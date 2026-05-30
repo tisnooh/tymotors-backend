@@ -14,7 +14,7 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
+client = AsyncIOMotorClient(mongo_url, tls=False, tlsAllowInvalidCertificates=True, serverSelectionTimeoutMS=5000)
 db = client[os.environ['DB_NAME']]
 
 app = FastAPI(title="TYMotors API", version="1.0.0")
