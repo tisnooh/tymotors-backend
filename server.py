@@ -8,6 +8,8 @@ from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from typing import List, Optional, Literal
 import uuid
+import stripe
+stripe.api_key = os.environ.get('STRIPE_SECRET_KEY', '')
 from datetime import datetime, timezone
 
 ROOT_DIR = Path(__file__).parent
@@ -366,6 +368,31 @@ async def newsletter_signup(payload: NewsletterInput):
 
 
 # Include the router
+class CheckoutInput(BaseModel):
+    items: List[CartItem]
+
+@api_router.post("/create-checkout-session")
+async def create_checkout_session(payload: CheckoutInput, x_session_id: Optional[str] = Header(default=None)):
+    line_items = []
+    for item in payload.items:
+        p = await db.products.find_one({"id": item.product_id}, {"_id": 0})
+        if p:
+            line_items.append({
+                "price_data": {
+                    "currency": "eur",
+                    "product_data": {"name": p["name"]},
+                    "unit_amount": int(float(p["price"]) * 100),
+                },
+                "quantity": item.quantity,
+            })
+    session = stripe.checkout.Session.create(
+        payment_method_types=["card"],
+        line_items=line_items,
+        mode="payment",
+        success_url="https://tymotors.vercel.app/order-success",
+        cancel_url="https://tymotors.vercel.app/cart",
+    )
+    return {"url": session.url}
 app.include_router(api_router)
 
 app.add_middleware(
