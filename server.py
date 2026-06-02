@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Header, Query
+from fastapi import FastAPI, APIRouter, HTTPException, Header, Query, UploadFile, File
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -11,6 +11,15 @@ import uuid
 import stripe
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY', '')
 from datetime import datetime, timezone
+import cloudinary
+import cloudinary.uploader
+
+cloudinary.config(
+    cloud_name=os.environ.get("CLOUDINARY_CLOUD_NAME", ""),
+    api_key=os.environ.get("CLOUDINARY_API_KEY", ""),
+    api_secret=os.environ.get("CLOUDINARY_API_SECRET", ""),
+    secure=True
+)
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -80,6 +89,47 @@ class VehicleModel(BaseModel):
     brand_slug: str
     name: str  # e.g. 'M3', 'C-Class'
     generations: List[str] = []  # e.g. ['G80 (2020+)','F80 (2014-2018)']
+
+
+class ProductCreateInput(BaseModel):
+    slug: str
+    name: str
+    subtitle: str
+    description: str
+    price: float
+    compare_at_price: Optional[float] = None
+    currency: str = "EUR"
+    images: List[str] = []
+    category_slug: str
+    subcategory: str
+    compatible_brands: List[str] = []
+    badges: List[str] = []
+    sku: str
+    stock: int = 25
+    rating: float = 4.8
+    review_count: int = 0
+    featured: bool = False
+    specs: dict = {}
+
+
+class ProductUpdateInput(BaseModel):
+    name: Optional[str] = None
+    subtitle: Optional[str] = None
+    description: Optional[str] = None
+    price: Optional[float] = None
+    compare_at_price: Optional[float] = None
+    currency: Optional[str] = None
+    images: Optional[List[str]] = None
+    category_slug: Optional[str] = None
+    subcategory: Optional[str] = None
+    compatible_brands: Optional[List[str]] = None
+    badges: Optional[List[str]] = None
+    sku: Optional[str] = None
+    stock: Optional[int] = None
+    rating: Optional[float] = None
+    review_count: Optional[int] = None
+    featured: Optional[bool] = None
+    specs: Optional[dict] = None
 
 
 class CartItem(BaseModel):
@@ -365,6 +415,77 @@ async def newsletter_signup(payload: NewsletterInput):
     doc["created_at"] = doc["created_at"].isoformat()
     await db.newsletter.insert_one(doc)
     return {"ok": True, "message": "subscribed"}
+
+
+# ---------- ADMIN - UPLOAD IMAGE ----------
+
+@api_router.post("/admin/upload-image")
+async def upload_image(file: UploadFile = File(...)):
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+    contents = await file.read()
+    result = cloudinary.uploader.upload(
+        contents,
+        folder="tymotors/products",
+        resource_type="image"
+    )
+    return {"url": result["secure_url"], "public_id": result["public_id"]}
+
+
+# ---------- ADMIN - PRODUCTS CRUD ----------
+
+@api_router.post("/admin/products")
+async def create_product(payload: ProductCreateInput):
+    existing = await db.products.find_one({"slug": payload.slug}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="Slug already exists")
+    product = Product(
+        slug=payload.slug,
+        name=payload.name,
+        subtitle=payload.subtitle,
+        description=payload.description,
+        price=payload.price,
+        compare_at_price=payload.compare_at_price,
+        currency=payload.currency,
+        images=payload.images,
+        category_slug=payload.category_slug,
+        subcategory=payload.subcategory,
+        compatible_brands=payload.compatible_brands,
+        badges=payload.badges,
+        sku=payload.sku,
+        stock=payload.stock,
+        rating=payload.rating,
+        review_count=payload.review_count,
+        featured=payload.featured,
+        specs=payload.specs,
+    )
+    doc = product.model_dump()
+    doc["created_at"] = doc["created_at"].isoformat()
+    await db.products.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+@api_router.put("/admin/products/{slug}")
+async def update_product(slug: str, payload: ProductUpdateInput):
+    existing = await db.products.find_one({"slug": slug}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Product not found")
+    updates = {k: v for k, v in payload.model_dump().items() if v is not None}
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    await db.products.update_one({"slug": slug}, {"$set": updates})
+    doc = await db.products.find_one({"slug": slug}, {"_id": 0})
+    return doc
+
+
+@api_router.delete("/admin/products/{slug}")
+async def delete_product(slug: str):
+    existing = await db.products.find_one({"slug": slug}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Product not found")
+    await db.products.delete_one({"slug": slug})
+    return {"ok": True, "deleted": slug}
 
 
 # Include the router
