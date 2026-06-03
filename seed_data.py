@@ -8,6 +8,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
 from datetime import datetime, timezone
+from dataclasses import dataclass, field
+from typing import List, Optional
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -24,7 +26,7 @@ BRANDS = [
         "name": "BMW",
         "tagline": "La performance à l'état pur",
         "description": "Calandres M Performance, pièces carbone, kits aérodynamiques et améliorations intérieures conçus pour les passionnés BMW.",
-        "image": "https://images.unsplash.com/photo-1617531653332-bd46c24f2068?q=80&w?auto=format&fit=crop&w=1600&q=80",
+        "image": "https://images.unsplash.com/photo-1617531653332-bd46c24f2068?q=80&w=1600&auto=format&fit=crop",
         "logo_text": "BMW",
         "order": 1,
     },
@@ -33,7 +35,7 @@ BRANDS = [
         "name": "Mercedes-Benz",
         "tagline": "L'élégance rencontre la puissance",
         "description": "Accessoires inspirés AMG, éléments en carbone, améliorations intérieures et transformations haut de gamme pour Mercedes-Benz.",
-        "image": "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=1600&q=80"",
+        "image": "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=1600&q=80",
         "logo_text": "Mercedes-Benz",
         "order": 2,
     },
@@ -79,28 +81,28 @@ CATEGORIES = [
     {
         "slug": "performance",
         "name": "Performance",
-        "tagline": "Sculpted aerodynamics, motorsport DNA.",
-        "description": "Front grilles, spoilers, diffusers, silencieux and exhaust tips engineered with carbon fiber and forged alloys.",
+        "tagline": "Aérodynamique sculpté, ADN motorsport.",
+        "description": "Calandres avant, spoilers, diffuseurs, silencieux et sorties d'échappement fabriqués en fibre de carbone et alliages forgés.",
         "image": "https://images.unsplash.com/photo-1614200187524-dc4b892acf16?auto=format&fit=crop&w=1600&q=80",
-        "subcategories": ["Grilles", "Spoilers", "Exhaust Tips", "Silencieux", "Diffusers", "Exterior"],
+        "subcategories": ["Calandres", "Spoilers", "Sorties d'échappement", "Silencieux", "Diffuseurs", "Extérieur"],
         "order": 1,
     },
     {
         "slug": "interior",
-        "name": "Interior",
-        "tagline": "Cinematic cockpit. Modernized.",
-        "description": "Steering wheels, digital dashboards, ambient lighting, door projectors and carbon fiber finishings.",
+        "name": "Intérieur",
+        "tagline": "Cockpit cinématique. Modernisé.",
+        "description": "Volants, tableaux de bord numériques, éclairage ambiant, projecteurs de portières et finitions en fibre de carbone.",
         "image": "https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&w=1600&q=80",
-        "subcategories": ["Steering Wheels", "Digital Dashboards", "Ambient Lighting", "Door Projectors", "Carbon Interior"],
+        "subcategories": ["Volants", "Tableaux de bord", "Éclairage ambiant", "Projecteurs de portières", "Intérieur carbone"],
         "order": 2,
     },
     {
         "slug": "technology",
-        "name": "Technology",
-        "tagline": "Smart hardware. Intelligent drive.",
-        "description": "Apple CarPlay screens, dashcams, reverse cameras, tire inflators and connected automotive accessories.",
+        "name": "Technologie",
+        "tagline": "Matériel intelligent. Conduite connectée.",
+        "description": "Écrans Apple CarPlay, dashcams, caméras de recul, gonfleurs de pneus et accessoires automobiles connectés.",
         "image": "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?auto=format&fit=crop&w=1600&q=80",
-        "subcategories": ["CarPlay Screens", "Dashcams", "Reverse Cameras", "Tire Inflators", "Smart Accessories"],
+        "subcategories": ["Écrans CarPlay", "Dashcams", "Caméras de recul", "Gonfleurs de pneus", "Accessoires connectés"],
         "order": 3,
     },
 ]
@@ -109,13 +111,13 @@ VEHICLE_MODELS = [
     # BMW
     {"brand_slug": "bmw", "name": "M3", "generations": ["G80 (2020+)", "F80 (2014-2018)", "E92 (2008-2013)"]},
     {"brand_slug": "bmw", "name": "M4", "generations": ["G82 (2021+)", "F82 (2014-2020)"]},
-    {"brand_slug": "bmw", "name": "Serie 3", "generations": ["G20 (2019+)", "F30 (2012-2018)"]},
-    {"brand_slug": "bmw", "name": "Serie 5", "generations": ["G30 (2017+)", "F10 (2010-2016)"]},
+    {"brand_slug": "bmw", "name": "Série 3", "generations": ["G20 (2019+)", "F30 (2012-2018)"]},
+    {"brand_slug": "bmw", "name": "Série 5", "generations": ["G30 (2017+)", "F10 (2010-2016)"]},
     {"brand_slug": "bmw", "name": "X5", "generations": ["G05 (2019+)", "F10 (2013-2018)"]},
     # Mercedes
-    {"brand_slug": "mercedes-benz", "name": "C-Class", "generations": ["W206 (2021+)", "W205 (2014-2020)"]},
-    {"brand_slug": "mercedes-benz", "name": "E-Class", "generations": ["W213 (2016+)", "W212 (2009-2016)"]},
-    {"brand_slug": "mercedes-benz", "name": "S-Class", "generations": ["W223 (2020+)", "W222 (2013-2020)"]},
+    {"brand_slug": "mercedes-benz", "name": "Classe C", "generations": ["W206 (2021+)", "W205 (2014-2020)"]},
+    {"brand_slug": "mercedes-benz", "name": "Classe E", "generations": ["W213 (2016+)", "W212 (2009-2016)"]},
+    {"brand_slug": "mercedes-benz", "name": "Classe S", "generations": ["W223 (2020+)", "W222 (2013-2020)"]},
     {"brand_slug": "mercedes-benz", "name": "GLC", "generations": ["X254 (2022+)", "X253 (2015-2022)"]},
     {"brand_slug": "mercedes-benz", "name": "AMG GT", "generations": ["C190 (2014+)"]},
     # Audi
@@ -143,7 +145,6 @@ VEHICLE_MODELS = [
     {"brand_slug": "toyota", "name": "Land Cruiser", "generations": ["J300 (2021+)"]},
 ]
 
-# Image pool for products (cinematic, dark automotive)
 IMG = {
     "grille": [
         "https://images.unsplash.com/photo-1605283176568-9b41fde3eba3?auto=format&fit=crop&w=1200&q=80",
@@ -196,10 +197,6 @@ IMG = {
 }
 
 
-from dataclasses import dataclass, field
-from typing import List, Optional
-
-
 @dataclass
 class ProductSpec:
     slug: str
@@ -218,7 +215,6 @@ class ProductSpec:
 
 
 def build_product(spec: ProductSpec) -> dict:
-    """Construct a MongoDB product document from a ProductSpec."""
     return {
         "id": str(uuid.uuid4()),
         "slug": spec.slug,
@@ -238,175 +234,160 @@ def build_product(spec: ProductSpec) -> dict:
         "rating": 4.8,
         "review_count": 42,
         "featured": spec.featured,
-        "specs": spec.specs or {"Material": "Carbon Fiber", "Finish": "Gloss", "Warranty": "2 years"},
+        "specs": spec.specs or {"Matériau": "Fibre de carbone", "Finition": "Brillant", "Garantie": "2 ans"},
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
 
 
 def p(slug, name, subtitle, description, price, subcategory, category_slug,
       images, compatible_brands, badges=None, featured=False, compare_at=None, specs=None):
-    """Backwards-compatible thin wrapper kept for readability of the PRODUCTS list."""
     return build_product(ProductSpec(
-        slug=slug,
-        name=name,
-        subtitle=subtitle,
-        description=description,
-        price=price,
-        subcategory=subcategory,
-        category_slug=category_slug,
-        images=images,
-        compatible_brands=compatible_brands,
-        badges=badges or [],
-        featured=featured,
-        compare_at_price=compare_at,
-        specs=specs,
+        slug=slug, name=name, subtitle=subtitle, description=description,
+        price=price, subcategory=subcategory, category_slug=category_slug,
+        images=images, compatible_brands=compatible_brands,
+        badges=badges or [], featured=featured, compare_at_price=compare_at, specs=specs,
     ))
 
 
 PRODUCTS = [
     # PERFORMANCE
-    p("m-performance-grille-g80", "M Performance Carbon Grille", "BMW G80 / G82 \u2013 OEM Fit",
-      "Hand-laid pre-preg carbon fiber kidney grille engineered for the BMW M3/M4 G80/G82. UV-protected gloss clear coat.",
-      890.0, "Grilles", "performance", IMG["grille"], ["bmw"], ["New", "Carbon"], featured=True, compare_at=990.0),
+    p("m-performance-grille-g80", "Calandre Carbone M Performance", "BMW G80 / G82 – Montage OEM",
+      "Calandre rein en fibre de carbone pré-imprégné pour BMW M3/M4 G80/G82. Vernis brillant protégé UV.",
+      890.0, "Calandres", "performance", IMG["grille"], ["bmw"], ["Nouveau", "Carbone"], featured=True, compare_at=990.0),
 
-    p("amg-night-package-grille", "AMG Night Package Diamond Grille", "Mercedes-Benz C/E/S Class",
-      "Diamond-pattern blacked-out grille with chrome accents. Direct OEM replacement for AMG Night Package retrofits.",
-      720.0, "Grilles", "performance", IMG["grille"], ["mercedes-benz"], ["Best Seller"], featured=True),
+    p("amg-night-package-grille", "Calandre Diamant AMG Night Package", "Mercedes-Benz Classe C/E/S",
+      "Calandre noire à motif diamant avec accents chromés. Remplacement OEM direct pour les retrofits AMG Night Package.",
+      720.0, "Calandres", "performance", IMG["grille"], ["mercedes-benz"], ["Best Seller"], featured=True),
 
-    p("audi-rs-honeycomb-grille", "RS Honeycomb Aero Grille", "Audi A4 / A6 / RS-Line",
-      "3D-printed honeycomb mesh with anodized matte black finish. Improves airflow by 14% to front intercoolers.",
-      640.0, "Grilles", "performance", IMG["grille"], ["audi"], ["Aero+"]),
+    p("audi-rs-honeycomb-grille", "Calandre Aéro RS Nid d'abeille", "Audi A4 / A6 / RS-Line",
+      "Grille honeycomb imprimée en 3D avec finition noire mat anodisée. Améliore le flux d'air de 14% vers les intercoolers.",
+      640.0, "Calandres", "performance", IMG["grille"], ["audi"], ["Aéro+"]),
 
-    p("porsche-gt3-front-splitter", "GT3-Inspired Front Splitter", "Porsche 911 992 / 991",
-      "Track-bred carbon front splitter machined from a single carbon block, generating measurable front-axle downforce.",
-      1490.0, "Exterior", "performance", IMG["diffuser"], ["porsche"], ["Pro Series"], featured=True),
+    p("porsche-gt3-front-splitter", "Splitter Avant GT3", "Porsche 911 992 / 991",
+      "Splitter avant carbone issu de la compétition, usiné dans un seul bloc carbone, générant une appui mesurable sur l'essieu avant.",
+      1490.0, "Extérieur", "performance", IMG["diffuser"], ["porsche"], ["Pro Series"], featured=True),
 
-    p("vw-r-rear-spoiler", "R-Line Rear Ducktail Spoiler", "VW Golf MK7 / MK8",
-      "OEM-grade ABS plastic spoiler with gloss black finish. Tested to 250 km/h for high-speed stability.",
+    p("vw-r-rear-spoiler", "Becquet Arrière R-Line", "VW Golf MK7 / MK8",
+      "Spoiler en ABS qualité OEM avec finition noire brillante. Testé jusqu'à 250 km/h pour la stabilité à haute vitesse.",
       280.0, "Spoilers", "performance", IMG["spoiler"], ["volkswagen"], ["Best Seller"]),
 
-    p("toyota-gr-aero-spoiler", "GR Performance Aero Wing", "Toyota GR Supra / GR Yaris",
-      "Adjustable carbon fiber rear wing with motorsport endplates. Up to 22% increase in rear downforce.",
-      820.0, "Spoilers", "performance", IMG["spoiler"], ["toyota"], ["Carbon"]),
+    p("toyota-gr-aero-spoiler", "Aileron Aéro GR Performance", "Toyota GR Supra / GR Yaris",
+      "Aileron arrière en fibre de carbone ajustable avec flasques motorsport. Jusqu'à 22% d'appui arrière supplémentaire.",
+      820.0, "Spoilers", "performance", IMG["spoiler"], ["toyota"], ["Carbone"]),
 
-    p("m4-quad-exhaust-tips", "M Quad Carbon Exhaust Tips", "BMW M3 / M4 G80 / G82",
-      "Aerospace-grade titanium core with hand-finished carbon sleeves. Bolt-on, no welding required.",
-      450.0, "Exhaust Tips", "performance", IMG["exhaust"], ["bmw"], ["Titanium"], featured=True),
+    p("m4-quad-exhaust-tips", "Sorties d'échappement Quad Carbone M", "BMW M3 / M4 G80 / G82",
+      "Âme en titane aérospatial avec manchons carbone finis à la main. Montage boulonné, sans soudure.",
+      450.0, "Sorties d'échappement", "performance", IMG["exhaust"], ["bmw"], ["Titane"], featured=True),
 
-    p("amg-quad-exhaust-tips", "AMG Quad Sport Exhaust Tips", "Mercedes-AMG C63 / E63",
-      "Polished stainless quad outlets with laser-etched AMG signature. CNC machined for perfect symmetry.",
-      380.0, "Exhaust Tips", "performance", IMG["exhaust"], ["mercedes-benz"], []),
+    p("amg-quad-exhaust-tips", "Sorties d'échappement Quad AMG Sport", "Mercedes-AMG C63 / E63",
+      "Sorties quad en inox poli avec signature AMG gravée au laser. Usinées CNC pour une symétrie parfaite.",
+      380.0, "Sorties d'échappement", "performance", IMG["exhaust"], ["mercedes-benz"], []),
 
-    p("porsche-titanium-silencieux", "Track Titanium Silencieux", "Porsche 911 / Cayman",
-      "Full titanium muffler engineered to deliver +18 hp and a deep race-bred soundtrack. ECE approved.",
-      2890.0, "Silencieux", "performance", IMG["exhaust"], ["porsche"], ["Pro Series", "Titanium"]),
+    p("porsche-titanium-silencieux", "Silencieux Titane Track", "Porsche 911 / Cayman",
+      "Silencieux full titane conçu pour délivrer +18 ch et une sonorité race profonde. Homologué ECE.",
+      2890.0, "Silencieux", "performance", IMG["exhaust"], ["porsche"], ["Pro Series", "Titane"]),
 
-    p("rs6-carbon-diffuser", "RS6 Carbon Rear Diffuser", "Audi RS6 C8",
-      "OEM-fit carbon diffuser sculpted for the C8 platform. Aero-tested for stability at autobahn speeds.",
-      1190.0, "Diffusers", "performance", IMG["diffuser"], ["audi"], ["Carbon"]),
+    p("rs6-carbon-diffuser", "Diffuseur Arrière Carbone RS6", "Audi RS6 C8",
+      "Diffuseur carbone taillé pour la plateforme C8. Testé en aérodynamique pour la stabilité à vitesse autoroute.",
+      1190.0, "Diffuseurs", "performance", IMG["diffuser"], ["audi"], ["Carbone"]),
 
-    p("vw-golf-front-lip-splitter", "R-Line Front Lip Splitter", "VW Golf MK7 / MK8",
-      "Sleek front splitter with reinforced ABS construction. Subtle aggression for daily refinement.",
-      210.0, "Exterior", "performance", IMG["diffuser"], ["volkswagen"], []),
+    p("vw-golf-front-lip-splitter", "Lèvre Avant R-Line", "VW Golf MK7 / MK8",
+      "Lèvre avant élégante en ABS renforcé. Agressivité subtile pour un raffinement quotidien.",
+      210.0, "Extérieur", "performance", IMG["diffuser"], ["volkswagen"], []),
 
-    p("supra-front-canards", "GR Aero Front Canards", "Toyota GR Supra A90",
-      "Hand-laid carbon canards designed to channel air to front intakes. Bolt-on installation.",
-      320.0, "Exterior", "performance", IMG["diffuser"], ["toyota"], ["Carbon"]),
+    p("supra-front-canards", "Canards Avant Aéro GR", "Toyota GR Supra A90",
+      "Canards carbone posés à la main, conçus pour canaliser l'air vers les prises d'air avant. Installation boulonnée.",
+      320.0, "Extérieur", "performance", IMG["diffuser"], ["toyota"], ["Carbone"]),
 
-    # INTERIOR
-    p("m-performance-steering-wheel", "M Performance Alcantara Steering Wheel", "BMW M Performance Series",
-      "Race-grade alcantara wheel with carbon trim, integrated shift lights and tri-color stitching. Plug-and-play.",
-      1390.0, "Steering Wheels", "interior", IMG["steering"], ["bmw"], ["Best Seller", "Alcantara"], featured=True),
+    # INTÉRIEUR
+    p("m-performance-steering-wheel", "Volant Alcantara M Performance", "BMW Série M Performance",
+      "Volant alcantara qualité course avec garniture carbone, témoins de changement de vitesse intégrés et surpiqûres tricolores.",
+      1390.0, "Volants", "interior", IMG["steering"], ["bmw"], ["Best Seller", "Alcantara"], featured=True),
 
-    p("amg-performance-steering-wheel", "AMG Performance Alcantara Wheel", "Mercedes-AMG Lineup",
-      "OEM-grade alcantara AMG performance wheel with red stitching and carbon trim. Direct retrofit.",
-      1290.0, "Steering Wheels", "interior", IMG["steering"], ["mercedes-benz"], ["Alcantara"]),
+    p("amg-performance-steering-wheel", "Volant Alcantara AMG Performance", "Mercedes-AMG",
+      "Volant alcantara AMG qualité OEM avec surpiqûres rouges et garniture carbone. Retrofit direct.",
+      1290.0, "Volants", "interior", IMG["steering"], ["mercedes-benz"], ["Alcantara"]),
 
-    p("rs-flat-bottom-wheel", "RS Flat Bottom Steering Wheel", "Audi RS Series",
-      "RS-spec flat bottom wheel with carbon insert, contrast stitching and 12 o\u2019clock indicator. Plug-and-play.",
-      1150.0, "Steering Wheels", "interior", IMG["steering"], ["audi"], []),
+    p("rs-flat-bottom-wheel", "Volant Fond Plat RS", "Audi Série RS",
+      "Volant fond plat RS avec insert carbone, surpiqûres contrastées et indicateur 12 heures. Plug-and-play.",
+      1150.0, "Volants", "interior", IMG["steering"], ["audi"], []),
 
-    p("gt3-rs-suede-wheel", "GT3-RS Suede Performance Wheel", "Porsche 911 / Cayman / Panamera",
-      "Hand-stitched suede wheel with carbon trim and motorsport-grade yellow 12 o\u2019clock band.",
-      1690.0, "Steering Wheels", "interior", IMG["steering"], ["porsche"], ["Pro Series"], featured=True),
+    p("gt3-rs-suede-wheel", "Volant Suède Performance GT3-RS", "Porsche 911 / Cayman / Panamera",
+      "Volant suède cousu à la main avec garniture carbone et bande jaune 12 heures qualité motorsport.",
+      1690.0, "Volants", "interior", IMG["steering"], ["porsche"], ["Pro Series"], featured=True),
 
-    p("digital-cockpit-12-3", "Digital Cockpit 12.3\" Display", "Universal Premium Fit",
-      "12.3\" 1920\u00d7720 anti-glare digital cluster running custom AMOLED firmware. Plug-and-play with VAG models.",
-      980.0, "Digital Dashboards", "interior", IMG["dashboard"], ["audi", "volkswagen", "porsche"], ["New"]),
+    p("digital-cockpit-12-3", "Tableau de Bord Numérique 12,3\"", "Montage Premium Universel",
+      "Cluster numérique 12,3\" 1920×720 anti-reflets avec firmware AMOLED personnalisé. Plug-and-play sur modèles VAG.",
+      980.0, "Tableaux de bord", "interior", IMG["dashboard"], ["audi", "volkswagen", "porsche"], ["Nouveau"]),
 
-    p("bmw-id8-dashboard", "BMW iD8 Curved Display Retrofit", "BMW Serie 3 / Serie 5 / X5",
-      "Curved iD8 retrofit kit with iDrive 8.5 firmware, navigation and gesture controls. Fully reversible.",
-      1890.0, "Digital Dashboards", "interior", IMG["dashboard"], ["bmw"], ["Pro Series"]),
+    p("bmw-id8-dashboard", "Retrofit Écran Incurvé BMW iD8", "BMW Série 3 / Série 5 / X5",
+      "Kit retrofit iD8 incurvé avec firmware iDrive 8.5, navigation et commandes gestuelles. Entièrement réversible.",
+      1890.0, "Tableaux de bord", "interior", IMG["dashboard"], ["bmw"], ["Pro Series"]),
 
-    p("ambient-led-pro-64", "Ambient LED Pro 64-Color System", "Universal Premium Fit",
-      "64-color ambient LED kit with app control, music sync and door pulse animation. Class-A wiring harness.",
-      290.0, "Ambient Lighting", "interior", IMG["ambient"], ["bmw", "mercedes-benz", "audi", "volkswagen"], ["Best Seller"], featured=True),
+    p("ambient-led-pro-64", "Éclairage Ambiant LED Pro 64 Couleurs", "Montage Premium Universel",
+      "Kit LED ambiant 64 couleurs avec contrôle via app, synchronisation musicale et animation pulse portières.",
+      290.0, "Éclairage ambiant", "interior", IMG["ambient"], ["bmw", "mercedes-benz", "audi", "volkswagen"], ["Best Seller"], featured=True),
 
-    p("welcome-door-projector", "Welcome Door Logo Projector", "Universal HD Fit",
-      "HD 1080p LED welcome projector with custom brand logos. CNC aluminum casing.",
-      89.0, "Door Projectors", "interior", IMG["ambient"], ["bmw", "mercedes-benz", "audi", "porsche", "volkswagen", "toyota"], ["Best Seller"]),
+    p("welcome-door-projector", "Projecteur Logo Bienvenue Portière", "Montage HD Universel",
+      "Projecteur LED de bienvenue HD 1080p avec logos de marques personnalisés. Boîtier aluminium usiné CNC.",
+      89.0, "Projecteurs de portières", "interior", IMG["ambient"], ["bmw", "mercedes-benz", "audi", "porsche", "volkswagen", "toyota"], ["Best Seller"]),
 
-    p("carbon-interior-trim-kit", "Carbon Fiber Interior Trim Kit", "Universal Premium Fit",
-      "Hand-laid carbon fiber interior trim kit. UV-resistant clear coat finish.",
-      590.0, "Carbon Interior", "interior", IMG["carbon"], ["bmw", "audi", "mercedes-benz", "porsche"], ["Carbon"]),
+    p("carbon-interior-trim-kit", "Kit Garnitures Intérieures Carbone", "Montage Premium Universel",
+      "Kit de garnitures intérieures en fibre de carbone posé à la main. Vernis transparent résistant aux UV.",
+      590.0, "Intérieur carbone", "interior", IMG["carbon"], ["bmw", "audi", "mercedes-benz", "porsche"], ["Carbone"]),
 
-    # TECHNOLOGY
-    p("carplay-screen-12", "12\" Wireless CarPlay & Android Auto Screen", "Universal Premium Fit",
-      "12\" QLED touchscreen with wireless CarPlay, Android Auto, AHD reverse camera support and split-screen mode.",
-      490.0, "CarPlay Screens", "technology", IMG["carplay"], ["bmw", "mercedes-benz", "audi", "volkswagen", "toyota"], ["Best Seller"], featured=True),
+    # TECHNOLOGIE
+    p("carplay-screen-12", "Écran CarPlay & Android Auto 12\" Sans Fil", "Montage Premium Universel",
+      "Écran tactile QLED 12\" avec CarPlay sans fil, Android Auto, support caméra de recul AHD et mode écran partagé.",
+      490.0, "Écrans CarPlay", "technology", IMG["carplay"], ["bmw", "mercedes-benz", "audi", "volkswagen", "toyota"], ["Best Seller"], featured=True),
 
-    p("carplay-screen-10", "10\" Wireless CarPlay Touchscreen", "Universal Premium Fit",
-      "10\" IPS HD wireless CarPlay screen with built-in dashcam input and reverse cam input. Plug-and-play.",
-      350.0, "CarPlay Screens", "technology", IMG["carplay"], ["bmw", "mercedes-benz", "audi", "volkswagen", "toyota", "porsche"], ["New"]),
+    p("carplay-screen-10", "Écran Tactile CarPlay 10\" Sans Fil", "Montage Premium Universel",
+      "Écran CarPlay IPS HD 10\" sans fil avec entrée dashcam intégrée et entrée caméra de recul. Plug-and-play.",
+      350.0, "Écrans CarPlay", "technology", IMG["carplay"], ["bmw", "mercedes-benz", "audi", "volkswagen", "toyota", "porsche"], ["Nouveau"]),
 
-    p("dashcam-4k-pro", "DashCam 4K Pro Dual-Lens", "Universal Premium Fit",
-      "4K front + 1080p rear dashcam with night vision, GPS, parking guard mode and 256GB storage support.",
-      280.0, "Dashcams", "technology", IMG["dashcam"], ["bmw", "mercedes-benz", "audi", "porsche", "volkswagen", "toyota"], ["New"], featured=True),
+    p("dashcam-4k-pro", "DashCam 4K Pro Double Objectif", "Montage Premium Universel",
+      "Dashcam 4K avant + 1080p arrière avec vision nocturne, GPS, mode surveillance stationnement et support 256 Go.",
+      280.0, "Dashcams", "technology", IMG["dashcam"], ["bmw", "mercedes-benz", "audi", "porsche", "volkswagen", "toyota"], ["Nouveau"], featured=True),
 
-    p("reverse-cam-hd", "AHD Reverse Camera Kit", "Universal Premium Fit",
-      "AHD 1080p reverse camera with dynamic guidelines and IP68 rating. Plug-and-play for most CarPlay screens.",
-      120.0, "Reverse Cameras", "technology", IMG["reverse"], ["bmw", "mercedes-benz", "audi", "porsche", "volkswagen", "toyota"], ["Best Seller"]),
+    p("reverse-cam-hd", "Kit Caméra de Recul AHD", "Montage Premium Universel",
+      "Caméra de recul AHD 1080p avec lignes directrices dynamiques et indice IP68. Plug-and-play pour la plupart des écrans CarPlay.",
+      120.0, "Caméras de recul", "technology", IMG["reverse"], ["bmw", "mercedes-benz", "audi", "porsche", "volkswagen", "toyota"], ["Best Seller"]),
 
-    p("tire-inflator-pro", "Smart Tire Inflator Pro", "Universal Premium Fit",
-      "Cordless smart tire inflator with auto-stop, digital pressure gauge and OLED display. 150 PSI max.",
-      99.0, "Tire Inflators", "technology", IMG["inflator"], ["bmw", "mercedes-benz", "audi", "porsche", "volkswagen", "toyota"], ["Best Seller"]),
+    p("tire-inflator-pro", "Gonfleur de Pneus Intelligent Pro", "Montage Premium Universel",
+      "Gonfleur de pneus sans fil avec arrêt automatique, jauge de pression numérique et écran OLED. 150 PSI max.",
+      99.0, "Gonfleurs de pneus", "technology", IMG["inflator"], ["bmw", "mercedes-benz", "audi", "porsche", "volkswagen", "toyota"], ["Best Seller"]),
 
-    p("smart-tpms-kit", "Wireless TPMS Smart Sensor Kit", "Universal Premium Fit",
-      "4-sensor wireless TPMS kit with solar charging hub. Real-time pressure and temperature monitoring.",
-      149.0, "Smart Accessories", "technology", IMG["inflator"], ["bmw", "mercedes-benz", "audi", "porsche", "volkswagen", "toyota"], []),
+    p("smart-tpms-kit", "Kit Capteurs TPMS Sans Fil Intelligent", "Montage Premium Universel",
+      "Kit TPMS 4 capteurs sans fil avec hub de charge solaire. Surveillance en temps réel de la pression et de la température.",
+      149.0, "Accessoires connectés", "technology", IMG["inflator"], ["bmw", "mercedes-benz", "audi", "porsche", "volkswagen", "toyota"], []),
 ]
 
 
 async def seed():
     print(f"Seeding database: {db_name}")
-    # Brands
     await db.brands.delete_many({})
     for b in BRANDS:
         b = {**b, "id": str(uuid.uuid4())}
         await db.brands.insert_one(b)
     print(f"Inserted {len(BRANDS)} brands.")
 
-    # Categories
     await db.categories.delete_many({})
     for c in CATEGORIES:
         c = {**c, "id": str(uuid.uuid4())}
         await db.categories.insert_one(c)
     print(f"Inserted {len(CATEGORIES)} categories.")
 
-    # Vehicle models
     await db.vehicle_models.delete_many({})
     for m in VEHICLE_MODELS:
         m = {**m, "id": str(uuid.uuid4())}
         await db.vehicle_models.insert_one(m)
     print(f"Inserted {len(VEHICLE_MODELS)} vehicle models.")
 
-    # Products
     await db.products.delete_many({})
     for p_doc in PRODUCTS:
         await db.products.insert_one(p_doc)
     print(f"Inserted {len(PRODUCTS)} products.")
 
-    # Indexes
     await db.products.create_index("slug", unique=True)
     await db.brands.create_index("slug", unique=True)
     await db.categories.create_index("slug", unique=True)
