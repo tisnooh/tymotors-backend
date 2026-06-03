@@ -109,40 +109,41 @@ CATEGORIES = [
 
 VEHICLE_MODELS = [
     # BMW
+    {"brand_slug": "bmw", "name": "M2", "generations": ["G87 (2023+)", "F87 (2016-2021)"]},
     {"brand_slug": "bmw", "name": "M3", "generations": ["G80 (2020+)", "F80 (2014-2018)", "E92 (2008-2013)"]},
     {"brand_slug": "bmw", "name": "M4", "generations": ["G82 (2021+)", "F82 (2014-2020)"]},
-    {"brand_slug": "bmw", "name": "Série 3", "generations": ["G20 (2019+)", "F30 (2012-2018)"]},
-    {"brand_slug": "bmw", "name": "Série 5", "generations": ["G30 (2017+)", "F10 (2010-2016)"]},
-    {"brand_slug": "bmw", "name": "X5", "generations": ["G05 (2019+)", "F10 (2013-2018)"]},
+    {"brand_slug": "bmw", "name": "Série 3 (G20)", "generations": ["G20 (2019+)", "F30 (2012-2018)"]},
+    {"brand_slug": "bmw", "name": "X5", "generations": ["G05 (2019+)", "F15 (2013-2018)"]},
     # Mercedes
+    {"brand_slug": "mercedes-benz", "name": "CLA", "generations": ["C118 (2019+)", "C117 (2013-2019)"]},
     {"brand_slug": "mercedes-benz", "name": "Classe C", "generations": ["W206 (2021+)", "W205 (2014-2020)"]},
     {"brand_slug": "mercedes-benz", "name": "Classe E", "generations": ["W213 (2016+)", "W212 (2009-2016)"]},
-    {"brand_slug": "mercedes-benz", "name": "Classe S", "generations": ["W223 (2020+)", "W222 (2013-2020)"]},
     {"brand_slug": "mercedes-benz", "name": "GLC", "generations": ["X254 (2022+)", "X253 (2015-2022)"]},
     {"brand_slug": "mercedes-benz", "name": "AMG GT", "generations": ["C190 (2014+)"]},
     # Audi
+    {"brand_slug": "audi", "name": "A3", "generations": ["8Y (2020+)", "8V (2012-2020)"]},
+    {"brand_slug": "audi", "name": "S3", "generations": ["8Y (2020+)", "8V (2013-2020)"]},
     {"brand_slug": "audi", "name": "RS3", "generations": ["8Y (2021+)", "8V (2015-2020)"]},
-    {"brand_slug": "audi", "name": "RS6", "generations": ["C8 (2019+)", "C7 (2013-2018)"]},
     {"brand_slug": "audi", "name": "A4", "generations": ["B9 (2015+)", "B8 (2008-2015)"]},
-    {"brand_slug": "audi", "name": "Q5", "generations": ["FY (2017+)", "8R (2008-2017)"]},
-    {"brand_slug": "audi", "name": "e-tron GT", "generations": ["F8 (2021+)"]},
+    {"brand_slug": "audi", "name": "RS6", "generations": ["C8 (2019+)", "C7 (2013-2018)"]},
     # Porsche
     {"brand_slug": "porsche", "name": "911", "generations": ["992 (2019+)", "991 (2011-2019)", "997 (2004-2012)"]},
-    {"brand_slug": "porsche", "name": "Cayenne", "generations": ["9YA (2017+)", "958 (2010-2017)"]},
-    {"brand_slug": "porsche", "name": "Taycan", "generations": ["J1 (2019+)"]},
+    {"brand_slug": "porsche", "name": "Cayman", "generations": ["718 (2016+)", "981 (2012-2016)"]},
+    {"brand_slug": "porsche", "name": "Boxster", "generations": ["718 (2016+)", "981 (2012-2016)"]},
     {"brand_slug": "porsche", "name": "Macan", "generations": ["95B (2014+)"]},
-    {"brand_slug": "porsche", "name": "Panamera", "generations": ["971 (2016+)"]},
-    # VW
+    {"brand_slug": "porsche", "name": "Cayenne", "generations": ["9YA (2017+)", "958 (2010-2017)"]},
+    # Volkswagen
     {"brand_slug": "volkswagen", "name": "Golf GTI", "generations": ["Mk8 (2020+)", "Mk7 (2013-2020)"]},
     {"brand_slug": "volkswagen", "name": "Golf R", "generations": ["Mk8 (2021+)", "Mk7 (2014-2020)"]},
+    {"brand_slug": "volkswagen", "name": "Polo GTI", "generations": ["AW (2018+)"]},
     {"brand_slug": "volkswagen", "name": "Tiguan", "generations": ["MQB (2016+)"]},
     {"brand_slug": "volkswagen", "name": "Passat", "generations": ["B8 (2014+)"]},
     # Toyota
-    {"brand_slug": "toyota", "name": "GR Supra", "generations": ["A90 (2019+)"]},
     {"brand_slug": "toyota", "name": "GR Yaris", "generations": ["XP210 (2020+)"]},
+    {"brand_slug": "toyota", "name": "GR Supra", "generations": ["A90 (2019+)"]},
     {"brand_slug": "toyota", "name": "Corolla", "generations": ["E210 (2018+)"]},
-    {"brand_slug": "toyota", "name": "Camry", "generations": ["XV70 (2017+)"]},
-    {"brand_slug": "toyota", "name": "Land Cruiser", "generations": ["J300 (2021+)"]},
+    {"brand_slug": "toyota", "name": "GT86", "generations": ["ZN6 (2012-2021)"]},
+    {"brand_slug": "toyota", "name": "Land Cruiser", "generations": ["J300 (2021+)", "J200 (2007-2021)"]},
 ]
 
 IMG = {
