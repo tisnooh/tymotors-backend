@@ -14,12 +14,17 @@ from datetime import datetime, timezone
 import cloudinary
 import cloudinary.uploader
 
-cloudinary.config(
-    cloud_name=os.environ.get("CLOUDINARY_CLOUD_NAME", ""),
-    api_key=os.environ.get("CLOUDINARY_API_KEY", ""),
-    api_secret=os.environ.get("CLOUDINARY_API_SECRET", ""),
-    secure=True
-)
+# Support both CLOUDINARY_URL (single var) and separate vars
+cloudinary_url = os.environ.get("CLOUDINARY_URL")
+if cloudinary_url:
+    cloudinary.config(cloudinary_url=cloudinary_url)
+else:
+    cloudinary.config(
+        cloud_name=os.environ.get("CLOUDINARY_CLOUD_NAME", ""),
+        api_key=os.environ.get("CLOUDINARY_API_KEY", ""),
+        api_secret=os.environ.get("CLOUDINARY_API_SECRET", ""),
+        secure=True
+    )
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
