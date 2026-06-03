@@ -111,7 +111,7 @@ VEHICLE_MODELS = [
     {"brand_slug": "bmw", "name": "M4", "generations": ["G82 (2021+)", "F82 (2014-2020)"]},
     {"brand_slug": "bmw", "name": "Serie 3", "generations": ["G20 (2019+)", "F30 (2012-2018)"]},
     {"brand_slug": "bmw", "name": "Serie 5", "generations": ["G30 (2017+)", "F10 (2010-2016)"]},
-    {"brand_slug": "bmw", "name": "X5", "generations": ["G05 (2019+)", "F15 (2013-2018)"]},
+    {"brand_slug": "bmw", "name": "X5", "generations": ["G05 (2019+)", "F10 (2013-2018)"]},
     # Mercedes
     {"brand_slug": "mercedes-benz", "name": "C-Class", "generations": ["W206 (2021+)", "W205 (2014-2020)"]},
     {"brand_slug": "mercedes-benz", "name": "E-Class", "generations": ["W213 (2016+)", "W212 (2009-2016)"]},
