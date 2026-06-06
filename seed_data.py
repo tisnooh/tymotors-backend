@@ -529,7 +529,7 @@ PRODUCTS = [
       "Gonfleur de pneus sans fil avec arrêt automatique, jauge de pression numérique et écran OLED. 150 PSI max.",
       99.0, "Gonfleurs de pneus", "technology", IMG["inflator"], ["bmw", "mercedes-benz", "audi", "porsche", "volkswagen", "toyota"], ["Best Seller"]),
 
-    p("smart-tpms-kit", "Kit Capteurs TPMS Sans Fil Intelligent", "Montage Premium Universel",
+    p("smart-tpms-kit", "Kit Capteurs TPMS Sans Fil Intelligent", "Montage Premium Universe",
       "Kit TPMS 4 capteurs sans fil avec hub de charge solaire. Surveillance en temps réel de la pression et de la température.",
       149.0, "Accessoires connectés", "technology", IMG["inflator"], ["bmw", "mercedes-benz", "audi", "porsche", "volkswagen", "toyota"], []),
 ]
