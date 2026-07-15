@@ -1,7 +1,23 @@
 FROM python:3.11-slim
-RUN apt-get update && apt-get install -y ca-certificates && update-ca-certificates
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && update-ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && addgroup --system app \
+    && adduser --system --ingroup app app
+
 WORKDIR /app
 COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY . .
-CMD uvicorn server:app --host 0.0.0.0 --port 8000
+RUN pip install --no-cache-dir -r requirements.txt
+COPY --chown=app:app . .
+
+USER app
+EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/', timeout=3)" || exit 1
+
+CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8000"]

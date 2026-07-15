@@ -1,0 +1,35 @@
+name: Backend CI
+
+on:
+  pull_request:
+  push:
+    branches: [develop, main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - run: python -m py_compile server.py seed_data.py
+      - run: pytest -q
+        env:
+          MONGO_URL: mongodb://localhost:27017
+          DB_NAME: tymotors_test
+          ADMIN_JWT_SECRET: test-only-secret-that-is-longer-than-thirty-two-characters
+      - run: pip check
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: gitleaks/gitleaks-action@v2
