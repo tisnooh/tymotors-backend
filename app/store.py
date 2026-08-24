@@ -112,6 +112,8 @@ class CatalogStore:
                 "stage_image_url": generation.get("stage_image_url") if generation.get("image_verified") else None,
                 "stage_image_alt": generation.get("stage_image_alt") if generation.get("image_verified") else None,
                 "image_verified": generation.get("image_verified", False),
+                "image_attribution": generation.get("image_attribution") if generation.get("image_verified") else None,
+                "image_source_url": generation.get("image_source_url") if generation.get("image_verified") else None,
                 "hotspots": hot_by_generation.get(generation["id"], []),
             })
         result = []

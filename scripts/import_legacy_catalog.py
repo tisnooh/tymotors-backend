@@ -113,7 +113,9 @@ async def run() -> None:
                     "vehicle_model_id": model["id"], "slug": slugify(generation_name), "name": generation_name,
                     "chassis_codes": [part.strip() for part in generation_name.split("/")],
                     "stage_image_url": stage_url, "stage_image_alt": f"{model_name} {generation_name} — vue latérale",
-                    "image_verified": False, "display_order": order, "is_active": True,
+                    "image_verified": False, "image_source_url": None, "image_rights_basis": None,
+                    "image_attribution": None, "image_verified_at": None,
+                    "display_order": order, "is_active": True,
                 }, "vehicle_model_id,slug")
 
         for item in PRODUCTS:
