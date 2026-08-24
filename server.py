@@ -537,8 +537,9 @@ async def checkout_session(stripe_session_id: str, x_session_id: str | None = He
     if order.get("payment_status") != "paid" and stripe_client is not None:
         try:
             session = await stripe_client.v1.checkout.sessions.retrieve_async(stripe_session_id)
-            if session.get("payment_status") == "paid":
-                await _complete_checkout_payment(session)
+            session_data = session.to_dict()
+            if session_data.get("payment_status") == "paid":
+                await _complete_checkout_payment(session_data)
                 rows = await db.select("orders", params={"select": "*", "id": f"eq.{order['id']}", "limit": 1})
                 order = rows[0]
         except stripe.StripeError:

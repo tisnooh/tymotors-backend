@@ -125,6 +125,7 @@ def test_checkout_and_webhook_enforce_vehicle_and_order_integrity():
     assert 'obj.get("client_reference_id") != order_id' in server
     assert 'completed is not True' in server
     assert 'checkout.sessions.retrieve_async(stripe_session_id)' in server
+    assert 'session.to_dict()' in server
     assert 'collected.get("shipping_details")' in server
 
 
