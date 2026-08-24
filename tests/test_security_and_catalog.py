@@ -124,6 +124,8 @@ def test_checkout_and_webhook_enforce_vehicle_and_order_integrity():
     assert 'obj.get("amount_total") != expected.get("total_cents")' in server
     assert 'obj.get("client_reference_id") != order_id' in server
     assert 'completed is not True' in server
+    assert 'checkout.sessions.retrieve_async(stripe_session_id)' in server
+    assert 'collected.get("shipping_details")' in server
 
 
 def test_cart_response_exposes_server_calculated_totals_and_compatibility():

@@ -534,12 +534,54 @@ async def checkout_session(stripe_session_id: str, x_session_id: str | None = He
     if not rows: raise HTTPException(status_code=404, detail="Order not found")
     order = rows[0]; allowed = bool(user and order.get("user_id") == user["id"]) or bool(not user and x_session_id and order.get("guest_session_id") == x_session_id)
     if not allowed: raise HTTPException(status_code=403, detail="Order access denied")
+    if order.get("payment_status") != "paid" and stripe_client is not None:
+        try:
+            session = await stripe_client.v1.checkout.sessions.retrieve_async(stripe_session_id)
+            if session.get("payment_status") == "paid":
+                await _complete_checkout_payment(session)
+                rows = await db.select("orders", params={"select": "*", "id": f"eq.{order['id']}", "limit": 1})
+                order = rows[0]
+        except stripe.StripeError:
+            logger.exception("Unable to reconcile Stripe Checkout session %s", stripe_session_id)
     result = (await _orders_with_items([order]))[0]
     return {"paid": result["payment_status"] == "paid", "status": result["status"], "payment_status": result["payment_status"],
         "order_reference": result["order_number"], "customer_email": result.get("customer_email"), "items": result["items"],
         "subtotal": result["subtotal_cents"] / 100, "shipping": result["shipping_amount_cents"] / 100,
         "tax": result["tax_amount_cents"] / 100, "total": result["total_cents"] / 100, "currency": result["currency"],
         "shipping_address": result.get("shipping_address") or {}}
+
+
+async def _complete_checkout_payment(obj: Any) -> str | None:
+    if obj.get("payment_status") != "paid":
+        return None
+    order_id = (obj.get("metadata") or {}).get("order_id")
+    if not order_id:
+        return None
+    order_rows = await db.select("orders", params={
+        "select": "id,total_cents,currency,stripe_session_id", "id": f"eq.{order_id}", "limit": 1,
+    })
+    if not order_rows:
+        raise RuntimeError("Stripe event references an unknown order")
+    expected = order_rows[0]
+    if (
+        obj.get("id") != expected.get("stripe_session_id")
+        or obj.get("client_reference_id") != order_id
+        or obj.get("amount_total") != expected.get("total_cents")
+        or (obj.get("currency") or "").upper() != expected.get("currency")
+    ):
+        raise RuntimeError("Stripe Checkout totals or references do not match the order")
+    customer = obj.get("customer_details") or {}
+    collected = obj.get("collected_information") or {}
+    shipping = obj.get("shipping_details") or collected.get("shipping_details") or {}
+    completed = await db.rpc("complete_paid_order", {"p_order_id": order_id, "p_payment_intent_id": obj.get("payment_intent"),
+        "p_customer_email": customer.get("email"), "p_customer_name": customer.get("name"),
+        "p_shipping_address": _address(shipping.get("address")), "p_billing_address": _address(customer.get("address"))})
+    if completed is not True:
+        raise RuntimeError("Order completion transaction was not applied")
+    orders = await db.select("orders", params={"select": "user_id", "id": f"eq.{order_id}", "limit": 1})
+    if orders and orders[0].get("user_id") and obj.get("customer"):
+        await db.update("profiles", {"stripe_customer_id": obj.get("customer")}, params={"id": f"eq.{orders[0]['user_id']}"})
+    return order_id
 
 
 @api.post("/stripe/webhook", include_in_schema=False)
@@ -557,30 +599,7 @@ async def stripe_webhook(request: Request, stripe_signature: str | None = Header
     try:
         obj = event["data"]["object"]; event_type = event["type"]
         if event_type == "checkout.session.completed" and obj.get("payment_status") == "paid":
-            order_id = (obj.get("metadata") or {}).get("order_id")
-            if order_id:
-                order_rows = await db.select("orders", params={
-                    "select": "id,total_cents,currency,stripe_session_id", "id": f"eq.{order_id}", "limit": 1,
-                })
-                if not order_rows:
-                    raise RuntimeError("Stripe event references an unknown order")
-                expected = order_rows[0]
-                if (
-                    obj.get("id") != expected.get("stripe_session_id")
-                    or obj.get("client_reference_id") != order_id
-                    or obj.get("amount_total") != expected.get("total_cents")
-                    or (obj.get("currency") or "").upper() != expected.get("currency")
-                ):
-                    raise RuntimeError("Stripe Checkout totals or references do not match the order")
-                customer = obj.get("customer_details") or {}
-                completed = await db.rpc("complete_paid_order", {"p_order_id": order_id, "p_payment_intent_id": obj.get("payment_intent"),
-                    "p_customer_email": customer.get("email"), "p_customer_name": customer.get("name"),
-                    "p_shipping_address": _address((obj.get("shipping_details") or {}).get("address")), "p_billing_address": _address(customer.get("address"))})
-                if completed is not True:
-                    raise RuntimeError("Order completion transaction was not applied")
-                orders = await db.select("orders", params={"select": "user_id", "id": f"eq.{order_id}", "limit": 1})
-                if orders and orders[0].get("user_id") and obj.get("customer"):
-                    await db.update("profiles", {"stripe_customer_id": obj.get("customer")}, params={"id": f"eq.{orders[0]['user_id']}"})
+            await _complete_checkout_payment(obj)
         elif event_type == "payment_intent.payment_failed":
             order_id = (obj.get("metadata") or {}).get("order_id")
             if order_id: await db.update("orders", {"status": "payment_failed", "payment_status": "failed"}, params={"id": f"eq.{order_id}", "payment_status": "neq.paid"})
