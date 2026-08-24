@@ -135,3 +135,17 @@ def test_cart_response_exposes_server_calculated_totals_and_compatibility():
     assert '"compatibility_result": compatibility_result' in server
     assert '"shipping": shipping_cents / 100' in server
     assert '"total": (subtotal_cents + shipping_cents) / 100' in server
+
+
+def test_configurator_only_exposes_verified_images_and_useful_hotspots():
+    store = (Path(__file__).parents[1] / "app" / "store.py").read_text(encoding="utf-8")
+    assert 'generation.get("stage_image_url") if generation.get("image_verified") else None' in store
+    assert '"status": "eq.active"' in store
+    assert '"verification_state": "eq.verified"' in store
+    assert 'hotspot["category_slug"] not in active_categories_by_generation' in store
+    assert 'vehicle_model_id, generation_id = await self._vehicle_ids' in store
+
+
+def test_shop_accepts_relevance_sort_used_by_frontend():
+    server = (Path(__file__).parents[1] / "server.py").read_text(encoding="utf-8")
+    assert "relevance|newest|price_asc" in server

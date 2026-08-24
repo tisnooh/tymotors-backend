@@ -66,8 +66,37 @@ class CatalogStore:
             hotspots = await self.db.select("vehicle_hotspots", params={
                 "select": "*", "generation_id": _in(row["id"] for row in generations), "is_verified": "eq.true", "order": "display_order.asc"
             })
+        # A verified coordinate alone is not enough to make a zone useful. Only
+        # expose hotspots backed by at least one active product with an exact,
+        # verified compatibility for the selected generation.
+        active_products = await self.db.select(
+            "products", params={"select": "id,category_id", "status": "eq.active"}
+        )
+        active_product_ids = {row["id"] for row in active_products}
+        active_categories_by_generation: dict[str, set[str]] = defaultdict(set)
+        if active_product_ids and generations:
+            category_ids = {row["category_id"] for row in active_products}
+            categories = await self.db.select(
+                "categories", params={"select": "id,slug", "id": _in(category_ids)}
+            )
+            category_slug_by_id = {row["id"]: row["slug"] for row in categories}
+            product_category = {
+                row["id"]: category_slug_by_id.get(row["category_id"])
+                for row in active_products
+            }
+            rules = await self.db.select("product_compatibilities", params={
+                "select": "product_id,generation_id", "product_id": _in(active_product_ids),
+                "generation_id": _in(row["id"] for row in generations),
+                "verification_state": "eq.verified",
+            })
+            for rule in rules:
+                category_slug = product_category.get(rule["product_id"])
+                if category_slug and rule.get("generation_id"):
+                    active_categories_by_generation[rule["generation_id"]].add(category_slug)
         hot_by_generation: dict[str, list[dict[str, Any]]] = defaultdict(list)
         for hotspot in hotspots:
+            if hotspot["category_slug"] not in active_categories_by_generation[hotspot["generation_id"]]:
+                continue
             hot_by_generation[hotspot["generation_id"]].append({
                 "id": hotspot["zone_slug"], "label": hotspot["label"], "category_slug": hotspot["category_slug"],
                 "x": float(hotspot["x_percent"]), "y": float(hotspot["y_percent"]),
@@ -79,8 +108,10 @@ class CatalogStore:
                 "id": generation["id"], "slug": generation["slug"], "name": generation["name"],
                 "chassis_codes": generation.get("chassis_codes") or [], "year_from": generation.get("year_from"),
                 "year_to": generation.get("year_to"), "body_types": generation.get("body_types") or [],
-                "trims": generation.get("trims") or [], "stage_image_url": generation.get("stage_image_url"),
-                "stage_image_alt": generation.get("stage_image_alt"), "image_verified": generation.get("image_verified", False),
+                "trims": generation.get("trims") or [],
+                "stage_image_url": generation.get("stage_image_url") if generation.get("image_verified") else None,
+                "stage_image_alt": generation.get("stage_image_alt") if generation.get("image_verified") else None,
+                "image_verified": generation.get("image_verified", False),
                 "hotspots": hot_by_generation.get(generation["id"], []),
             })
         result = []
@@ -189,6 +220,28 @@ class CatalogStore:
             raise ValueError(f"Unknown brand: {slug}")
         return rows[0]["id"]
 
+    async def _vehicle_ids(
+        self, brand_id: str, model_name: str | None, generation_name: str | None, chassis: str | None
+    ) -> tuple[str | None, str | None]:
+        if not model_name:
+            return None, None
+        models = await self.db.select("vehicle_models", params={
+            "select": "id,name", "brand_id": f"eq.{brand_id}", "is_active": "eq.true"
+        })
+        model = next((row for row in models if row["name"].casefold() == model_name.casefold()), None)
+        if not model:
+            return None, None
+        generations = await self.db.select("vehicle_generations", params={
+            "select": "id,name,chassis_codes", "vehicle_model_id": f"eq.{model['id']}", "is_active": "eq.true"
+        })
+        wanted_generation = (generation_name or "").casefold()
+        wanted_chassis = (chassis or "").casefold()
+        generation = next((row for row in generations if (
+            (wanted_generation and row["name"].casefold() == wanted_generation)
+            or (wanted_chassis and wanted_chassis in {code.casefold() for code in row.get("chassis_codes") or []})
+        )), None)
+        return model["id"], generation["id"] if generation else None
+
     async def write_product(self, payload: ProductInput, *, product_id: str | None = None) -> dict[str, Any]:
         data = payload.model_dump()
         category_id = await self._category_id(data["category_slug"])
@@ -217,8 +270,12 @@ class CatalogStore:
             ])
         for rule in data["compatibilities"]:
             brand_id = await self._brand_id(rule["brand_slug"])
+            vehicle_model_id, generation_id = await self._vehicle_ids(
+                brand_id, rule["model"], rule["generation"], rule["chassis"]
+            )
             await self.db.insert("product_compatibilities", {
-                "product_id": product_id, "brand_id": brand_id, "model_name": rule["model"], "chassis": rule["chassis"],
+                "product_id": product_id, "brand_id": brand_id, "vehicle_model_id": vehicle_model_id,
+                "generation_id": generation_id, "model_name": rule["model"], "chassis": rule["chassis"],
                 "generation_name": rule["generation"], "year_from": rule["year_from"], "year_to": rule["year_to"],
                 "body_types": rule["body_types"], "facelift": rule["facelift"], "required_trims": rule["required_trim"],
                 "excluded_trims": rule["excluded_trims"], "camera_compatible": rule["camera_compatible"],

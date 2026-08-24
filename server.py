@@ -231,7 +231,7 @@ async def list_products(category: str | None = None, brand: str | None = None, m
                         chassis: str | None = None, year: int | None = Query(default=None, ge=1950, le=2100),
                         body_type: str | None = None, q: str | None = Query(default=None, max_length=120),
                         featured: bool | None = None,
-                        sort: str = Query(default="newest", pattern="^(newest|price_asc|price_desc|name)$"),
+                        sort: str = Query(default="newest", pattern="^(relevance|newest|price_asc|price_desc|name)$"),
                         page: int = Query(default=1, ge=1), limit: int = Query(default=24, ge=1, le=100)):
     products = await catalog.hydrate_products(await catalog.product_rows())
     category = {"performance": "exterior", "technology": "multimedia-technology"}.get(category, category)
