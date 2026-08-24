@@ -7,6 +7,7 @@ from app.compatibility import check_compatibility
 from app.config import Settings, get_settings
 from app.schemas import CartItemInput, ProductInput, VehicleSelection
 from app.supabase_rest import SupabaseRest
+from scripts.import_legacy_catalog import contains_replacement_character
 
 
 def active_product_payload():
@@ -93,6 +94,11 @@ def test_modern_supabase_secret_is_not_sent_as_bearer_token():
     assert modern._headers()["apikey"] == "sb_secret_modern"
     assert "Authorization" not in modern._headers()
     assert legacy._headers()["Authorization"] == "Bearer legacy-service-role-jwt"
+
+
+def test_catalog_import_detects_nested_unicode_replacement_characters():
+    assert contains_replacement_character({"name": "S\ufffdrie 3"}) is True
+    assert contains_replacement_character({"name": "Série 3", "generations": ["F30"]}) is False
 
 
 def test_schema_enables_rls_and_atomic_payment_completion():

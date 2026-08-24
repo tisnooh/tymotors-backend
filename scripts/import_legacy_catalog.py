@@ -48,6 +48,29 @@ async def upsert_one(db: SupabaseRest, table: str, payload: dict, conflict: str)
     return (await db.insert(table, payload, upsert=True, on_conflict=conflict))[0]
 
 
+def contains_replacement_character(value: object) -> bool:
+    """Detect text that was irreversibly decoded with the Unicode replacement char."""
+    if isinstance(value, str):
+        return "\ufffd" in value
+    if isinstance(value, dict):
+        return any(contains_replacement_character(item) for item in value.values())
+    if isinstance(value, (list, tuple)):
+        return any(contains_replacement_character(item) for item in value)
+    return False
+
+
+async def deactivate_malformed_catalog_rows(db: SupabaseRest) -> int:
+    """Hide malformed legacy duplicates without deleting potentially useful records."""
+    deactivated = 0
+    for table in ("brands", "categories", "vehicle_models", "vehicle_generations"):
+        rows = await db.select(table, params={"select": "*", "is_active": "eq.true"})
+        for row in rows:
+            if contains_replacement_character(row):
+                await db.update(table, {"is_active": False}, params={"id": f"eq.{row['id']}"})
+                deactivated += 1
+    return deactivated
+
+
 async def run() -> None:
     settings = get_settings(); settings.validate()
     db = SupabaseRest(settings.supabase_url, settings.supabase_service_role_key, settings.supabase_publishable_key)
@@ -115,7 +138,11 @@ async def run() -> None:
                 "product_id": product["id"], "supplier_verified": False,
                 "notes": "REQUIRES_MANUAL_REVIEW: exact supplier, price, rights, dimensions and fitment are not verified.",
             }, "product_id")
-        print(f"Imported {len(BRANDS)} brands, {len(grouped_models)} models and {len(PRODUCTS)} draft products.")
+        deactivated = await deactivate_malformed_catalog_rows(db)
+        print(
+            f"Imported {len(BRANDS)} brands, {len(grouped_models)} models and "
+            f"{len(PRODUCTS)} draft products; deactivated {deactivated} malformed legacy rows."
+        )
     finally:
         await db.close()
 
