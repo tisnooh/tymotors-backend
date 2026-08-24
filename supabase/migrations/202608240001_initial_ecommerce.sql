@@ -3,6 +3,11 @@
 
 create extension if not exists pgcrypto;
 
+-- Helper functions used by RLS live outside the exposed Data API schema.
+create schema if not exists private;
+revoke all on schema private from public, anon, authenticated;
+grant usage on schema private to anon, authenticated;
+
 create type public.app_role as enum ('customer', 'admin');
 create type public.product_status as enum ('draft', 'active', 'archived');
 create type public.order_status as enum ('pending', 'paid', 'payment_failed', 'cancelled', 'refunded');
@@ -344,6 +349,21 @@ create index orders_status_created_idx on public.orders(status, created_at desc)
 create index order_items_order_idx on public.order_items(order_id);
 create index cart_items_cart_idx on public.cart_items(cart_id);
 create index product_images_product_idx on public.product_images(product_id, display_order);
+create index admin_audit_admin_user_idx on public.admin_audit(admin_user_id);
+create index cart_items_product_idx on public.cart_items(product_id);
+create index categories_parent_idx on public.categories(parent_id);
+create index contact_messages_user_idx on public.contact_messages(user_id);
+create index customer_addresses_user_idx on public.customer_addresses(user_id);
+create index newsletter_subscriptions_user_idx on public.newsletter_subscriptions(user_id);
+create index order_items_product_idx on public.order_items(product_id);
+create index orders_cart_idx on public.orders(cart_id);
+create index product_compatibilities_product_idx on public.product_compatibilities(product_id);
+create index product_compatibilities_model_idx on public.product_compatibilities(vehicle_model_id);
+create index product_compatibilities_generation_idx on public.product_compatibilities(generation_id);
+create index product_compatibilities_verified_by_idx on public.product_compatibilities(verified_by);
+create index products_category_idx on public.products(category_id);
+create index saved_vehicles_generation_idx on public.saved_vehicles(generation_id);
+create index wishlists_product_idx on public.wishlists(product_id);
 
 create or replace function public.set_updated_at()
 returns trigger language plpgsql set search_path = '' as $$
@@ -381,7 +401,7 @@ create trigger on_auth_user_created
 after insert on auth.users
 for each row execute function public.handle_new_user();
 
-create or replace function public.is_admin()
+create or replace function private.is_admin()
 returns boolean
 language sql
 stable
@@ -392,8 +412,8 @@ as $$
     where id = (select auth.uid()) and role = 'admin'
   );
 $$;
-revoke all on function public.is_admin() from public;
-grant execute on function public.is_admin() to anon, authenticated;
+revoke all on function private.is_admin() from public;
+grant execute on function private.is_admin() to anon, authenticated;
 
 create or replace function public.validate_product_publication()
 returns trigger
@@ -521,33 +541,51 @@ alter table public.newsletter_subscriptions enable row level security;
 alter table public.contact_messages enable row level security;
 alter table public.admin_audit enable row level security;
 
-create policy profiles_select_own on public.profiles for select to authenticated using ((select auth.uid()) = id or (select public.is_admin()));
+create policy profiles_select_own on public.profiles for select to authenticated using ((select auth.uid()) = id or (select private.is_admin()));
 create policy profiles_update_own on public.profiles for update to authenticated using ((select auth.uid()) = id) with check ((select auth.uid()) = id);
 revoke update on public.profiles from authenticated;
 grant update (full_name, phone, billing_address, shipping_address, updated_at) on public.profiles to authenticated;
 
-create policy public_read_brands on public.brands for select to anon, authenticated using (is_active or (select public.is_admin()));
-create policy public_read_vehicle_models on public.vehicle_models for select to anon, authenticated using (is_active or (select public.is_admin()));
-create policy public_read_vehicle_generations on public.vehicle_generations for select to anon, authenticated using (is_active or (select public.is_admin()));
-create policy public_read_vehicle_hotspots on public.vehicle_hotspots for select to anon, authenticated using (is_verified or (select public.is_admin()));
-create policy public_read_categories on public.categories for select to anon, authenticated using (is_active or (select public.is_admin()));
-create policy public_read_products on public.products for select to anon, authenticated using (status = 'active' or (select public.is_admin()));
+create policy public_read_brands on public.brands for select to anon, authenticated using (is_active or (select private.is_admin()));
+create policy public_read_vehicle_models on public.vehicle_models for select to anon, authenticated using (is_active or (select private.is_admin()));
+create policy public_read_vehicle_generations on public.vehicle_generations for select to anon, authenticated using (is_active or (select private.is_admin()));
+create policy public_read_vehicle_hotspots on public.vehicle_hotspots for select to anon, authenticated using (is_verified or (select private.is_admin()));
+create policy public_read_categories on public.categories for select to anon, authenticated using (is_active or (select private.is_admin()));
+create policy public_read_products on public.products for select to anon, authenticated using (status = 'active' or (select private.is_admin()));
 create policy public_read_product_images on public.product_images for select to anon, authenticated using (
-  exists (select 1 from public.products p where p.id = product_id and (p.status = 'active' or (select public.is_admin())))
+  exists (select 1 from public.products p where p.id = product_id and (p.status = 'active' or (select private.is_admin())))
 );
 create policy public_read_product_compatibilities on public.product_compatibilities for select to anon, authenticated using (
-  exists (select 1 from public.products p where p.id = product_id and (p.status = 'active' or (select public.is_admin())))
+  exists (select 1 from public.products p where p.id = product_id and (p.status = 'active' or (select private.is_admin())))
 );
 
-create policy admin_all_brands on public.brands for all to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
-create policy admin_all_vehicle_models on public.vehicle_models for all to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
-create policy admin_all_vehicle_generations on public.vehicle_generations for all to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
-create policy admin_all_vehicle_hotspots on public.vehicle_hotspots for all to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
-create policy admin_all_categories on public.categories for all to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
-create policy admin_all_products on public.products for all to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
-create policy admin_all_product_images on public.product_images for all to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
-create policy admin_all_product_compatibilities on public.product_compatibilities for all to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
-create policy admin_all_supplier_data on public.product_supplier_data for all to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
+create policy admin_insert_brands on public.brands for insert to authenticated with check ((select private.is_admin()));
+create policy admin_update_brands on public.brands for update to authenticated using ((select private.is_admin())) with check ((select private.is_admin()));
+create policy admin_delete_brands on public.brands for delete to authenticated using ((select private.is_admin()));
+create policy admin_insert_vehicle_models on public.vehicle_models for insert to authenticated with check ((select private.is_admin()));
+create policy admin_update_vehicle_models on public.vehicle_models for update to authenticated using ((select private.is_admin())) with check ((select private.is_admin()));
+create policy admin_delete_vehicle_models on public.vehicle_models for delete to authenticated using ((select private.is_admin()));
+create policy admin_insert_vehicle_generations on public.vehicle_generations for insert to authenticated with check ((select private.is_admin()));
+create policy admin_update_vehicle_generations on public.vehicle_generations for update to authenticated using ((select private.is_admin())) with check ((select private.is_admin()));
+create policy admin_delete_vehicle_generations on public.vehicle_generations for delete to authenticated using ((select private.is_admin()));
+create policy admin_insert_vehicle_hotspots on public.vehicle_hotspots for insert to authenticated with check ((select private.is_admin()));
+create policy admin_update_vehicle_hotspots on public.vehicle_hotspots for update to authenticated using ((select private.is_admin())) with check ((select private.is_admin()));
+create policy admin_delete_vehicle_hotspots on public.vehicle_hotspots for delete to authenticated using ((select private.is_admin()));
+create policy admin_insert_categories on public.categories for insert to authenticated with check ((select private.is_admin()));
+create policy admin_update_categories on public.categories for update to authenticated using ((select private.is_admin())) with check ((select private.is_admin()));
+create policy admin_delete_categories on public.categories for delete to authenticated using ((select private.is_admin()));
+create policy admin_insert_products on public.products for insert to authenticated with check ((select private.is_admin()));
+create policy admin_update_products on public.products for update to authenticated using ((select private.is_admin())) with check ((select private.is_admin()));
+create policy admin_delete_products on public.products for delete to authenticated using ((select private.is_admin()));
+create policy admin_insert_product_images on public.product_images for insert to authenticated with check ((select private.is_admin()));
+create policy admin_update_product_images on public.product_images for update to authenticated using ((select private.is_admin())) with check ((select private.is_admin()));
+create policy admin_delete_product_images on public.product_images for delete to authenticated using ((select private.is_admin()));
+create policy admin_insert_product_compatibilities on public.product_compatibilities for insert to authenticated with check ((select private.is_admin()));
+create policy admin_update_product_compatibilities on public.product_compatibilities for update to authenticated using ((select private.is_admin())) with check ((select private.is_admin()));
+create policy admin_delete_product_compatibilities on public.product_compatibilities for delete to authenticated using ((select private.is_admin()));
+create policy admin_insert_supplier_data on public.product_supplier_data for insert to authenticated with check ((select private.is_admin()));
+create policy admin_update_supplier_data on public.product_supplier_data for update to authenticated using ((select private.is_admin())) with check ((select private.is_admin()));
+create policy admin_delete_supplier_data on public.product_supplier_data for delete to authenticated using ((select private.is_admin()));
 
 create policy saved_vehicles_own on public.saved_vehicles for all to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 create policy addresses_own on public.customer_addresses for all to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
@@ -558,17 +596,55 @@ create policy cart_items_own on public.cart_items for all to authenticated using
   exists (select 1 from public.carts c where c.id = cart_id and c.user_id = (select auth.uid()))
 );
 create policy wishlists_own on public.wishlists for all to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
-create policy orders_select_own on public.orders for select to authenticated using ((select auth.uid()) = user_id or (select public.is_admin()));
+create policy orders_select_own on public.orders for select to authenticated using ((select auth.uid()) = user_id or (select private.is_admin()));
 create policy order_items_select_own on public.order_items for select to authenticated using (
-  exists (select 1 from public.orders o where o.id = order_id and (o.user_id = (select auth.uid()) or (select public.is_admin())))
+  exists (select 1 from public.orders o where o.id = order_id and (o.user_id = (select auth.uid()) or (select private.is_admin())))
 );
-create policy admin_update_orders on public.orders for update to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
-create policy admin_read_supplier_data on public.product_supplier_data for select to authenticated using ((select public.is_admin()));
-create policy admin_read_stripe_events on public.stripe_events for select to authenticated using ((select public.is_admin()));
-create policy admin_read_contacts on public.contact_messages for select to authenticated using ((select public.is_admin()));
-create policy admin_update_contacts on public.contact_messages for update to authenticated using ((select public.is_admin())) with check ((select public.is_admin()));
-create policy admin_read_newsletter on public.newsletter_subscriptions for select to authenticated using ((select public.is_admin()));
-create policy admin_read_audit on public.admin_audit for select to authenticated using ((select public.is_admin()));
+create policy admin_update_orders on public.orders for update to authenticated using ((select private.is_admin())) with check ((select private.is_admin()));
+create policy admin_read_supplier_data on public.product_supplier_data for select to authenticated using ((select private.is_admin()));
+create policy admin_read_stripe_events on public.stripe_events for select to authenticated using ((select private.is_admin()));
+create policy admin_read_contacts on public.contact_messages for select to authenticated using ((select private.is_admin()));
+create policy admin_update_contacts on public.contact_messages for update to authenticated using ((select private.is_admin())) with check ((select private.is_admin()));
+create policy admin_read_newsletter on public.newsletter_subscriptions for select to authenticated using ((select private.is_admin()));
+create policy admin_read_audit on public.admin_audit for select to authenticated using ((select private.is_admin()));
 
 -- Anonymous newsletter/contact writes go through the rate-limited FastAPI backend.
 -- Guest carts and all payment/order writes also go through the backend service role.
+
+-- Supabase is transitioning new projects to opt-in Data API grants. Keep the
+-- exposed surface explicit so security does not depend on project creation date.
+revoke all on all tables in schema public from anon, authenticated;
+revoke execute on all functions in schema public from public, anon, authenticated;
+
+grant select on public.brands, public.vehicle_models, public.vehicle_generations,
+  public.vehicle_hotspots, public.categories, public.products, public.product_images,
+  public.product_compatibilities to anon;
+
+grant select on public.profiles to authenticated;
+grant update (full_name, phone, billing_address, shipping_address, updated_at)
+  on public.profiles to authenticated;
+
+grant select, insert, update, delete on public.brands, public.vehicle_models,
+  public.vehicle_generations, public.vehicle_hotspots, public.categories,
+  public.products, public.product_images, public.product_compatibilities,
+  public.product_supplier_data to authenticated;
+
+grant select, insert, update, delete on public.saved_vehicles,
+  public.customer_addresses, public.carts, public.cart_items, public.wishlists
+  to authenticated;
+grant select, update on public.orders to authenticated;
+grant select on public.order_items, public.stripe_events,
+  public.newsletter_subscriptions, public.admin_audit to authenticated;
+grant select, update on public.contact_messages to authenticated;
+
+grant all privileges on all tables in schema public to service_role;
+grant usage, select on all sequences in schema public to service_role;
+
+grant execute on function private.is_admin() to anon, authenticated;
+grant execute on function public.decrement_product_stock(uuid, integer) to service_role;
+grant execute on function public.complete_paid_order(uuid, text, text, text, jsonb, jsonb) to service_role;
+
+alter default privileges for role postgres in schema public
+  revoke all on tables from anon, authenticated;
+alter default privileges for role postgres in schema public
+  revoke execute on functions from public, anon, authenticated;

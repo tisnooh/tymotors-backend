@@ -210,7 +210,10 @@ def build_product(spec: ProductSpec) -> dict:
         "compatible_brands": list(spec.compatible_brands),
         "compatibilities": [],
         "badges": [],
-        "sku": "TY-" + spec.slug.upper()[:14],
+        # The previous 14-character truncation produced collisions (notably
+        # several W205 and CarPlay products). The canonical slug is already
+        # unique, stable and safe for a human-readable staging SKU.
+        "sku": "TY-" + spec.slug.upper(),
         "stock": 0,
         "rating": None,
         "review_count": 0,
