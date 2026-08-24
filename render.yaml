@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: tymotors-backend-staging
+    runtime: docker
+    plan: free
+    region: frankfurt
+    repo: https://github.com/tisnooh/tymotors-backend
+    branch: develop
+    autoDeployTrigger: checksPass
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/
+    maxShutdownDelaySeconds: 30
+    envVars:
+      - key: ENVIRONMENT
+        value: test
+      - key: CORS_ORIGINS
+        value: http://localhost:3000,https://tymotors-git-develop-iapetse09-2414s-projects.vercel.app
+      - key: CORS_ORIGIN_REGEX
+        value: ^https://tymotors-[a-z0-9-]+\.vercel\.app$
+      - key: FRONTEND_URL
+        value: https://tymotors-git-develop-iapetse09-2414s-projects.vercel.app
+      - key: STRIPE_AUTOMATIC_TAX
+        value: "false"
+      - key: FREE_SHIPPING_THRESHOLD_CENTS
+        value: "35000"
+      - key: SHIPPING_RATE_CENTS
+        value: "1500"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: CLOUDINARY_URL
+        sync: false

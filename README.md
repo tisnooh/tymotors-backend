@@ -14,7 +14,7 @@ MongoDB et l’ancien mot de passe admin/JWT maison ont été retirés du runtim
 ## Installation locale
 
 1. Copier `.env.example` vers `.env` et renseigner uniquement des identifiants de staging/test.
-2. Appliquer `supabase/migrations/202608240001_initial_ecommerce.sql` au projet Supabase de staging.
+2. Appliquer, dans l'ordre, tous les fichiers SQL de `supabase/migrations/` au projet Supabase de staging.
 3. Installer `requirements-dev.txt`, puis lancer `uvicorn server:app --reload`.
 4. Exécuter `pytest -q`.
 
@@ -43,7 +43,7 @@ Les anciennes catégories API `performance` et `technology` restent acceptées c
 
 ## Déploiement Preview
 
-- Render staging : variables Supabase serveur, Stripe test et Cloudinary.
+- Render staging : créer le Blueprint depuis `render.yaml`, puis renseigner uniquement des valeurs Supabase staging, Stripe test et Cloudinary.
 - Vercel Preview : URL API, URL Supabase et clé Supabase publique uniquement.
 - Conserver `ENVIRONMENT=test` et `REACT_APP_SITE_MODE=test`.
 - Ne jamais modifier le déploiement Production ni la branche `main` pendant la migration.
