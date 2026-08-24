@@ -135,20 +135,48 @@ async def _cart_for(user: dict[str, Any] | None, session_id: str | None, *, crea
 
 async def _cart_response(cart: dict[str, Any] | None) -> dict[str, Any]:
     if not cart:
-        return {"items": [], "subtotal": 0, "currency": "EUR"}
+        return {"items": [], "subtotal": 0, "shipping": 0, "total": 0, "currency": "EUR"}
     item_rows = await db.select("cart_items", params={"select": "*", "cart_id": f"eq.{cart['id']}", "order": "created_at.asc"})
     if not item_rows:
-        return {"items": [], "subtotal": 0, "currency": cart.get("currency", "EUR")}
+        return {"items": [], "subtotal": 0, "shipping": 0, "total": 0, "currency": cart.get("currency", "EUR")}
     product_ids = [row["product_id"] for row in item_rows]
     rows = await db.select("products", params={"select": "*", "id": "in.(" + ",".join(product_ids) + ")", "status": "eq.active"})
     products = await catalog.hydrate_products(rows); by_id = {p["id"]: p for p in products}
-    items, subtotal = [], 0.0
+    items, subtotal_cents = [], 0
     for row in item_rows:
         product = by_id.get(row["product_id"])
         if not product: continue
-        subtotal += product["price"] * row["quantity"]
-        items.append({**product, "product_id": product["id"], "quantity": row["quantity"], "selected_vehicle": row.get("selected_vehicle")})
-    return {"items": items, "subtotal": round(subtotal, 2), "currency": cart.get("currency", "EUR")}
+        quantity = row["quantity"]
+        unit_amount_cents = round(product["price"] * 100)
+        line_total_cents = unit_amount_cents * quantity
+        subtotal_cents += line_total_cents
+        selected_vehicle = row.get("selected_vehicle")
+        compatibility_result = (
+            check_compatibility(product, VehicleSelection.model_validate(selected_vehicle))
+            if selected_vehicle else {"status": "unknown", "reason": "No vehicle selected"}
+        )
+        if selected_vehicle:
+            selected_vehicle = {
+                **selected_vehicle,
+                "compatibility_status": compatibility_result["status"],
+                "compatibility_reason": compatibility_result.get("reason"),
+            }
+        items.append({
+            **product,
+            "product_id": product["id"],
+            "quantity": quantity,
+            "selected_vehicle": selected_vehicle,
+            "compatibility_result": compatibility_result,
+            "line_total": line_total_cents / 100,
+        })
+    shipping_cents = 0 if not items or subtotal_cents >= settings.free_shipping_threshold_cents else settings.shipping_rate_cents
+    return {
+        "items": items,
+        "subtotal": subtotal_cents / 100,
+        "shipping": shipping_cents / 100,
+        "total": (subtotal_cents + shipping_cents) / 100,
+        "currency": cart.get("currency", "EUR"),
+    }
 
 
 def _order_number() -> str:
