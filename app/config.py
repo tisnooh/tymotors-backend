@@ -33,7 +33,7 @@ class Settings:
         if not self.supabase_publishable_key:
             raise RuntimeError("SUPABASE_PUBLISHABLE_KEY is required")
         if not self.supabase_service_role_key:
-            raise RuntimeError("SUPABASE_SERVICE_ROLE_KEY is required")
+            raise RuntimeError("SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY is required")
         if self.supabase_publishable_key == self.supabase_service_role_key:
             raise RuntimeError("Publishable and service-role keys must be different")
         if "*" in self.cors_origins:
@@ -48,7 +48,10 @@ def get_settings() -> Settings:
         environment=os.getenv("ENVIRONMENT", "test").lower(),
         supabase_url=os.getenv("SUPABASE_URL", "").rstrip("/"),
         supabase_publishable_key=os.getenv("SUPABASE_PUBLISHABLE_KEY", ""),
-        supabase_service_role_key=os.getenv("SUPABASE_SERVICE_ROLE_KEY", ""),
+        supabase_service_role_key=(
+            os.getenv("SUPABASE_SECRET_KEY", "")
+            or os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+        ),
         frontend_url=os.getenv("FRONTEND_URL", "http://localhost:3000").rstrip("/"),
         cors_origins=_csv("CORS_ORIGINS", "http://localhost:3000"),
         cors_origin_regex=os.getenv("CORS_ORIGIN_REGEX") or None,

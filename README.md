@@ -18,7 +18,7 @@ MongoDB et l’ancien mot de passe admin/JWT maison ont été retirés du runtim
 3. Installer `requirements-dev.txt`, puis lancer `uvicorn server:app --reload`.
 4. Exécuter `pytest -q`.
 
-La clé `SUPABASE_SERVICE_ROLE_KEY` est strictement serveur. Elle ne doit jamais être préfixée par `REACT_APP_`, placée dans Vercel Frontend ou commitée.
+La clé `SUPABASE_SECRET_KEY` est strictement serveur. L'ancienne variable `SUPABASE_SERVICE_ROLE_KEY` reste acceptée uniquement comme solution de repli. Aucune des deux ne doit être préfixée par `REACT_APP_`, placée dans Vercel Frontend ou commitée.
 
 ## Paiement
 

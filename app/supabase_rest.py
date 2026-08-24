@@ -16,7 +16,7 @@ class SupabaseError(RuntimeError):
 class SupabaseRest:
     """Small async PostgREST/Auth client used only by the server.
 
-    The service-role key never leaves the backend. Public/user authorization is
+    The secret/service-role key never leaves the backend. Public/user authorization is
     still enforced at the API boundary and in PostgreSQL RLS for direct clients.
     """
 

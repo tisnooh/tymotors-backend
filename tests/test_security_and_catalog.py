@@ -4,7 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from app.compatibility import check_compatibility
-from app.config import Settings
+from app.config import Settings, get_settings
 from app.schemas import CartItemInput, ProductInput, VehicleSelection
 
 
@@ -73,6 +73,16 @@ def test_settings_reject_shared_public_and_service_key():
         cloudinary_api_secret="",
     )
     with pytest.raises(RuntimeError): settings.validate()
+
+
+def test_settings_prefers_modern_supabase_secret_key(monkeypatch):
+    monkeypatch.setenv("SUPABASE_SECRET_KEY", "sb_secret_modern")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "legacy-service-role")
+    get_settings.cache_clear()
+    try:
+        assert get_settings().supabase_service_role_key == "sb_secret_modern"
+    finally:
+        get_settings.cache_clear()
 
 
 def test_schema_enables_rls_and_atomic_payment_completion():
