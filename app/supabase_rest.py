@@ -44,9 +44,13 @@ class SupabaseRest:
     def _headers(self, *, prefer: str | None = None) -> dict[str, str]:
         headers = {
             "apikey": self.service_key,
-            "Authorization": f"Bearer {self.service_key}",
             "Content-Type": "application/json",
         }
+        # Modern sb_secret_* keys are opaque API keys, not JWTs. Supabase's
+        # gateway derives the privileged role from `apikey`; sending the same
+        # value as Bearer would make PostgREST reject it as an invalid JWT.
+        if not self.service_key.startswith("sb_secret_"):
+            headers["Authorization"] = f"Bearer {self.service_key}"
         if prefer:
             headers["Prefer"] = prefer
         return headers
