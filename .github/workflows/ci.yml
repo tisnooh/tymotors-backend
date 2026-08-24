@@ -21,9 +21,12 @@ jobs:
       - run: python -m py_compile server.py seed_data.py
       - run: pytest -q
         env:
-          MONGO_URL: mongodb://localhost:27017
-          DB_NAME: tymotors_test
-          ADMIN_JWT_SECRET: test-only-secret-that-is-longer-than-thirty-two-characters
+          ENVIRONMENT: test
+          SUPABASE_URL: https://example.supabase.co
+          SUPABASE_PUBLISHABLE_KEY: ci-publishable-placeholder
+          SUPABASE_SERVICE_ROLE_KEY: ci-service-placeholder
+          FRONTEND_URL: http://localhost:3000
+          CORS_ORIGINS: http://localhost:3000
       - run: pip check
 
   secrets:

@@ -1,23 +1,13 @@
-"""Seed script for TYMotors database.
-Run: python /app/backend/seed_data.py
+"""Catalogue historique déclaratif.
+
+Ces données servent uniquement à l'import Supabase de staging. Les produits sont
+forcés en brouillon par le constructeur ``p`` et doivent être vérifiés avant
+toute activation.
 """
-import asyncio
-import os
 import uuid
-from pathlib import Path
-from dotenv import load_dotenv
-from motor.motor_asyncio import AsyncIOMotorClient
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
 from typing import List, Optional
-
-ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env')
-
-mongo_url = os.environ['MONGO_URL']
-db_name = os.environ['DB_NAME']
-client = AsyncIOMotorClient(mongo_url)
-db = client[db_name]
 
 
 BRANDS = [
@@ -76,7 +66,6 @@ BRANDS = [
         "order": 6,
     },
 ]
-
 CATEGORIES = [
     {
         "slug": "performance",
@@ -413,41 +402,3 @@ PRODUCTS = [
       "Gonfleur de pneus sans fil avec arrêt automatique, jauge de pression numérique et écran OLED. 150 PSI max.",
       99.0, "Gonfleurs de pneus", "technology", IMG["inflator"], ["bmw", "mercedes-benz", "audi", "porsche", "volkswagen", "toyota"], ["Best Seller"]),
 ]
-
-
-async def seed():
-    print(f"Seeding database: {db_name}")
-    await db.brands.delete_many({})
-    for b in BRANDS:
-        b = {**b, "id": str(uuid.uuid4())}
-        await db.brands.insert_one(b)
-    print(f"Inserted {len(BRANDS)} brands.")
-
-    await db.categories.delete_many({})
-    for c in CATEGORIES:
-        c = {**c, "id": str(uuid.uuid4())}
-        await db.categories.insert_one(c)
-    print(f"Inserted {len(CATEGORIES)} categories.")
-
-    await db.vehicle_models.delete_many({})
-    for m in VEHICLE_MODELS:
-        m = {**m, "id": str(uuid.uuid4())}
-        await db.vehicle_models.insert_one(m)
-    print(f"Inserted {len(VEHICLE_MODELS)} vehicle models.")
-
-    await db.products.delete_many({})
-    for p_doc in PRODUCTS:
-        await db.products.insert_one(p_doc)
-    print(f"Inserted {len(PRODUCTS)} products.")
-
-    await db.products.create_index("slug", unique=True)
-    await db.brands.create_index("slug", unique=True)
-    await db.categories.create_index("slug", unique=True)
-    await db.carts.create_index("session_id", unique=True)
-    await db.wishlists.create_index("session_id", unique=True)
-
-    print("Seed complete.")
-
-
-if __name__ == "__main__":
-    asyncio.run(seed())

@@ -1,46 +1,49 @@
-# TYMotors backend — branche de test
+# TYMotors backend — Supabase staging
 
-API FastAPI/MongoDB pour le catalogue, le panier, l'administration et Stripe Checkout. La branche `develop` est destinée aux tests ; elle ne doit pas recevoir de clés Stripe réelles.
+API FastAPI du catalogue, des comptes, paniers, commandes, uploads Cloudinary et paiements Stripe Checkout. La branche `develop` reste exclusivement dédiée aux tests.
 
-## Démarrage local
+## Architecture
 
-1. Copier `.env.example` vers `.env` et utiliser uniquement des valeurs de test.
-2. Créer un mot de passe administrateur haché avec bcrypt et le placer dans `ADMIN_PASSWORD_HASH`.
-3. Définir un `ADMIN_JWT_SECRET` aléatoire d'au moins 32 caractères.
-4. Installer `requirements-dev.txt`, puis lancer `uvicorn server:app --reload`.
-5. Exécuter `pytest -q` avant toute publication.
+- PostgreSQL, Auth et RLS : Supabase
+- Paiements : Stripe Checkout en environnement test
+- Images : Cloudinary
+- API : FastAPI, client PostgREST asynchrone
 
-## Flux de paiement attendu
+MongoDB et l’ancien mot de passe admin/JWT maison ont été retirés du runtime. L’administration utilise une session Supabase et vérifie `profiles.role = 'admin'` côté serveur.
 
-Le serveur relit prix, statut et stock dans MongoDB, crée une commande `pending`, puis ouvre Stripe Checkout. Seul le webhook signé peut passer une commande à `paid` et réduire le stock. La page de succès lit la commande enregistrée et ne valide jamais le paiement.
+## Installation locale
 
-Événements Stripe de test :
+1. Copier `.env.example` vers `.env` et renseigner uniquement des identifiants de staging/test.
+2. Appliquer `supabase/migrations/202608240001_initial_ecommerce.sql` au projet Supabase de staging.
+3. Installer `requirements-dev.txt`, puis lancer `uvicorn server:app --reload`.
+4. Exécuter `pytest -q`.
+
+La clé `SUPABASE_SERVICE_ROLE_KEY` est strictement serveur. Elle ne doit jamais être préfixée par `REACT_APP_`, placée dans Vercel Frontend ou commitée.
+
+## Paiement
+
+Le serveur relit prix, statut et stock dans PostgreSQL, enregistre une commande `pending`, puis crée une session Checkout. Le webhook signé appelle la fonction transactionnelle `complete_paid_order`: stock, commande et panier sont mis à jour atomiquement. La page de succès ne valide jamais elle-même un paiement.
+
+Événements de staging :
 
 - `checkout.session.completed`
-- `payment_intent.succeeded`
 - `payment_intent.payment_failed`
 - `charge.refunded`
+- `refund.created`
 
-Endpoint webhook : `/api/stripe/webhook`.
+Endpoint : `/api/stripe/webhook`.
 
-## Déploiement de test
+`STRIPE_AUTOMATIC_TAX` reste désactivé tant que les inscriptions fiscales et paramètres Stripe Tax n’ont pas été validés. Ne pas afficher de TVA calculée si cette configuration n’est pas activée.
 
-- Déployer `develop` vers un service Render de staging séparé.
-- Configurer les variables de `.env.example` dans Render, sans ajouter de `.env` au dépôt.
-- Utiliser `ENVIRONMENT=test`, une clé `sk_test_...` et le secret du webhook de staging.
-- Configurer le frontend Vercel Preview avec l'URL de ce backend de staging.
-- Conserver `REACT_APP_SITE_MODE=test` pour maintenir `noindex,nofollow`.
+## Catalogue
 
-## Migration catalogue
+Tous les produits historiques sont importés en `draft`, sans stock, avis, promotion, garantie ni compatibilité inventés. Un trigger PostgreSQL et la validation Pydantic empêchent l’activation d’un produit sans image, compatibilité et fournisseur vérifiés.
 
-`migrations/001_secure_catalog.py` fonctionne en lecture seule par défaut. Après sauvegarde MongoDB, `--apply` place les produits historiques en brouillon et supprime leurs preuves sociales artificielles. Compléter ensuite les compatibilités, photos, coûts, montage et délai dans l'administration avant de passer un produit à `active`.
+Les anciennes catégories API `performance` et `technology` restent acceptées comme alias de transition vers `exterior` et `multimedia-technology`.
 
-## Actions manuelles obligatoires
+## Déploiement Preview
 
-- Révoquer et recréer les identifiants MongoDB, Stripe et Cloudinary déjà visibles dans des captures ou dans l'historique Git.
-- Nettoyer l'ancien `.env` de tout l'historique avec `git filter-repo`, puis forcer la mise à jour uniquement après sauvegarde et coordination.
-- Restreindre MongoDB Atlas aux réseaux nécessaires et à un utilisateur aux droits minimaux.
-- Créer le webhook Stripe en environnement de test et enregistrer son secret uniquement sur le backend de staging.
-- Vérifier le type, les dimensions et les droits d'utilisation de chaque image fournisseur.
-
-Ne jamais recopier un secret dans un ticket, une capture, un log ou un commit.
+- Render staging : variables Supabase serveur, Stripe test et Cloudinary.
+- Vercel Preview : URL API, URL Supabase et clé Supabase publique uniquement.
+- Conserver `ENVIRONMENT=test` et `REACT_APP_SITE_MODE=test`.
+- Ne jamais modifier le déploiement Production ni la branche `main` pendant la migration.
