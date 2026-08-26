@@ -1,0 +1,100 @@
+[
+  {
+    "brand_slug": "bmw", "brand_name": "BMW", "model_slug": "serie-3", "model_name": "Série 3", "generation_slug": "f30-f35", "generation_name": "F30 / F35",
+    "source_file": "bmw-serie-3-f30-f35.jpg", "final_file": "bmw-serie-3-f30-f35-configurator.png",
+    "source_url": "https://s1.cdn.autoevolution.com/images/gallery/BMW-3-Series--F30--4412_69.jpg", "source_name": "autoevolution",
+    "rights_status": "REQUIRES_MANUAL_REVIEW", "rights_basis": "unverified",
+    "cloudinary_public_id": "tymotors/vehicles/bmw/serie-3/f30-f35/configurator-front-three-quarter"
+  },
+  {
+    "brand_slug": "bmw", "brand_name": "BMW", "model_slug": "serie-4", "model_name": "Série 4", "generation_slug": "f32-f36", "generation_name": "F32 / F36",
+    "source_file": "bmw-serie-4-f32-f36.jpg", "final_file": "bmw-serie-4-f32-f36-configurator.png",
+    "source_url": "https://s1.cdn.autoevolution.com/images/gallery/BMW-4-Series-4884_78.jpg", "source_name": "autoevolution",
+    "rights_status": "REQUIRES_MANUAL_REVIEW", "rights_basis": "unverified",
+    "cloudinary_public_id": "tymotors/vehicles/bmw/serie-4/f32-f36/configurator-front-three-quarter"
+  },
+  {
+    "brand_slug": "bmw", "brand_name": "BMW", "model_slug": "serie-3", "model_name": "Série 3", "generation_slug": "g20", "generation_name": "G20",
+    "source_file": "bmw-serie-3-g20.jpg", "final_file": "bmw-serie-3-g20-configurator.png",
+    "source_url": "https://commons.wikimedia.org/wiki/File:BMW_3_SERIES_SEDAN_(G20)_China.jpg", "source_name": "Wikimedia Commons",
+    "rights_status": "APPROVED", "rights_basis": "cc-by-sa",
+    "cloudinary_public_id": "tymotors/vehicles/bmw/serie-3/g20/configurator-front-three-quarter"
+  },
+  {
+    "brand_slug": "audi", "brand_name": "Audi", "model_slug": "a3", "model_name": "A3", "generation_slug": "8v", "generation_name": "8V",
+    "source_file": "audi-a3-8v.jpg", "final_file": "audi-a3-8v-configurator.png",
+    "source_url": "https://www.carsinvasion.com/gallery/2014-audi-a3-sportback/2014-audi-a3-sportback-01.jpg", "source_name": "CarsInvasion",
+    "rights_status": "REQUIRES_MANUAL_REVIEW", "rights_basis": "unverified",
+    "cloudinary_public_id": "tymotors/vehicles/audi/a3/8v/configurator-front-three-quarter"
+  },
+  {
+    "brand_slug": "audi", "brand_name": "Audi", "model_slug": "a4", "model_name": "A4", "generation_slug": "b9", "generation_name": "B9",
+    "source_file": "audi-a4-b9.jpg", "final_file": "audi-a4-b9-configurator.png",
+    "source_url": "https://avtoskhemy.com/wp-content/uploads/2024/05/shema-bloku-zapobizhnikiv-audi-a4-b9-i-rele-z-priznachennyam-i-roztashuvannyam1.jpg", "source_name": "Avtoskhemy",
+    "rights_status": "REQUIRES_MANUAL_REVIEW", "rights_basis": "unverified",
+    "cloudinary_public_id": "tymotors/vehicles/audi/a4/b9/configurator-front-three-quarter"
+  },
+  {
+    "brand_slug": "mercedes-benz", "brand_name": "Mercedes-Benz", "model_slug": "classe-a", "model_name": "Classe A", "generation_slug": "w177", "generation_name": "W177",
+    "source_file": "mercedes-classe-a-w177.jpg", "final_file": "mercedes-classe-a-w177-configurator.png",
+    "source_url": "user-provided://tymotors/Image-Codex-25-aout-2026-22-34-21.png", "source_name": "Image TYMotors fournie par le propriétaire du projet",
+    "rights_status": "REQUIRES_MANUAL_REVIEW", "rights_basis": "user-provided-unverified",
+    "cloudinary_public_id": "tymotors/vehicles/mercedes-benz/classe-a/w177/configurator-front-three-quarter"
+  },
+  {
+    "brand_slug": "mercedes-benz", "brand_name": "Mercedes-Benz", "model_slug": "classe-c", "model_name": "Classe C", "generation_slug": "w205", "generation_name": "W205",
+    "source_file": "mercedes-classe-c-w205.jpg", "final_file": "mercedes-classe-c-w205-configurator.png",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Mercedes-Benz_W205_C180_2021.jpg", "source_name": "Wikimedia Commons",
+    "rights_status": "APPROVED", "rights_basis": "cc-by-sa",
+    "cloudinary_public_id": "tymotors/vehicles/mercedes-benz/classe-c/w205/configurator-front-three-quarter"
+  },
+  {
+    "brand_slug": "volkswagen", "brand_name": "Volkswagen", "model_slug": "golf-7", "model_name": "Golf 7", "generation_slug": "gti", "generation_name": "GTI",
+    "source_file": "volkswagen-golf-7-gti.jpg", "final_file": "volkswagen-golf-7-gti-configurator.png",
+    "source_url": "https://www.larevueautomobile.com/images/articles-md/Volkswagen/Golf-7-GTI/Exterieur/Volkswagen_Golf_7_GTI_001.jpg", "source_name": "La Revue Automobile",
+    "rights_status": "REQUIRES_MANUAL_REVIEW", "rights_basis": "unverified",
+    "cloudinary_public_id": "tymotors/vehicles/volkswagen/golf-7/gti/configurator-front-three-quarter"
+  },
+  {
+    "brand_slug": "volkswagen", "brand_name": "Volkswagen", "model_slug": "golf-7", "model_name": "Golf 7", "generation_slug": "r", "generation_name": "R",
+    "source_file": "volkswagen-golf-7-r.jpg", "final_file": "volkswagen-golf-7-r-configurator.png",
+    "source_url": "https://commons.wikimedia.org/wiki/File:2017_Volkswagen_Golf_R_TSi.jpg", "source_name": "Wikimedia Commons",
+    "rights_status": "APPROVED", "rights_basis": "cc-by-sa",
+    "cloudinary_public_id": "tymotors/vehicles/volkswagen/golf-7/r/configurator-front-three-quarter"
+  },
+  {
+    "brand_slug": "porsche", "brand_name": "Porsche", "model_slug": "911", "model_name": "911", "generation_slug": "991", "generation_name": "991",
+    "source_file": "porsche-911-991.jpg", "final_file": "porsche-911-991-configurator.png",
+    "source_url": "https://commons.wikimedia.org/wiki/File:2013_Porsche_911_Carrera_4S_(991)_(9626546987).jpg", "source_name": "Wikimedia Commons",
+    "rights_status": "APPROVED", "rights_basis": "cc-by-sa",
+    "cloudinary_public_id": "tymotors/vehicles/porsche/911/991/configurator-front-three-quarter"
+  },
+  {
+    "brand_slug": "porsche", "brand_name": "Porsche", "model_slug": "911", "model_name": "911", "generation_slug": "992", "generation_name": "992",
+    "source_file": "porsche-911-992.jpg", "final_file": "porsche-911-992-configurator.png",
+    "source_url": "https://cdn11.bigcommerce.com/s-aw4qbuk/images/stencil/original/products/317/1482/Embargo_05_30_AM_CET_28_November_front_three_quarter-1__57654.1656700402.jpg", "source_name": "BigCommerce-hosted Porsche press image",
+    "rights_status": "REQUIRES_MANUAL_REVIEW", "rights_basis": "unverified",
+    "cloudinary_public_id": "tymotors/vehicles/porsche/911/992/configurator-front-three-quarter"
+  },
+  {
+    "brand_slug": "porsche", "brand_name": "Porsche", "model_slug": "cayenne", "model_name": "Cayenne", "generation_slug": "9ya", "generation_name": "9YA",
+    "source_file": "porsche-cayenne-9ya.jpg", "final_file": "porsche-cayenne-9ya-configurator.png",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Porsche_Cayenne_(9YA)_Miami_Metro_Area,_USA.jpg", "source_name": "Wikimedia Commons",
+    "rights_status": "APPROVED", "rights_basis": "cc-by",
+    "cloudinary_public_id": "tymotors/vehicles/porsche/cayenne/9ya/configurator-front-three-quarter"
+  },
+  {
+    "brand_slug": "toyota", "brand_name": "Toyota", "model_slug": "gr-supra", "model_name": "GR Supra", "generation_slug": "a90", "generation_name": "A90",
+    "source_file": "toyota-gr-supra-a90.jpg", "final_file": "toyota-gr-supra-a90-configurator.png",
+    "source_url": "https://s1.paultan.org/image/2019/09/2019-A90-Toyota-GR-Supra-Malaysia-official-8.jpg", "source_name": "paultan.org / Toyota official image",
+    "rights_status": "REQUIRES_MANUAL_REVIEW", "rights_basis": "unverified",
+    "cloudinary_public_id": "tymotors/vehicles/toyota/gr-supra/a90/configurator-front-three-quarter"
+  },
+  {
+    "brand_slug": "toyota", "brand_name": "Toyota", "model_slug": "gr-yaris", "model_name": "GR Yaris", "generation_slug": "xp210", "generation_name": "XP210",
+    "source_file": "toyota-gr-yaris-xp210.jpg", "final_file": "toyota-gr-yaris-xp210-configurator.png",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Toyota_GR_Yaris_RZ_1X7A0252.jpg", "source_name": "Wikimedia Commons",
+    "rights_status": "APPROVED", "rights_basis": "cc-by-sa",
+    "cloudinary_public_id": "tymotors/vehicles/toyota/gr-yaris/xp210/configurator-front-three-quarter"
+  }
+]

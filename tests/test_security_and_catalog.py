@@ -140,6 +140,7 @@ def test_cart_response_exposes_server_calculated_totals_and_compatibility():
 def test_configurator_only_exposes_verified_images_and_useful_hotspots():
     store = (Path(__file__).parents[1] / "app" / "store.py").read_text(encoding="utf-8")
     assert 'generation.get("stage_image_url") if generation.get("image_verified") else None' in store
+    assert '"image_rights_status": generation.get("image_rights_status", "REQUIRES_MANUAL_REVIEW")' in store
     assert 'generation.get("image_attribution") if generation.get("image_verified") else None' in store
     assert 'generation.get("image_source_url") if generation.get("image_verified") else None' in store
     assert '"status": "eq.active"' in store
