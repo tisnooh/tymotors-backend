@@ -1,0 +1,330 @@
+{
+  "generated_at": "2026-08-27",
+  "purpose": "Development catalogue image fallbacks for products without an exact supplier image.",
+  "rights_policy": "Every entry requires manual commercial-use rights review before production publication. No entry is represented as royalty-free.",
+  "rights_status": "REQUIRES_MANUAL_REVIEW",
+  "images": [
+    {
+      "product_slug": "bmw-logo-door-projectors",
+      "source_name": "SCP Automotive",
+      "source_url": "https://scpautomotive.co.uk/products/bmw-led-door-projector-pair-bmw-logo",
+      "image_url": "https://scpautomotive.co.uk/cdn/shop/files/BMW-LED-Door-Projector-_Pair_-BMW-Logo-SCP-Automotive-90141840.jpg?v=1736672443&width=2048",
+      "match_status": "representative_product_match",
+      "notes": "BMW logo door projector pair; exact vehicle fitment must be confirmed.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812274/tymotors/products/o5ylil1cryn4uertnc89.webp",
+      "cloudinary_public_id": "tymotors/products/o5ylil1cryn4uertnc89"
+    },
+    {
+      "product_slug": "audi-a3-8v-rs3-grille",
+      "source_name": "Mars Performance",
+      "source_url": "https://marsperformance.com.au/collections/audi-a3-s3",
+      "image_url": "https://marsperformance.com.au/cdn/shop/files/A3-8V-S2-17-RS-FG-GB-XFY-3_1170x.jpg?v=1753331603",
+      "match_status": "representative_product_match",
+      "notes": "RS3-style Audi A3 8V grille; pre-facelift/facelift variant must be confirmed.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812269/tymotors/products/bck3jzlnce1ibljambew.webp",
+      "cloudinary_public_id": "tymotors/products/bck3jzlnce1ibljambew"
+    },
+    {
+      "product_slug": "audi-a3-8v-rear-spoiler",
+      "source_name": "Refined Auto Styling",
+      "source_url": "https://refinedautostyling.co.uk/products/audi-a3-8v-hatch-s3-rs3-look-rear-spoiler-in-gloss-black",
+      "image_url": "https://refinedautostyling.co.uk/cdn/shop/files/audi-a3-8v-hatch-s3-rs3-look-rear-spoiler-in-gloss-black-risperstyling-4.jpg?v=1705356676&width=1445",
+      "match_status": "vehicle_and_product_match",
+      "notes": "Gloss-black rear spoiler for Audi A3 8V hatch/Sportback; body style must be confirmed.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812267/tymotors/products/hzdciapklkgvwwcatpic.webp",
+      "cloudinary_public_id": "tymotors/products/hzdciapklkgvwwcatpic"
+    },
+    {
+      "product_slug": "audi-a4-b9-rs4-grille",
+      "source_name": "Daithi's Automotive",
+      "source_url": "https://daithisautomotive.com/products/audi-a4-b9-honeycomb-rs4-grille-2017-2020",
+      "image_url": "https://daithisautomotive.com/cdn/shop/products/2ba795bb-d060-4536-a9ca-e7393083dd97_955be434-4d5b-482f-8f4d-f0d0beb1858d_1200x1200.jpg?v=1640020837",
+      "match_status": "vehicle_and_product_match",
+      "notes": "RS4 honeycomb grille for Audi A4 B9 2017-2020.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812270/tymotors/products/nt3kaqcyavdt8wyddowh.webp",
+      "cloudinary_public_id": "tymotors/products/nt3kaqcyavdt8wyddowh"
+    },
+    {
+      "product_slug": "audi-a5-rear-spoiler",
+      "source_name": "Eurolineas Personales",
+      "source_url": "https://www.eurolineas-personales.com/en/styling-spoilers-and-body-kits-audi-a5/5836-spoiler-audi-a5-2017-sportback-glossy-black.html",
+      "image_url": "https://www.eurolineas-personales.com/25750-large_default/spoiler-audi-a5-2017-2024-sportback-glossy-black.jpg",
+      "match_status": "vehicle_and_product_match",
+      "notes": "Audi A5 Sportback 2017-2024 gloss-black spoiler; current catalogue entry must be narrowed to Sportback.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812271/tymotors/products/cb4rrpfwhdipxg8i9t3r.jpg",
+      "cloudinary_public_id": "tymotors/products/cb4rrpfwhdipxg8i9t3r"
+    },
+    {
+      "product_slug": "audi-gloss-black-mirror-caps",
+      "source_name": "Division Automotive",
+      "source_url": "https://divisionautomotive.co.uk/products/gloss-black-wing-mirror-cover-caps-a4-s4-a5-s5-rs5-b9-replacement-pair-for-audi",
+      "image_url": "https://divisionautomotive.co.uk/cdn/shop/files/10_e702a327-9541-4920-8b4b-e2d5864a4401.jpg?v=1752310650",
+      "match_status": "partial_vehicle_match",
+      "notes": "Gloss-black pair for Audi A4/A5 B9; the current A3 compatibility is not represented by this image.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812272/tymotors/products/ulycd4tnyyo6byw8bhiu.webp",
+      "cloudinary_public_id": "tymotors/products/ulycd4tnyyo6byw8bhiu"
+    },
+    {
+      "product_slug": "audi-logo-door-projectors",
+      "source_name": "Mercado Livre",
+      "source_url": "https://produto.mercadolivre.com.br/MLB-2177208993-projetor-led-logo-audi-luz-cortesia-portas-a1-a3-a4-a5-q3-tt-_JM",
+      "image_url": "https://http2.mlstatic.com/D_NQ_NP_717694-MLB89279147412_082025-O-projetor-led-logo-audi-luz-cortesia-portas-a1-a3-a4-a5-q3-tt.webp",
+      "match_status": "representative_product_match",
+      "notes": "Audi logo door projector product; exact connector and model fitment must be confirmed.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812273/tymotors/products/esaujo8wx76wirmm5gsx.webp",
+      "cloudinary_public_id": "tymotors/products/esaujo8wx76wirmm5gsx"
+    },
+    {
+      "product_slug": "mercedes-w205-panamericana-grille",
+      "source_name": "Carsmatic",
+      "source_url": "https://www.carsmatic.be/products/calandre-style-gtr-panamericana-mercedes-classe-c-w205-pre-facelift-15-18-sans-camera",
+      "image_url": "https://www.carsmatic.be/cdn/shop/products/image_c2cc3c0b-e352-4039-bee1-679d1f03a14e_1200x1200.jpg?v=1647885128",
+      "match_status": "vehicle_and_product_match",
+      "notes": "W205 pre-facelift 2015-2018 without camera; catalogue compatibility must be narrowed.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812281/tymotors/products/a8uhlb4p8yktkr78fdwo.webp",
+      "cloudinary_public_id": "tymotors/products/a8uhlb4p8yktkr78fdwo"
+    },
+    {
+      "product_slug": "mercedes-w205-rear-spoiler",
+      "source_name": "Astina",
+      "source_url": "https://www.astina.dk/en/mercedes-class-w205-drz-rear-spoiler-brabus-design-15-21-sedan-p-153977.html",
+      "image_url": "https://www.astina.dk/getimage/153977_01.webp",
+      "match_status": "vehicle_and_product_match",
+      "notes": "Mercedes W205 sedan rear spoiler 2015-2021; sedan body style must be confirmed.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812282/tymotors/products/uzc5j6i7pneej4ptd3qg.webp",
+      "cloudinary_public_id": "tymotors/products/uzc5j6i7pneej4ptd3qg"
+    },
+    {
+      "product_slug": "mercedes-w177-amg-side-vents",
+      "source_name": "Bless",
+      "source_url": "https://bless.lv/en/car-body-parts/10407--side-vents-front-bumper-suitable-for-mercedes-a-class-w177-hatchback-042018-up-v177-sedan-042018-up-piano-black",
+      "image_url": "https://bless.lv/45055-large_default/side-vents-front-bumper-suitable-for-mercedes-a-class-w177-hatchback-042018-up-v177-sedan-042018-up-piano-black.jpg",
+      "match_status": "vehicle_and_product_match",
+      "notes": "Piano-black side vents for W177/V177 AMG Line and A35; excludes standard bumper and A45.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812280/tymotors/products/qi2tuheecreo0n4tup9i.jpg",
+      "cloudinary_public_id": "tymotors/products/qi2tuheecreo0n4tup9i"
+    },
+    {
+      "product_slug": "mercedes-w205-mirror-caps",
+      "source_name": "Redzini Motorsports",
+      "source_url": "https://redzinimotorsports.com/products/mercedes-w205-mirror-caps-gloss-black",
+      "image_url": "https://redzinimotorsports.com/cdn/shop/files/Mercedes-W205-Mirror-Caps-Gloss-Black-Left-Right.jpg?v=1700006396&width=1946",
+      "match_status": "vehicle_and_product_match",
+      "notes": "Gloss-black left/right mirror caps for Mercedes W205.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812281/tymotors/products/lyijb0ypr7sxrtjquaig.webp",
+      "cloudinary_public_id": "tymotors/products/lyijb0ypr7sxrtjquaig"
+    },
+    {
+      "product_slug": "mercedes-logo-door-projectors",
+      "source_name": "Walmart",
+      "source_url": "https://www.walmart.com/ip/17708612007",
+      "image_url": "https://i5.walmartimages.com/seo/Non-Fading-Door-Lights-Logo-Ghost-Shadow-Welcome-Puddle-Projection-Light-Compatible-with-Accessories-S-R-E-Coupe-S-Coupe-A-C-E-GLA-GLC-GLE-GLS_50ccdf95-6036-4020-97bc-20666da1a47a.52aff3f541fe39d6b9d4ea731c085fa1.jpeg",
+      "match_status": "representative_product_match",
+      "notes": "Mercedes logo projector pair; exact connector and model fitment must be confirmed.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812279/tymotors/products/xmjkhlornytdipkva8xe.jpg",
+      "cloudinary_public_id": "tymotors/products/xmjkhlornytdipkva8xe"
+    },
+    {
+      "product_slug": "vw-golf7-gti-r-spoiler",
+      "source_name": "Sportmax Design",
+      "source_url": "https://www.sportmaxdesignsa.co.za/products/vw-golf-7-gti-r-oettinger-style-gloss-black-plastic-roof-spoiler",
+      "image_url": "https://www.sportmaxdesignsa.co.za/cdn/shop/products/image_8f66db0c-1c04-4445-9d98-9c736970550c.jpg?v=1650308333&width=1946",
+      "match_status": "vehicle_and_product_match",
+      "notes": "Oettinger-style gloss-black roof spoiler for Golf 7 GTI/R.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812295/tymotors/products/hgfmmysfbmvsa8esnwwx.webp",
+      "cloudinary_public_id": "tymotors/products/hgfmmysfbmvsa8esnwwx"
+    },
+    {
+      "product_slug": "vw-golf7-gti-grille",
+      "source_name": "Ceneo / DPA",
+      "source_url": "https://www.ceneo.pl/139157382",
+      "image_url": "https://image.ceneostatic.pl/data/products/139157382/i-dpa-atrapa-grill-vw-golf-7-vii-gti-1217-czerwona-88531537802.jpg",
+      "match_status": "vehicle_and_product_match",
+      "notes": "GTI-style front grille for Volkswagen Golf 7 2012-2017.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812294/tymotors/products/dj2c9synoroidw3yt9sf.webp",
+      "cloudinary_public_id": "tymotors/products/dj2c9synoroidw3yt9sf"
+    },
+    {
+      "product_slug": "vw-golf7-mirror-caps",
+      "source_name": "JL Styling Parts",
+      "source_url": "https://jlstylingparts.com/products/gloss-black-mirror-caps-for-vw-golf-mk7-mk7-5",
+      "image_url": "https://cdn.shopify.com/s/files/1/0670/1406/6484/products/image_3c4f42a6-e4fc-4a4e-86ba-e4829501db1f.jpg?v=1667329401&width=1445",
+      "match_status": "vehicle_and_product_match",
+      "notes": "Gloss-black mirror caps for Golf Mk7/7.5.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812297/tymotors/products/ccnn1ok3hxrjddibi29s.webp",
+      "cloudinary_public_id": "tymotors/products/ccnn1ok3hxrjddibi29s"
+    },
+    {
+      "product_slug": "vw-golf7-r-rear-diffuser",
+      "source_name": "Art Car Detail / Maxton Design",
+      "source_url": "https://www.artcardetail.ch/maxton-design/p/diffuseur-arrire-complet-v3-vw-golf-7-r-facelift-noir-brillant",
+      "image_url": "https://images.squarespace-cdn.com/content/v1/60774913fa807306308911ae/1704203749149-1RD27SF2YKRCZHQWFE17/eng_pm_Rear-Valance-V-3-VW-Golf-7-R-Facelift-10753_5.jpg?format=1500w",
+      "match_status": "vehicle_and_product_match",
+      "notes": "Gloss-black rear diffuser for Golf 7 R facelift 2017-2019; current entry must be narrowed to facelift.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812297/tymotors/products/rwd8ux7dqdgttxq85kyz.webp",
+      "cloudinary_public_id": "tymotors/products/rwd8ux7dqdgttxq85kyz"
+    },
+    {
+      "product_slug": "vw-logo-door-projectors",
+      "source_name": "Tuninglinie",
+      "source_url": "https://www.tuninglinie.de/de/tuer-logo-projektor/volkswagen/2x-led-projektor-volkswagen-tuerbeleuchtung-vw-einstiegsbeleuchtung-logo-tuer-licht-golf-passat-sharan",
+      "image_url": "https://www.tuninglinie.de/312-Niara_thickbox/2x-led-projektor-volkswagen-tuerbeleuchtung-vw-einstiegsbeleuchtung-logo-tuer-licht-golf-passat-sharan.jpg",
+      "match_status": "representative_product_match",
+      "notes": "Volkswagen logo door projector pair; exact connector and model fitment must be confirmed.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812298/tymotors/products/bkk74v4iz2qolbk5ltz8.jpg",
+      "cloudinary_public_id": "tymotors/products/bkk74v4iz2qolbk5ltz8"
+    },
+    {
+      "product_slug": "porsche-911-rear-spoiler",
+      "source_name": "Design 911",
+      "source_url": "https://www.design911.com/p/rear-spoiler-for-992-gt3-look-bodykit-for-porsche/",
+      "image_url": "https://www.design911.com/uploads/products/3dd91a06-7035-4189-9450-4c0c1fe31ca9/992GT3RW_3.jpg",
+      "match_status": "partial_vehicle_match",
+      "notes": "992 GT3-look rear spoiler; current article also claims 991 and must be split or narrowed.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812285/tymotors/products/vchtci3a5ltf7efwa6iq.jpg",
+      "cloudinary_public_id": "tymotors/products/vchtci3a5ltf7efwa6iq"
+    },
+    {
+      "product_slug": "porsche-cayenne-front-grille",
+      "source_name": "GabParts",
+      "source_url": "https://gabparts.com/collections/cayenne-2019-current-bumper-elements/products/porsche-cayenne-2019-23-front-bumper-grille-base-s-coupe-w-o-acc-9y0807683pok1",
+      "image_url": "https://gabparts.com/cdn/shop/files/porsche-cayenne-2019-23-front-bumper-grille-base-s-coupe-wo-acc-9y0807683pok1-589053_1024x1024.png?v=1743660425",
+      "match_status": "vehicle_and_product_match",
+      "notes": "Cayenne 9YA 2019-2023 grille without ACC; exact trim/ACC condition must be captured.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812286/tymotors/products/mulk5ubnpqf6h8qvqbl1.webp",
+      "cloudinary_public_id": "tymotors/products/mulk5ubnpqf6h8qvqbl1"
+    },
+    {
+      "product_slug": "porsche-mirror-caps-carbon",
+      "source_name": "Carbon District",
+      "source_url": "https://carbon-district.com/products/oem-style-carbon-fiber-mirror-cap-set-porsche-991-911-981-cayman-boxster",
+      "image_url": "https://carbon-district.com/cdn/shop/files/OEM-Style-Carbon-Fiber-Mirror-Cap-Set-Porsche-991-911-981-Cayman-Boxster-2.jpg?v=1751063849&width=960",
+      "match_status": "partial_vehicle_match",
+      "notes": "Carbon mirror shell pair for Porsche 991/981; current 911/Cayman/Boxster compatibility must be structured by generation.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812287/tymotors/products/d33ieftm7pxftve7wzr8.webp",
+      "cloudinary_public_id": "tymotors/products/d33ieftm7pxftve7wzr8",
+      "supabase_slug": "porsche-mirror-caps-black"
+    },
+    {
+      "product_slug": "porsche-logo-door-projectors",
+      "source_name": "Krystal Russell product reference",
+      "source_url": "https://storage.googleapis.com/dpluerwzkwdmge/porsche-logo-led-door-courtesy-lights.html",
+      "image_url": "https://miro.medium.com/v2/resize%3Afit%3A1000/0%2AGGzVyfKSfOf5Xa5f.jpeg",
+      "match_status": "representative_product_match",
+      "notes": "Porsche crest door projection shown; exact projector hardware and fitment are not validated.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812286/tymotors/products/wlyirhoycty4fg1xy45v.jpg",
+      "cloudinary_public_id": "tymotors/products/wlyirhoycty4fg1xy45v"
+    },
+    {
+      "product_slug": "porsche-911-diffuser-carbon",
+      "source_name": "The Carbon Industries",
+      "source_url": "https://www.thecarbonindustries.com/products/carbon-rear-diffuser-extension-porsche-911-992-2019-2021",
+      "image_url": "https://www.thecarbonindustries.com/cdn/shop/files/Carbon-fiber-Rear-Bumper-Diffuser-for-Porsche-911-992-Carrera-4-S-4S-Coupe-2-Door.jpg__3.jpg?v=1727767418&width=1024",
+      "match_status": "vehicle_and_product_match",
+      "notes": "Carbon rear diffuser extension for Porsche 911 992 2019-2021; exact trim fitment must be confirmed.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812283/tymotors/products/a0x5gwf5v2bp2jwfj82x.webp",
+      "cloudinary_public_id": "tymotors/products/a0x5gwf5v2bp2jwfj82x",
+      "supabase_slug": "porsche-911-diffuser-black"
+    },
+    {
+      "product_slug": "toyota-gr-supra-rear-spoiler",
+      "source_name": "The Carbon Industries",
+      "source_url": "https://www.thecarbonindustries.com/products/gloss-black-high-kick-rear-trunk-spoiler-toyota-supra-a90-a91-mk5",
+      "image_url": "https://www.thecarbonindustries.com/cdn/shop/files/s-l1600_d453a0b4-6e34-4b84-a279-85c867d2c455.webp?v=1738634550&width=1200",
+      "match_status": "vehicle_and_product_match",
+      "notes": "Gloss-black high-kick rear spoiler for Toyota Supra A90/A91.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812290/tymotors/products/d0avf2txmkwpdfclx3zq.webp",
+      "cloudinary_public_id": "tymotors/products/d0avf2txmkwpdfclx3zq"
+    },
+    {
+      "product_slug": "toyota-gr-yaris-grille",
+      "source_name": "Lam Speed Racing",
+      "source_url": "https://lamspeedracing.com/products/genuine-oem-toyota-gr-yaris-front-bumper-radiator-grill-53102-52150",
+      "image_url": "https://lamspeedracing.com/cdn/shop/files/PXL_20230703_022845939.jpg?v=1688395354&width=1920",
+      "match_status": "vehicle_and_product_match",
+      "notes": "OEM Toyota GR Yaris front bumper radiator grille, part 53102-52150.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812291/tymotors/products/cas5xqenmvec1ciakrtc.webp",
+      "cloudinary_public_id": "tymotors/products/cas5xqenmvec1ciakrtc"
+    },
+    {
+      "product_slug": "toyota-gr86-mirror-caps",
+      "source_name": "Ikon Motorsports",
+      "source_url": "https://ikonmotorsports.com/products/2022-2024-subaru-brz-toyota-gr86-jdm-mirror-covers",
+      "image_url": "https://ikonmotorsports.com/cdn/shop/files/RMC-SBRZ22JDM-GBK_wborder_08.jpg?v=1713264106&width=2048",
+      "match_status": "partial_vehicle_match",
+      "notes": "Gloss-black caps for 2022-2026 GR86/BRZ; the current GT86 claim is not represented and must be split.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812292/tymotors/products/oajcplsyv50nlxllbb0b.webp",
+      "cloudinary_public_id": "tymotors/products/oajcplsyv50nlxllbb0b"
+    },
+    {
+      "product_slug": "toyota-logo-door-projectors",
+      "source_name": "Luxor Auto",
+      "source_url": "https://luxor-auto.com.ua/ua/p1615785443-shtatnaya-led-podsvetka.html",
+      "image_url": "https://images.prom.ua/3781051351_w640_h640_3781051351.jpg",
+      "match_status": "representative_product_match",
+      "notes": "Toyota logo door projector modules; exact connector and model fitment must be confirmed.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812292/tymotors/products/wyastfk9r2jlvtubsg72.webp",
+      "cloudinary_public_id": "tymotors/products/wyastfk9r2jlvtubsg72"
+    },
+    {
+      "product_slug": "toyota-supra-diffuser",
+      "source_name": "The Carbon Industries",
+      "source_url": "https://www.thecarbonindustries.com/products/gloss-black-rear-diffuser-20-24-toyota-gr-supra-a90",
+      "image_url": "https://www.thecarbonindustries.com/cdn/shop/files/s-l1600_6b1a4a36-a547-4189-8c0d-91d8b38d3c28.webp?v=1738646247&width=800",
+      "match_status": "vehicle_and_product_match",
+      "notes": "Gloss-black rear diffuser for 2020-2024 Toyota GR Supra A90.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812293/tymotors/products/nn87biriyjautzxdngcj.webp",
+      "cloudinary_public_id": "tymotors/products/nn87biriyjautzxdngcj"
+    },
+    {
+      "product_slug": "carplay-screen-12",
+      "source_name": "Noeiefvo",
+      "source_url": "https://www.noeifevo.de/pt/products/noeifevo-tela-wireless-carplay-atualizada-de-11-3-polegadas-para-carros-com-dashcam-4k-e-camera-de-re-1080p-suporte-para-apple-carplay-e-android-auto-radio-de-carro-com-navegacao-gps-link-de-espelho-controle-por-voz-fm-bluetooth",
+      "image_url": "https://www.noeifevo.de/cdn/shop/files/11111_1200x1200.jpg?v=1736846454",
+      "match_status": "representative_product_only",
+      "notes": "11.3-inch CarPlay/Android Auto display used as a temporary representative image; it must not validate the current 12-inch specification.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812276/tymotors/products/sfugsisrhrkx2r9f3shz.webp",
+      "cloudinary_public_id": "tymotors/products/sfugsisrhrkx2r9f3shz"
+    },
+    {
+      "product_slug": "carplay-screen-10",
+      "source_name": "VEVOR",
+      "source_url": "https://www.vevor.com/digital-media-receivers-c_13979/car-stereo-radio-carplay-touchscreen-10-in-apple-android-front-rear-camera-p_010629881264",
+      "image_url": "https://img.vevorstatic.com/us%2FCZZKP10INCHDHWMYE001V9%2Fgoods_img-v1%2Fcar-stereo-m100-9.jpg?format=webp&timestamp=1748595948000",
+      "match_status": "representative_product_match",
+      "notes": "10-inch portable wireless CarPlay/Android Auto display with cameras; exact TYMotors specification must be confirmed.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812275/tymotors/products/ry5xqoo5vhzd5pzg70hv.webp",
+      "cloudinary_public_id": "tymotors/products/ry5xqoo5vhzd5pzg70hv"
+    },
+    {
+      "product_slug": "dashcam-4k-pro",
+      "source_name": "SecurityLab",
+      "source_url": "https://www.securitylab.com.au/vimel-dual-dash-gps-wifi-4k-car-camera",
+      "image_url": "https://www.securitylab.com.au/image/cache/catalog/2019-4/VIM-LUXX7S/dash-camera-night-vision-4k-dual-cam-front-rear-550x550.jpg",
+      "match_status": "representative_product_match",
+      "notes": "4K front/1080p rear dual dashcam; exact model and bundled accessories must be confirmed.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812277/tymotors/products/l3ktklfj5by1r3dbqfnu.jpg",
+      "cloudinary_public_id": "tymotors/products/l3ktklfj5by1r3dbqfnu"
+    },
+    {
+      "product_slug": "reverse-cam-hd",
+      "source_name": "Mongoose Automotive / Total Audio",
+      "source_url": "https://www.totalaudio.co.nz/products/mck713a",
+      "image_url": "https://static.wixstatic.com/media/6c24d0_45edce9b58204bf9a5c9e51ff6cf0e91~mv2.jpg/v1/fill/w_756%2Ch_754%2Cal_c%2Cq_85/Mongoose%20MCK713A.JPG",
+      "match_status": "representative_product_match",
+      "notes": "AHD reverse camera and monitor kit; exact TYMotors kit specification must be confirmed.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812288/tymotors/products/zkmy4ozu3npnowl5r1ln.jpg",
+      "cloudinary_public_id": "tymotors/products/zkmy4ozu3npnowl5r1ln"
+    },
+    {
+      "product_slug": "tire-inflator-pro",
+      "source_name": "Top Hope Auto",
+      "source_url": "https://www.tophopeauto.com/plastic-pump/inflator-tyre-compressor.html",
+      "image_url": "https://www.tophopeauto.com/uploads/202339688/inflator-tyre-compressor80ab5831-702c-41e3-943e-14d60c29de02.jpg",
+      "match_status": "representative_product_match",
+      "notes": "Portable 12V digital tyre inflator; exact TYMotors pump specifications must be confirmed.",
+      "delivery_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787812289/tymotors/products/certt9jjcpbfvqugqkft.webp",
+      "cloudinary_public_id": "tymotors/products/certt9jjcpbfvqugqkft"
+    }
+  ]
+}

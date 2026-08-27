@@ -22,7 +22,13 @@ Huit images issues de fiches GZTM Auto / Leju ont été copiées dans Cloudinary
 
 Les URLs d'origine, URLs Cloudinary, identifiants publics, titres fournisseur et notes de compatibilité sont conservés dans `product_supplier_image_manifest.json` et `product_supplier_data`.
 
-## Articles laissés inchangés
+## Images de repli installées depuis Internet
+
+Les 32 articles sans correspondance exacte chez Tianzhiyu, Soyintech ou GZTM Auto ont maintenant une image de produit dédiée dans Cloudinary. Les anciennes photos génériques de voitures, de paysage ou de pièces sans rapport ont été remplacées.
+
+Chaque provenance est conservée dans `product_internet_image_manifest.json` avec l'URL source, l'URL de l'image originale, l'URL Cloudinary, le statut de correspondance et `RIGHTS_STATUS=REQUIRES_MANUAL_REVIEW`. Ces images servent au développement et à la Preview ; elles ne sont pas déclarées libres de droits et restent `is_verified=false` dans Supabase.
+
+### Correspondances nécessitant encore une correction catalogue
 
 ### Résultats proches mais incompatibles ou ambigus
 
@@ -41,8 +47,8 @@ Les URLs d'origine, URLs Cloudinary, identifiants publics, titres fournisseur et
 - Toyota : `toyota-gr-supra-rear-spoiler`, `toyota-gr-yaris-grille`, `toyota-gr86-mirror-caps`, `toyota-logo-door-projectors`, `toyota-supra-diffuser`.
 - Volkswagen : `vw-golf7-gti-grille`, `vw-golf7-gti-r-spoiler`, `vw-golf7-mirror-caps`, `vw-golf7-r-rear-diffuser`, `vw-logo-door-projectors`.
 
-Le produit `staging-checkout-validation` est un article technique de test et ne doit pas être associé à un fournisseur ni à une image commerciale.
+Ces articles ont désormais une image représentative issue du Web, sans être enregistrés comme provenant de l'un des trois fournisseurs. Le produit `staging-checkout-validation` reste un article technique de test sans image commerciale.
 
 ## État de publication
 
-Les articles restent `draft`, les images restent `is_verified=false` et les fournisseurs restent `supplier_verified=false`. Ce rapport ne valide ni la matière, ni le prix, ni le MOQ, ni le stock, ni les droits commerciaux. Ces champs devront être confirmés auprès du fournisseur avant activation en production.
+Les articles Supabase restent `draft`, les images restent `is_verified=false` et les fournisseurs restent `supplier_verified=false`. Ce rapport ne valide ni la matière, ni le prix, ni le MOQ, ni le stock, ni les droits commerciaux. Ces champs devront être confirmés auprès du fournisseur ou du détenteur de l'image avant activation en production.
