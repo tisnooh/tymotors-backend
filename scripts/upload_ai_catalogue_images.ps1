@@ -1,7 +1,9 @@
 param(
     [string]$ApiBase = "https://tymotors-backend.onrender.com",
     [string]$ImageDirectory = (Join-Path $PSScriptRoot "..\assets\ai-catalogue"),
-    [string]$OutputPath = (Join-Path $PSScriptRoot "..\data\product_ai_catalogue_uploads.json")
+    [string]$OutputPath = (Join-Path $PSScriptRoot "..\data\product_ai_catalogue_uploads.json"),
+    [string[]]$ProductSlugs = @(),
+    [switch]$ReplaceExisting
 )
 
 $ErrorActionPreference = "Stop"
@@ -27,9 +29,16 @@ function Save-Manifest {
 
 foreach ($file in Get-ChildItem -LiteralPath $ImageDirectory -Filter "*.png" | Sort-Object BaseName) {
     $slug = $file.BaseName
-    if ($results.product_slug -contains $slug) {
+    if ($ProductSlugs.Count -gt 0 -and $slug -notin $ProductSlugs) {
+        continue
+    }
+    if (($results.product_slug -contains $slug) -and -not $ReplaceExisting) {
         Write-Host "Skipping $slug (already uploaded)."
         continue
+    }
+
+    if ($ReplaceExisting) {
+        $results = @($results | Where-Object { $_.product_slug -ne $slug })
     }
 
     Write-Host "Uploading $slug..."
@@ -60,7 +69,7 @@ foreach ($file in Get-ChildItem -LiteralPath $ImageDirectory -Filter "*.png" | S
         source_file = $file.Name
         delivery_url = $upload.url
         cloudinary_public_id = $upload.public_id
-        transformation = "ai_product_isolation_charcoal_studio"
+        transformation = if ($ReplaceExisting) { "exact_source_pixels_charcoal_studio" } else { "ai_product_isolation_charcoal_studio" }
         rights_status = "REQUIRES_MANUAL_REVIEW"
     }
 
