@@ -6,6 +6,7 @@ import logging
 import os
 from pathlib import Path
 import random
+import re
 import string
 import time
 from typing import Any
@@ -80,6 +81,16 @@ def _rate_limit(bucket: dict[str, list[float]], key: str, maximum: int, window: 
 def _client_key(request: Request) -> str:
     forwarded = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
     return forwarded or (request.client.host if request.client else "unknown")
+
+
+def _checkout_frontend_url(request: Request) -> str:
+    """Return only a configured/allow-listed frontend origin for Stripe redirects."""
+    origin = request.headers.get("origin", "").rstrip("/")
+    if origin in settings.cors_origins:
+        return origin
+    if origin and settings.cors_origin_regex and re.fullmatch(settings.cors_origin_regex, origin):
+        return origin
+    return settings.frontend_url
 
 
 async def optional_user(credentials: HTTPAuthorizationCredentials | None = Depends(bearer)) -> dict[str, Any] | None:
@@ -510,8 +521,9 @@ async def create_checkout_session(request: Request, x_session_id: str | None = H
     await db.insert("order_items", [{**item, "order_id": order["id"]} for item in order_items])
     if shipping: line_items.append({"quantity": 1, "price_data": {"currency": cart_view["currency"].lower(), "unit_amount": shipping, "product_data": {"name": "Livraison suivie"}}})
     suffix = "".join(random.choice(string.ascii_lowercase) for _ in range(8))
+    frontend_url = _checkout_frontend_url(request)
     params: dict[str, Any] = {"mode": "payment", "line_items": line_items,
-        "success_url": f"{settings.frontend_url}/order-success?session_id={{CHECKOUT_SESSION_ID}}", "cancel_url": f"{settings.frontend_url}/cart?checkout=cancelled",
+        "success_url": f"{frontend_url}/order-success?session_id={{CHECKOUT_SESSION_ID}}", "cancel_url": f"{frontend_url}/cart?checkout=cancelled",
         "client_reference_id": order["id"], "integration_identifier": f"tymotors_checkout_{suffix}",
         "metadata": {"order_id": order["id"], "user_id": user["id"] if user else "guest"},
         "payment_intent_data": {"metadata": {"order_id": order["id"], "user_id": user["id"] if user else "guest"}},

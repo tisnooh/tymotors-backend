@@ -127,6 +127,8 @@ def test_checkout_and_webhook_enforce_vehicle_and_order_integrity():
     assert 'checkout.sessions.retrieve_async(stripe_session_id)' in server
     assert 'session.to_dict()' in server
     assert 'collected.get("shipping_details")' in server
+    assert 'frontend_url = _checkout_frontend_url(request)' in server
+    assert 're.fullmatch(settings.cors_origin_regex, origin)' in server
 
 
 def test_cart_response_exposes_server_calculated_totals_and_compatibility():
