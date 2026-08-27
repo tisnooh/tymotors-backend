@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-27T19:45:01.9352234Z",
+  "generated_at": "2026-08-27T23:06:06.2997964Z",
   "count": 40,
   "strategy": "main_exact_product_plus_real_source_context",
   "rights_status": "REQUIRES_MANUAL_REVIEW",
@@ -48,7 +48,7 @@
     },
     {
       "product_slug": "bmw-f30-double-slat-grille",
-      "main_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787853804/tymotors/products/zhds28zhu5mh72saaw7o.png",
+      "main_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787871907/tymotors/products/w1xrrzbztsjdrygowoyd.png",
       "context_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787859817/tymotors/products/jnfse41t6upcjn59y8fv.png",
       "context_public_id": "tymotors/products/jnfse41t6upcjn59y8fv",
       "source_file": "bmw-f30-double-slat-grille-context.png"
@@ -83,7 +83,7 @@
     },
     {
       "product_slug": "bmw-g20-m-performance-spoiler",
-      "main_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787853807/tymotors/products/heir7fas6hibtzn6m7nf.png",
+      "main_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787871913/tymotors/products/sgiop0v8yfanbfroffgs.png",
       "context_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787859832/tymotors/products/qdkorqzfhewwlumbga8z.png",
       "context_public_id": "tymotors/products/qdkorqzfhewwlumbga8z",
       "source_file": "bmw-g20-m-performance-spoiler-context.png"
@@ -111,14 +111,14 @@
     },
     {
       "product_slug": "carplay-screen-12",
-      "main_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787853810/tymotors/products/pwl1ykgiojikomipmxip.png",
+      "main_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787871918/tymotors/products/ahdqm3ohpsfwkcnwjaot.png",
       "context_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787859842/tymotors/products/wdut9vppawbvrg4pxlq1.png",
       "context_public_id": "tymotors/products/wdut9vppawbvrg4pxlq1",
       "source_file": "carplay-screen-12-context.png"
     },
     {
       "product_slug": "dashcam-4k-pro",
-      "main_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787853813/tymotors/products/weupxtdhlg9kgvczofh6.png",
+      "main_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787871921/tymotors/products/bgrz6vprhzayzlyhfvhv.png",
       "context_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787859844/tymotors/products/tycvcpn81ydd0rrk48pb.png",
       "context_public_id": "tymotors/products/tycvcpn81ydd0rrk48pb",
       "source_file": "dashcam-4k-pro-context.png"
@@ -139,7 +139,7 @@
     },
     {
       "product_slug": "mercedes-w205-amg-grille",
-      "main_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787853816/tymotors/products/s09xonyfzlaxilhxfkbi.png",
+      "main_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787871924/tymotors/products/sdx3okapfhmbr8b1jgxz.png",
       "context_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787859852/tymotors/products/fedl8ltyoeiuik1qubmp.png",
       "context_public_id": "tymotors/products/fedl8ltyoeiuik1qubmp",
       "source_file": "mercedes-w205-amg-grille-context.png"
@@ -174,7 +174,7 @@
     },
     {
       "product_slug": "porsche-911-rear-spoiler",
-      "main_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787853819/tymotors/products/zgpfssdfoddnuyjfeqmt.png",
+      "main_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787871928/tymotors/products/il4hozpi5u14vqclnhya.png",
       "context_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787859864/tymotors/products/fp03u9ixdpcejzw2pyku.png",
       "context_public_id": "tymotors/products/fp03u9ixdpcejzw2pyku",
       "source_file": "porsche-911-rear-spoiler-context.png"
@@ -202,7 +202,7 @@
     },
     {
       "product_slug": "reverse-cam-hd",
-      "main_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787853821/tymotors/products/x5imlhpzy2ryqee5chpb.png",
+      "main_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787871931/tymotors/products/lhauoocfbuk2fvmmchyk.png",
       "context_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787859873/tymotors/products/k9aydpxv8xnxlph2uy7l.png",
       "context_public_id": "tymotors/products/k9aydpxv8xnxlph2uy7l",
       "source_file": "reverse-cam-hd-context.png"
@@ -272,7 +272,7 @@
     },
     {
       "product_slug": "vw-golf7-r-rear-diffuser",
-      "main_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787853824/tymotors/products/wgkd84dof3cfxn8zqtyq.png",
+      "main_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787871934/tymotors/products/miosmu0iblk9dzvrbt3f.png",
       "context_url": "https://res.cloudinary.com/dwsyixjux/image/upload/v1787859897/tymotors/products/hn2rmcojdsrydxoog8a2.png",
       "context_public_id": "tymotors/products/hn2rmcojdsrydxoog8a2",
       "source_file": "vw-golf7-r-rear-diffuser-context.png"

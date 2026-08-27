@@ -55,7 +55,12 @@ foreach ($file in Get-ChildItem -LiteralPath $ImageDirectory -Filter "*.png" | S
         throw "Upload response for $slug did not contain a URL."
     }
 
-    $body = @{ images = @($upload.url) } | ConvertTo-Json -Compress
+    $currentProduct = Invoke-RestMethod -Uri "$ApiBase/api/products/$slug" -Method Get
+    $galleryTail = @()
+    if ($currentProduct.images.Count -gt 1) {
+        $galleryTail = @($currentProduct.images | Select-Object -Skip 1)
+    }
+    $body = @{ images = @($upload.url) + $galleryTail } | ConvertTo-Json -Compress
     & curl.exe --silent --show-error --fail `
         -X PUT "$ApiBase/api/admin/products/$slug" `
         -H "Content-Type: application/json" `
