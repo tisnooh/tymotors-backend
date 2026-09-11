@@ -88,6 +88,21 @@ class SupabaseRest:
     async def select(self, table: str, *, params: dict[str, Any] | None = None) -> list[dict[str, Any]]:
         return await self.request("GET", table, params=params) or []
 
+    async def page(self, table: str, *, params: dict[str, Any], page: int, limit: int) -> dict[str, Any]:
+        response = await self.client.get(
+            f"{self.url}/rest/v1/{quote(table, safe='')}",
+            params={**params, "limit": limit, "offset": (page - 1) * limit},
+            headers=self._headers(prefer="count=exact"),
+        )
+        if response.status_code >= 400:
+            raise SupabaseError(response.status_code, self._detail(response))
+        count = response.headers.get("content-range", "*/0").split("/")[-1]
+        if not count.isdigit():
+            raise SupabaseError(502, "Missing database pagination count")
+        total = int(count)
+        return {"items": response.json(), "total": total, "page": page, "limit": limit,
+                "pages": (total + limit - 1) // limit}
+
     async def insert(self, table: str, payload: Any, *, upsert: bool = False, on_conflict: str | None = None) -> list[dict[str, Any]]:
         params = {"on_conflict": on_conflict} if on_conflict else None
         prefer = "return=representation"

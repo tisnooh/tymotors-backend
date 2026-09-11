@@ -23,6 +23,7 @@ from stripe import StripeClient
 from starlette.middleware.cors import CORSMiddleware
 
 from app.compatibility import check_compatibility
+from app.admin import create_admin_router, search_filter, product_input_data
 from app.config import Settings, get_settings
 from app.schemas import (
     AdminOrderUpdateInput, CartItemInput, CartUpdateInput, ContactInput, NewsletterInput,
@@ -410,9 +411,15 @@ async def verify_admin(admin: dict[str, Any] = Depends(require_admin)): return {
 
 
 @api.get("/admin/products")
-async def admin_products(limit: int = Query(default=200, ge=1, le=500), admin: dict[str, Any] = Depends(require_admin)):
-    rows = (await catalog.product_rows(public_only=False))[:limit]
-    return {"items": await catalog.hydrate_products(rows, include_admin=True), "total": len(rows)}
+async def admin_products(limit: int = Query(default=25, ge=1, le=100), page: int = Query(1, ge=1),
+                         q: str = Query("", max_length=120), status: str = Query("", pattern="^(|draft|active|archived)$"),
+                         admin: dict[str, Any] = Depends(require_admin)):
+    params = {"select": "*", "order": "created_at.desc,id.desc"}
+    if q: params["or"] = search_filter(q, ["name", "sku"])
+    if status: params["status"] = f"eq.{status}"
+    result = await db.page("products", params=params, page=page, limit=limit)
+    result["items"] = await catalog.hydrate_products(result["items"], include_admin=True)
+    return result
 
 
 @api.post("/admin/upload-image")
@@ -420,10 +427,16 @@ async def upload_image(file: UploadFile = File(...), admin: dict[str, Any] = Dep
     if file.content_type not in {"image/jpeg", "image/png", "image/webp", "image/avif"}: raise HTTPException(status_code=415, detail="Unsupported image type")
     content = await file.read(8 * 1024 * 1024 + 1)
     if len(content) > 8 * 1024 * 1024: raise HTTPException(status_code=413, detail="Image exceeds 8 MB")
-    signatures = (content.startswith(b"\xff\xd8\xff"), content.startswith(b"\x89PNG\r\n\x1a\n"), content[:4] in {b"RIFF", b"\x00\x00\x00\x1c", b"\x00\x00\x00\x20"})
-    if len(content) < 12 or not any(signatures): raise HTTPException(status_code=400, detail="Invalid image")
+    signatures = {
+        "image/jpeg": content.startswith(b"\xff\xd8\xff"),
+        "image/png": content.startswith(b"\x89PNG\r\n\x1a\n"),
+        "image/webp": content[:4] == b"RIFF" and content[8:12] == b"WEBP",
+        "image/avif": content[4:8] == b"ftyp" and b"avif" in content[8:32],
+    }
+    if len(content) < 12 or not signatures[file.content_type]: raise HTTPException(status_code=400, detail="Invalid image")
     try:
-        result = cloudinary.uploader.upload(content, folder="tymotors/products", resource_type="image", use_filename=False,
+        from starlette.concurrency import run_in_threadpool
+        result = await run_in_threadpool(cloudinary.uploader.upload, content, folder="tymotors/products", resource_type="image", use_filename=False,
                                              unique_filename=True, overwrite=False,
                                              transformation=[{"quality": "auto:good", "fetch_format": "auto"}])
     except Exception:
@@ -435,30 +448,28 @@ async def upload_image(file: UploadFile = File(...), admin: dict[str, Any] = Dep
 @api.post("/admin/products", status_code=201)
 async def create_product(payload: ProductInput, admin: dict[str, Any] = Depends(require_admin)):
     if not payload.slug: raise HTTPException(status_code=422, detail="slug is required")
-    try: product = await catalog.write_product(payload)
-    except (ValueError, SupabaseError) as error: raise HTTPException(status_code=422, detail=str(error))
-    await _audit(admin, "product.create", product["id"], {"slug": product["slug"]}); return product
+    try: return await catalog.write_product_atomic(payload, actor=admin["id"])
+    except ValueError as error: raise HTTPException(status_code=422, detail=str(error))
 
 
 @api.put("/admin/products/{slug}")
 async def update_product(slug: str, payload: ProductUpdateInput, admin: dict[str, Any] = Depends(require_admin)):
     current = await catalog.product_by("slug", slug, public_only=False, include_admin=True)
     if not current: raise HTTPException(status_code=404, detail="Product not found")
-    merged = {**current, **payload.model_dump(exclude_unset=True), "slug": current["slug"]}
-    for key in ("id", "image_records", "created_at"): merged.pop(key, None)
+    merged = {**product_input_data(current, ProductInput), **payload.model_dump(exclude_unset=True, exclude={"expected_updated_at"})}
     try:
-        product = await catalog.write_product(ProductInput.model_validate(merged), product_id=current["id"])
-    except ValidationError as error: raise HTTPException(status_code=422, detail=error.errors())
-    except (ValueError, SupabaseError) as error: raise HTTPException(status_code=422, detail=str(error))
-    await _audit(admin, "product.update", product["id"], {"slug": slug}); return product
+        return await catalog.write_product_atomic(ProductInput.model_validate(merged), actor=admin["id"],
+            product_id=current["id"], expected_updated_at=payload.expected_updated_at)
+    except ValidationError as error: raise HTTPException(status_code=422, detail=error.errors(include_context=False))
+    except ValueError as error: raise HTTPException(status_code=422, detail=str(error))
 
 
 @api.delete("/admin/products/{slug}")
 async def archive_product(slug: str, admin: dict[str, Any] = Depends(require_admin)):
     product = await catalog.product_by("slug", slug, public_only=False, include_admin=True)
     if not product: raise HTTPException(status_code=404, detail="Product not found")
-    await db.update("products", {"status": "archived", "featured": False}, params={"id": f"eq.{product['id']}"})
-    await _audit(admin, "product.archive", product["id"], {"slug": slug}); return {"archived": True}
+    await db.rpc("admin_save_record", {"p_actor": admin["id"], "p_kind": "archive", "p_id": product["id"], "p_data": {}})
+    return {"archived": True}
 
 
 async def _orders_with_items(orders: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -474,22 +485,27 @@ async def _orders_with_items(orders: list[dict[str, Any]]) -> list[dict[str, Any
 
 
 @api.get("/admin/orders")
-async def admin_orders(limit: int = Query(default=100, ge=1, le=500), admin: dict[str, Any] = Depends(require_admin)):
-    rows = await db.select("orders", params={"select": "*", "order": "created_at.desc", "limit": limit})
-    return {"items": await _orders_with_items(rows), "total": len(rows)}
+async def admin_orders(limit: int = Query(default=25, ge=1, le=100), page: int = Query(1, ge=1),
+                       q: str = Query("", max_length=120),
+                       status: str = Query("", pattern="^(|pending|paid|processing|shipped|delivered|cancelled|refunded)$"),
+                       admin: dict[str, Any] = Depends(require_admin)):
+    params = {"select": "*", "order": "created_at.desc,id.desc"}
+    if q: params["or"] = search_filter(q, ["order_number", "customer_email", "customer_name"])
+    if status: params["fulfillment_status" if status in {"processing", "shipped", "delivered"} else "status"] = f"eq.{status}"
+    return await db.page("orders", params=params, page=page, limit=limit)
 
 
 @api.put("/admin/orders/{order_id}")
 async def update_order(order_id: str, payload: AdminOrderUpdateInput, admin: dict[str, Any] = Depends(require_admin)):
-    changes: dict[str, Any] = {"fulfillment_status": payload.fulfillment_status, "tracking_number": payload.tracking_number}
-    if payload.fulfillment_status == "shipped": changes["shipped_at"] = datetime.now(timezone.utc).isoformat()
-    rows = await db.update("orders", changes, params={"id": f"eq.{order_id}"})
-    if not rows: raise HTTPException(status_code=404, detail="Order not found")
-    await _audit(admin, "order.update", order_id, changes); return (await _orders_with_items(rows))[0]
+    try: order_id = str(uuid.UUID(order_id))
+    except ValueError: raise HTTPException(422, "Invalid order ID")
+    return await db.rpc("admin_update_order", {"p_actor": admin["id"], "p_id": order_id, "p_status": payload.fulfillment_status,
+        "p_tracking": payload.tracking_number, "p_expected": payload.expected_updated_at})
 
 
 @api.post("/create-checkout-session")
-async def create_checkout_session(request: Request, x_session_id: str | None = Header(default=None), user: dict[str, Any] | None = Depends(optional_user)):
+async def create_checkout_session(request: Request, promotion_code: str | None = Query(None, max_length=40),
+                                  x_session_id: str | None = Header(default=None), user: dict[str, Any] | None = Depends(optional_user)):
     if stripe_client is None: raise HTTPException(status_code=503, detail="Stripe test checkout is not configured")
     actor = user["id"] if user else _session_id(x_session_id); _rate_limit(checkout_attempts, actor, 8, 60)
     cart = await _cart_for(user, x_session_id, create=False); cart_view = await _cart_response(cart)
@@ -519,6 +535,9 @@ async def create_checkout_session(request: Request, x_session_id: str | None = H
         if profiles: order_payload.update(customer_email=profiles[0].get("email"), customer_name=profiles[0].get("full_name"))
     order = (await db.insert("orders", order_payload))[0]
     await db.insert("order_items", [{**item, "order_id": order["id"]} for item in order_items])
+    promotion = None
+    if promotion_code:
+        promotion = await db.rpc("apply_order_promotion", {"p_order_id": order["id"], "p_code": promotion_code.upper()})
     if shipping: line_items.append({"quantity": 1, "price_data": {"currency": cart_view["currency"].lower(), "unit_amount": shipping, "product_data": {"name": "Livraison suivie"}}})
     suffix = "".join(random.choice(string.ascii_lowercase) for _ in range(8))
     frontend_url = _checkout_frontend_url(request)
@@ -530,8 +549,15 @@ async def create_checkout_session(request: Request, x_session_id: str | None = H
         "shipping_address_collection": {"allowed_countries": ["FR", "BE", "DE", "ES", "IT", "LU", "NL", "PT"]},
         "billing_address_collection": "required", "phone_number_collection": {"enabled": True}}
     if order_payload.get("customer_email"): params["customer_email"] = order_payload["customer_email"]
+    params["expires_at"] = int(time.time()) + 1800
     if os.getenv("STRIPE_AUTOMATIC_TAX", "false").lower() == "true": params["automatic_tax"] = {"enabled": True}
     try:
+        if promotion:
+            coupon = await stripe_client.v1.coupons.create_async(
+                params={"amount_off": promotion["discount_cents"], "currency": "eur", "duration": "once",
+                        "max_redemptions": 1, "name": promotion_code.upper()},
+                options={"idempotency_key": f"coupon_{order['id']}"})
+            params["discounts"] = [{"coupon": coupon.id}]
         session = await stripe_client.v1.checkout.sessions.create_async(params=params, options={"idempotency_key": f"checkout_{order['id']}"})
     except stripe.StripeError:
         await db.update("orders", {"status": "payment_failed", "payment_status": "failed"}, params={"id": f"eq.{order['id']}"})
@@ -550,7 +576,7 @@ async def checkout_session(stripe_session_id: str, x_session_id: str | None = He
         try:
             session = await stripe_client.v1.checkout.sessions.retrieve_async(stripe_session_id)
             session_data = session.to_dict()
-            if session_data.get("payment_status") == "paid":
+            if session_data.get("payment_status") in {"paid", "no_payment_required"}:
                 await _complete_checkout_payment(session_data)
                 rows = await db.select("orders", params={"select": "*", "id": f"eq.{order['id']}", "limit": 1})
                 order = rows[0]
@@ -565,7 +591,7 @@ async def checkout_session(stripe_session_id: str, x_session_id: str | None = He
 
 
 async def _complete_checkout_payment(obj: Any) -> str | None:
-    if obj.get("payment_status") != "paid":
+    if obj.get("payment_status") not in {"paid", "no_payment_required"}:
         return None
     order_id = (obj.get("metadata") or {}).get("order_id")
     if not order_id:
@@ -576,6 +602,8 @@ async def _complete_checkout_payment(obj: Any) -> str | None:
     if not order_rows:
         raise RuntimeError("Stripe event references an unknown order")
     expected = order_rows[0]
+    if obj.get("payment_status") == "no_payment_required" and expected["total_cents"] != 0:
+        raise RuntimeError("A non-zero order cannot be completed without payment")
     if (
         obj.get("id") != expected.get("stripe_session_id")
         or obj.get("client_reference_id") != order_id
@@ -611,13 +639,18 @@ async def stripe_webhook(request: Request, stripe_signature: str | None = Header
             if error.status_code != 409: raise
     try:
         obj = event["data"]["object"]; event_type = event["type"]
-        if event_type == "checkout.session.completed" and obj.get("payment_status") == "paid":
+        if event_type in {"checkout.session.completed", "checkout.session.async_payment_succeeded"} and obj.get("payment_status") in {"paid", "no_payment_required"}:
             await _complete_checkout_payment(obj)
         elif event_type == "payment_intent.payment_failed":
             order_id = (obj.get("metadata") or {}).get("order_id")
-            if order_id: await db.update("orders", {"status": "payment_failed", "payment_status": "failed"}, params={"id": f"eq.{order_id}", "payment_status": "neq.paid"})
-        elif event_type in {"charge.refunded", "refund.created"} and obj.get("payment_intent"):
-            await db.update("orders", {"status": "refunded", "payment_status": "refunded"}, params={"stripe_payment_intent_id": f"eq.{obj['payment_intent']}"})
+            if order_id: await db.update("orders", {"status": "payment_failed", "payment_status": "failed"}, params={"id": f"eq.{order_id}", "payment_status": "in.(unpaid,failed)", "stock_applied_at": "is.null"})
+        elif event_type in {"charge.refunded", "refund.created", "refund.updated", "refund.failed"} and obj.get("payment_intent"):
+            await _sync_refunds(obj["payment_intent"])
+        elif event_type in {"checkout.session.expired", "checkout.session.async_payment_failed"}:
+            order_id = (obj.get("metadata") or {}).get("order_id")
+            if order_id:
+                await db.update("orders", {"status": "payment_failed", "payment_status": "failed"},
+                    params={"id": f"eq.{order_id}", "stock_applied_at": "is.null", "payment_status": "in.(unpaid,failed)"})
         await db.update("stripe_events", {"status": "completed", "completed_at": datetime.now(timezone.utc).isoformat()}, params={"event_id": f"eq.{event_id}"})
     except Exception as error:
         await db.update("stripe_events", {"status": "failed", "error_message": type(error).__name__}, params={"event_id": f"eq.{event_id}"})
@@ -625,6 +658,24 @@ async def stripe_webhook(request: Request, stripe_signature: str | None = Header
     return {"received": True}
 
 
+async def _sync_refunds(payment_intent: str) -> None:
+    if stripe_client is None:
+        raise RuntimeError("Stripe client required to confirm refunds")
+    refunds = await stripe_client.v1.refunds.list_async(params={"payment_intent": payment_intent, "limit": 100})
+    succeeded = 0
+    async for refund in refunds.auto_paging_iter():
+        if refund.get("status") == "succeeded":
+            succeeded += refund["amount"]
+    await db.rpc("record_order_refund", {"p_payment_intent": payment_intent, "p_refunded": succeeded})
+
+
+api.include_router(create_admin_router(
+    db,
+    catalog,
+    require_admin,
+    _audit,
+    stripe_test_mode=settings.stripe_secret_key.startswith("sk_test_"),
+))
 app.include_router(api)
 
 
@@ -632,6 +683,29 @@ app.include_router(api)
 async def supabase_error_handler(_: Request, error: SupabaseError):
     from fastapi.responses import JSONResponse
     logger.error("Supabase request failed with status %s", error.status_code)
+    messages = {
+        "changed. Reload": "Les données ont changé. Rechargez la page avant d’enregistrer.",
+        "Use inventory": "Modifiez le stock depuis la rubrique Stocks.",
+        "Insufficient stock": "Stock insuffisant pour cette opération.",
+        "insufficient stock": "Stock insuffisant pour cette opération.",
+        "Invalid transition": "Cette transition de commande n’est pas autorisée.",
+        "Invalid return transition": "Cette transition de retour n’est pas autorisée.",
+        "Payment required": "Un paiement confirmé est nécessaire.",
+        "Tracking number required": "Un numéro de suivi est nécessaire.",
+        "Ship the order first": "La commande doit d’abord être expédiée.",
+        "This order is closed": "Cette commande est clôturée.",
+        "Use a return": "Ouvrez un retour pour une commande déjà expédiée.",
+        "Receive and inspect": "Recevez et inspectez l’article avant une unique remise en stock.",
+        "Confirm the full refund": "Le remboursement intégral doit être confirmé par Stripe.",
+        "Return quantity exceeds": "La quantité retournée dépasse la quantité achetée.",
+        "Promotion unavailable": "Ce code promotionnel n’est pas applicable à ce panier.",
+        "Promotion usage limit": "Le nombre maximum d’utilisations du code est atteint.",
+        "No eligible products": "Aucun produit du panier n’est éligible à ce code.",
+        "duplicate key": "Un produit ou code avec cet identifiant existe déjà.",
+    }
+    for fragment, message in messages.items():
+        if fragment in error.detail:
+            return JSONResponse(status_code=409, content={"detail": message})
     return JSONResponse(status_code=error.status_code if error.status_code in {400, 404, 409, 422} else 502,
                         content={"detail": "Database request failed"})
 

@@ -42,6 +42,7 @@ class VehicleSelection(BaseModel):
 
 
 class SupplierData(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
     supplier_reference: str | None = Field(default=None, max_length=200)
     supplier_name: str | None = Field(default=None, max_length=200)
     supplier_url: str | None = Field(default=None, max_length=1000)
@@ -57,6 +58,9 @@ class SupplierData(BaseModel):
 
 
 class ProductInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+    low_stock_threshold: int | None = Field(default=None, ge=0, le=100000)
+    tags: list[str] = Field(default_factory=list, max_length=30)
     slug: str | None = Field(default=None, min_length=3, max_length=120, pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
     name: str = Field(min_length=2, max_length=160)
     subtitle: str = Field(default="", max_length=240)
@@ -88,6 +92,11 @@ class ProductInput(BaseModel):
 
     @model_validator(mode="after")
     def active_is_complete(self):
+        from urllib.parse import urlparse
+        if len(self.images) > 20 or any(urlparse(url).scheme != "https" or not urlparse(url).hostname for url in self.images):
+            raise ValueError("At most 20 HTTPS image URLs are allowed")
+        if self.compare_at_price is not None and self.compare_at_price <= self.price:
+            raise ValueError("compare_at_price must exceed price")
         if self.status != "active":
             return self
         missing: list[str] = []
@@ -106,6 +115,10 @@ class ProductInput(BaseModel):
 
 class ProductUpdateInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    slug: str | None = Field(default=None, min_length=3, max_length=120, pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+    expected_updated_at: str | None = None
+    low_stock_threshold: int | None = Field(default=None, ge=0, le=100000)
+    tags: list[str] | None = Field(default=None, max_length=30)
     name: str | None = Field(default=None, min_length=2, max_length=160)
     subtitle: str | None = Field(default=None, max_length=240)
     description: str | None = Field(default=None, min_length=20, max_length=5000)
@@ -164,11 +177,14 @@ class ContactInput(BaseModel):
 
 
 class AdminOrderUpdateInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    expected_updated_at: str
     fulfillment_status: Literal["unfulfilled", "processing", "shipped", "delivered", "cancelled", "requires_review"]
     tracking_number: str | None = Field(default=None, max_length=200)
 
 
 class ProfileUpdateInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     full_name: str | None = Field(default=None, max_length=160)
     phone: str | None = Field(default=None, max_length=40)
     billing_address: dict[str, Any] | None = None

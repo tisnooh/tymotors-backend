@@ -17,3 +17,5 @@ assets/ai-catalogue/
 assets/review-sheets/
 assets/catalogue-gallery/
 
+.admin-test-runtime/
+supabase/.temp/

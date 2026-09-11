@@ -186,6 +186,8 @@ class CatalogStore:
             }
             if include_admin:
                 supplier = suppliers.get(row["id"], {})
+                item.update(updated_at=row.get("updated_at"), low_stock_threshold=row.get("low_stock_threshold"),
+                            tags=row.get("tags") or [])
                 item["admin"] = {
                     "supplier_reference": supplier.get("supplier_reference"), "supplier_name": supplier.get("supplier_name"),
                     "supplier_url": supplier.get("supplier_url"), "exact_source_url": supplier.get("exact_source_url"),
@@ -298,5 +300,48 @@ class CatalogStore:
         if data["status"] != "draft":
             await self.db.update("products", {"status": data["status"]}, params={"id": f"eq.{product_id}"})
         product = await self.product_by("id", product_id, public_only=False, include_admin=True)
+        assert product is not None
+        return product
+
+    async def write_product_atomic(self, payload: ProductInput, *, actor: str, product_id: str | None = None,
+                                   expected_updated_at: str | None = None) -> dict[str, Any]:
+        data = payload.model_dump()
+        category_id = await self._category_id(data["category_slug"])
+        base = {key: data[key] for key in (
+            "slug", "sku", "name", "subtitle", "description", "subcategory", "currency", "stock", "status",
+            "is_verified", "featured", "badges", "rating", "review_count", "specs", "package_contents",
+            "installation_difficulty", "installation_minutes", "tools_required", "warranty_months",
+            "delivery_estimate", "low_stock_threshold", "tags")}
+        base.update(category_id=category_id, price_cents=_cents(data["price"]),
+                    compare_at_price_cents=_cents(data["compare_at_price"]), legacy_compatible_brands=data["compatible_brands"])
+        rules = []
+        for rule in data["compatibilities"]:
+            brand_id = await self._brand_id(rule["brand_slug"])
+            vehicle_model_id, generation_id = await self._vehicle_ids(brand_id, rule["model"], rule["generation"], rule["chassis"])
+            rules.append({
+                "brand_id": brand_id, "vehicle_model_id": vehicle_model_id, "generation_id": generation_id,
+                "model_name": rule["model"], "chassis": rule["chassis"], "generation_name": rule["generation"],
+                "year_from": rule["year_from"], "year_to": rule["year_to"], "body_types": rule["body_types"],
+                "facelift": rule["facelift"], "required_trims": rule["required_trim"], "excluded_trims": rule["excluded_trims"],
+                "camera_compatible": rule["camera_compatible"], "parking_sensor_compatible": rule["parking_sensor_compatible"],
+                "notes": rule["notes"], "verification_state": "verified" if rule["is_verified"] else "unverified",
+                "verified_by": actor if rule["is_verified"] else None,
+                "verified_at": datetime.now(timezone.utc).isoformat() if rule["is_verified"] else None,
+            })
+        supplier = data["admin"]
+        private = {key: supplier[key] for key in ("supplier_name", "supplier_reference", "supplier_url",
+                   "exact_source_url", "moq", "supplier_verified", "notes")}
+        for key in ("cost_price", "shipping_cost", "landed_cost"):
+            private[key + "_cents"] = _cents(supplier[key])
+        # Gross margin is derived, never accepted from the browser.
+        cost = supplier["cost_price"]
+        private["margin_amount_cents"] = _cents(data["price"] - cost) if cost is not None else None
+        private["margin_percent"] = round((data["price"] - cost) / data["price"] * 100, 2) if cost is not None else None
+        saved_id = await self.db.rpc("admin_save_product", {
+            "p_actor": actor, "p_id": product_id, "p_expected": expected_updated_at, "p_base": base,
+            "p_images": [{"url": url, "display_order": n, "image_type": "main" if n == 0 else "gallery"} for n, url in enumerate(data["images"])],
+            "p_rules": rules, "p_supplier": private,
+        })
+        product = await self.product_by("id", saved_id, public_only=False, include_admin=True)
         assert product is not None
         return product
