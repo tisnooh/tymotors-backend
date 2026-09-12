@@ -27,10 +27,13 @@ class Settings:
     cloudinary_api_key: str
     cloudinary_api_secret: str
     email_enabled: bool = False
+    email_provider: str = "smtp"
     email_from_address: str = "tyachatfr@gmail.com"
     email_from_name: str = "TYMotors"
     email_reply_to: str = "tyachatfr@gmail.com"
     email_token_secret: str = ""
+    brevo_api_key: str = ""
+    brevo_api_url: str = "https://api.brevo.com/v3/smtp/email"
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 587
     smtp_username: str = ""
@@ -51,15 +54,24 @@ class Settings:
         if self.environment != "production" and self.stripe_secret_key and not self.stripe_secret_key.startswith("sk_test_"):
             raise RuntimeError("A live Stripe key cannot be used outside production")
         if self.email_enabled:
-            if not all((self.email_from_address, self.email_reply_to, self.email_token_secret,
-                        self.smtp_host, self.smtp_username, self.smtp_password)):
-                raise RuntimeError("Email delivery is enabled but its server configuration is incomplete")
+            if not all((self.email_from_address, self.email_reply_to, self.email_token_secret)):
+                raise RuntimeError("Email delivery is enabled but its common configuration is incomplete")
             if len(self.email_token_secret) < 32:
                 raise RuntimeError("EMAIL_TOKEN_SECRET must contain at least 32 characters")
-            if not 1 <= self.smtp_port <= 65535:
-                raise RuntimeError("SMTP_PORT must be between 1 and 65535")
-            if self.smtp_host.casefold() == "smtp.gmail.com" and not self.smtp_use_tls:
-                raise RuntimeError("Gmail SMTP requires TLS")
+            if self.email_provider == "brevo":
+                if not self.brevo_api_key:
+                    raise RuntimeError("BREVO_API_KEY is required when EMAIL_PROVIDER=brevo")
+                if self.brevo_api_url != "https://api.brevo.com/v3/smtp/email":
+                    raise RuntimeError("BREVO_API_URL must use Brevo's HTTPS transactional endpoint")
+            elif self.email_provider == "smtp":
+                if not all((self.smtp_host, self.smtp_username, self.smtp_password)):
+                    raise RuntimeError("SMTP email delivery is enabled but its configuration is incomplete")
+                if not 1 <= self.smtp_port <= 65535:
+                    raise RuntimeError("SMTP_PORT must be between 1 and 65535")
+                if self.smtp_host.casefold() == "smtp.gmail.com" and not self.smtp_use_tls:
+                    raise RuntimeError("Gmail SMTP requires TLS")
+            else:
+                raise RuntimeError("EMAIL_PROVIDER must be either smtp or brevo")
 
 
 @lru_cache
@@ -84,10 +96,13 @@ def get_settings() -> Settings:
         cloudinary_api_key=os.getenv("CLOUDINARY_API_KEY", ""),
         cloudinary_api_secret=os.getenv("CLOUDINARY_API_SECRET", ""),
         email_enabled=os.getenv("EMAIL_ENABLED", "false").lower() in {"1", "true", "yes"},
+        email_provider=os.getenv("EMAIL_PROVIDER", "smtp").strip().lower(),
         email_from_address=os.getenv("EMAIL_FROM_ADDRESS", "tyachatfr@gmail.com").strip(),
         email_from_name=os.getenv("EMAIL_FROM_NAME", "TYMotors").strip(),
         email_reply_to=os.getenv("EMAIL_REPLY_TO", "tyachatfr@gmail.com").strip(),
         email_token_secret=os.getenv("EMAIL_TOKEN_SECRET", ""),
+        brevo_api_key=os.getenv("BREVO_API_KEY", ""),
+        brevo_api_url=os.getenv("BREVO_API_URL", "https://api.brevo.com/v3/smtp/email").strip(),
         smtp_host=os.getenv("SMTP_HOST", "smtp.gmail.com").strip(),
         smtp_port=int(os.getenv("SMTP_PORT", "587")),
         smtp_username=os.getenv("SMTP_USERNAME", "").strip(),

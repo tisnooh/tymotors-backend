@@ -39,6 +39,8 @@ services:
         sync: false
       - key: EMAIL_ENABLED
         value: "true"
+      - key: EMAIL_PROVIDER
+        value: brevo
       - key: EMAIL_FROM_NAME
         value: TYMotors
       - key: EMAIL_FROM_ADDRESS
@@ -47,6 +49,10 @@ services:
         value: tyachatfr@gmail.com
       - key: EMAIL_TOKEN_SECRET
         sync: false
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_API_URL
+        value: https://api.brevo.com/v3/smtp/email
       - key: SMTP_HOST
         value: smtp.gmail.com
       - key: SMTP_PORT

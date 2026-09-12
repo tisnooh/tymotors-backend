@@ -9,6 +9,8 @@ import smtplib
 import ssl
 from typing import Any, Callable
 
+import httpx
+
 from app.config import Settings
 from app.services.email_templates import EmailContent
 from app.supabase_rest import SupabaseError
@@ -18,7 +20,7 @@ class EmailService:
     def __init__(self, settings: Settings, db: Any, transport: Callable[[str, EmailContent], str | None] | None = None):
         self.settings = settings
         self.db = db
-        self.transport = transport or self._smtp_send
+        self.transport = transport or (self._brevo_send if settings.email_provider == "brevo" else self._smtp_send)
 
     @staticmethod
     def normalize_email(value: str) -> str:
@@ -101,3 +103,31 @@ class EmailService:
             smtp.login(self.settings.smtp_username, self.settings.smtp_password)
             smtp.send_message(message)
         return message.get("Message-ID")
+
+    def _brevo_send(self, recipient: str, content: EmailContent) -> str | None:
+        response = httpx.post(
+            self.settings.brevo_api_url,
+            headers={
+                "accept": "application/json",
+                "api-key": self.settings.brevo_api_key,
+                "content-type": "application/json",
+            },
+            json={
+                "sender": {
+                    "name": self.settings.email_from_name,
+                    "email": self.settings.email_from_address,
+                },
+                "to": [{"email": recipient}],
+                "replyTo": {
+                    "name": self.settings.email_from_name,
+                    "email": self.settings.email_reply_to,
+                },
+                "subject": content.subject,
+                "htmlContent": content.html,
+                "textContent": content.text,
+            },
+            timeout=20,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        return payload.get("messageId")

@@ -14,8 +14,10 @@ def settings(**overrides):
         supabase_service_role_key="secret", frontend_url="http://localhost:3000", cors_origins=["http://localhost:3000"],
         cors_origin_regex=None, stripe_secret_key="", stripe_webhook_secret="", shipping_rate_cents=0,
         free_shipping_threshold_cents=0, cloudinary_url="", cloudinary_cloud_name="", cloudinary_api_key="",
-        cloudinary_api_secret="", email_enabled=True, email_from_address="test@example.com", email_from_name="TYMotors",
-        email_reply_to="test@example.com", email_token_secret="test-secret", smtp_host="smtp.example.com",
+        cloudinary_api_secret="", email_enabled=True, email_provider="smtp",
+        email_from_address="test@example.com", email_from_name="TYMotors",
+        email_reply_to="test@example.com", email_token_secret="test-secret-that-is-at-least-32-chars", brevo_api_key="",
+        brevo_api_url="https://api.brevo.com/v3/smtp/email", smtp_host="smtp.example.com",
         smtp_port=587, smtp_username="test@example.com", smtp_password="app-password", smtp_use_tls=True,
     )
     values.update(overrides)
@@ -69,6 +71,38 @@ def test_enabled_email_configuration_requires_a_strong_token_secret():
         assert False, "validation should reject a weak email token secret"
     except RuntimeError as error:
         assert "32 characters" in str(error)
+
+
+def test_brevo_configuration_requires_an_api_key():
+    try:
+        settings(email_provider="brevo", brevo_api_key="").validate()
+        assert False, "validation should reject a missing Brevo API key"
+    except RuntimeError as error:
+        assert "BREVO_API_KEY" in str(error)
+
+
+def test_brevo_transport_sends_html_and_text(monkeypatch):
+    captured = {}
+
+    class Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"messageId": "brevo-message-1"}
+
+    def fake_post(url, **kwargs):
+        captured.update(url=url, **kwargs)
+        return Response()
+
+    monkeypatch.setattr("app.services.email_service.httpx.post", fake_post)
+    service = EmailService(settings(email_provider="brevo", brevo_api_key="secret-key"), FakeDb())
+    message_id = service._brevo_send("client@example.com", EmailContent("Sujet", "<p>Bonjour</p>", "Bonjour"))
+    assert message_id == "brevo-message-1"
+    assert captured["url"] == "https://api.brevo.com/v3/smtp/email"
+    assert captured["headers"]["api-key"] == "secret-key"
+    assert captured["json"]["htmlContent"] == "<p>Bonjour</p>"
+    assert captured["json"]["textContent"] == "Bonjour"
 
 
 def test_smtp_failure_is_logged_without_being_raised():
