@@ -110,7 +110,9 @@ begin
   from public.vehicle_generations
   where image_verified;
 
-  if verified_count <> 14 then
+  -- A fresh database may intentionally have no catalogue until the separate
+  -- staging importer runs. Still fail loudly for a partially imported catalogue.
+  if exists (select 1 from public.vehicle_generations) and verified_count <> 14 then
     raise exception 'Expected 14 verified generation images after migration, got %', verified_count;
   end if;
 end;

@@ -26,6 +26,16 @@ class Settings:
     cloudinary_cloud_name: str
     cloudinary_api_key: str
     cloudinary_api_secret: str
+    email_enabled: bool = False
+    email_from_address: str = "tyachatfr@gmail.com"
+    email_from_name: str = "TYMotors"
+    email_reply_to: str = "tyachatfr@gmail.com"
+    email_token_secret: str = ""
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_use_tls: bool = True
 
     def validate(self) -> None:
         if not self.supabase_url.startswith("https://") or ".supabase.co" not in self.supabase_url:
@@ -40,6 +50,16 @@ class Settings:
             raise RuntimeError("CORS_ORIGINS must not contain a wildcard")
         if self.environment != "production" and self.stripe_secret_key and not self.stripe_secret_key.startswith("sk_test_"):
             raise RuntimeError("A live Stripe key cannot be used outside production")
+        if self.email_enabled:
+            if not all((self.email_from_address, self.email_reply_to, self.email_token_secret,
+                        self.smtp_host, self.smtp_username, self.smtp_password)):
+                raise RuntimeError("Email delivery is enabled but its server configuration is incomplete")
+            if len(self.email_token_secret) < 32:
+                raise RuntimeError("EMAIL_TOKEN_SECRET must contain at least 32 characters")
+            if not 1 <= self.smtp_port <= 65535:
+                raise RuntimeError("SMTP_PORT must be between 1 and 65535")
+            if self.smtp_host.casefold() == "smtp.gmail.com" and not self.smtp_use_tls:
+                raise RuntimeError("Gmail SMTP requires TLS")
 
 
 @lru_cache
@@ -63,5 +83,15 @@ def get_settings() -> Settings:
         cloudinary_cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME", ""),
         cloudinary_api_key=os.getenv("CLOUDINARY_API_KEY", ""),
         cloudinary_api_secret=os.getenv("CLOUDINARY_API_SECRET", ""),
+        email_enabled=os.getenv("EMAIL_ENABLED", "false").lower() in {"1", "true", "yes"},
+        email_from_address=os.getenv("EMAIL_FROM_ADDRESS", "tyachatfr@gmail.com").strip(),
+        email_from_name=os.getenv("EMAIL_FROM_NAME", "TYMotors").strip(),
+        email_reply_to=os.getenv("EMAIL_REPLY_TO", "tyachatfr@gmail.com").strip(),
+        email_token_secret=os.getenv("EMAIL_TOKEN_SECRET", ""),
+        smtp_host=os.getenv("SMTP_HOST", "smtp.gmail.com").strip(),
+        smtp_port=int(os.getenv("SMTP_PORT", "587")),
+        smtp_username=os.getenv("SMTP_USERNAME", "").strip(),
+        smtp_password=os.getenv("SMTP_PASSWORD", ""),
+        smtp_use_tls=os.getenv("SMTP_USE_TLS", "true").lower() in {"1", "true", "yes"},
     )
     return settings

@@ -108,6 +108,7 @@ def create_admin_router(db, catalog, require_admin, audit, stripe_test_mode: boo
                 "stripe_dashboard_url": stripe_prefix + payment_intent if payment_intent else None,
                 "items": await db.select("order_items", params={"order_id": f"eq.{order_id}", "order": "created_at.asc"}),
                 "history": await db.select("admin_audit", params={"resource": f"eq.{order_id}", "order": "created_at.desc", "limit": 50}),
+                "emails": await db.select("email_logs", params={"order_id": f"eq.{order_id}", "order": "created_at.desc", "limit": 50}),
                 "returns": await db.select("returns", params={"order_id": f"eq.{order_id}", "order": "created_at.desc", "limit": 50})}
 
     @router.get("/inventory")

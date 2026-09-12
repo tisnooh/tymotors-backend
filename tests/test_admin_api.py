@@ -131,6 +131,10 @@ def test_pending_and_failed_refunds_never_reduce_revenue(monkeypatch):
                 yield {"status": status, "amount": amount}
     rpc = AsyncMock()
     monkeypatch.setattr(server.db, "rpc", rpc)
+    monkeypatch.setattr(server.db, "select", AsyncMock(return_value=[{"id": "order-1", "refunded_amount_cents": 0}]))
+    email = AsyncMock()
+    monkeypatch.setattr(server, "_send_order_email", email)
     monkeypatch.setattr(server, "stripe_client", SimpleNamespace(v1=SimpleNamespace(refunds=SimpleNamespace(list_async=AsyncMock(return_value=RefundPage())))))
     asyncio.run(server._sync_refunds("pi_test"))
     rpc.assert_awaited_once_with("record_order_refund", {"p_payment_intent": "pi_test", "p_refunded": 400})
+    email.assert_awaited_once_with("refund_confirmed", "order-1", amount_cents=400)

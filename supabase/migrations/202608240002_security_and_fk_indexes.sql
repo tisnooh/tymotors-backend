@@ -67,15 +67,45 @@ alter policy admin_read_newsletter on public.newsletter_subscriptions
 alter policy admin_read_audit on public.admin_audit
   using ((select private.is_admin()));
 
-drop policy admin_all_brands on public.brands;
-drop policy admin_all_vehicle_models on public.vehicle_models;
-drop policy admin_all_vehicle_generations on public.vehicle_generations;
-drop policy admin_all_vehicle_hotspots on public.vehicle_hotspots;
-drop policy admin_all_categories on public.categories;
-drop policy admin_all_products on public.products;
-drop policy admin_all_product_images on public.product_images;
-drop policy admin_all_product_compatibilities on public.product_compatibilities;
-drop policy admin_all_supplier_data on public.product_supplier_data;
+drop policy if exists admin_all_brands on public.brands;
+drop policy if exists admin_all_vehicle_models on public.vehicle_models;
+drop policy if exists admin_all_vehicle_generations on public.vehicle_generations;
+drop policy if exists admin_all_vehicle_hotspots on public.vehicle_hotspots;
+drop policy if exists admin_all_categories on public.categories;
+drop policy if exists admin_all_products on public.products;
+drop policy if exists admin_all_product_images on public.product_images;
+drop policy if exists admin_all_product_compatibilities on public.product_compatibilities;
+drop policy if exists admin_all_supplier_data on public.product_supplier_data;
+
+-- Current fresh installs already contain the split policies below. Recreate
+-- them so this historical hardening migration also remains replayable.
+drop policy if exists admin_insert_brands on public.brands;
+drop policy if exists admin_update_brands on public.brands;
+drop policy if exists admin_delete_brands on public.brands;
+drop policy if exists admin_insert_vehicle_models on public.vehicle_models;
+drop policy if exists admin_update_vehicle_models on public.vehicle_models;
+drop policy if exists admin_delete_vehicle_models on public.vehicle_models;
+drop policy if exists admin_insert_vehicle_generations on public.vehicle_generations;
+drop policy if exists admin_update_vehicle_generations on public.vehicle_generations;
+drop policy if exists admin_delete_vehicle_generations on public.vehicle_generations;
+drop policy if exists admin_insert_vehicle_hotspots on public.vehicle_hotspots;
+drop policy if exists admin_update_vehicle_hotspots on public.vehicle_hotspots;
+drop policy if exists admin_delete_vehicle_hotspots on public.vehicle_hotspots;
+drop policy if exists admin_insert_categories on public.categories;
+drop policy if exists admin_update_categories on public.categories;
+drop policy if exists admin_delete_categories on public.categories;
+drop policy if exists admin_insert_products on public.products;
+drop policy if exists admin_update_products on public.products;
+drop policy if exists admin_delete_products on public.products;
+drop policy if exists admin_insert_product_images on public.product_images;
+drop policy if exists admin_update_product_images on public.product_images;
+drop policy if exists admin_delete_product_images on public.product_images;
+drop policy if exists admin_insert_product_compatibilities on public.product_compatibilities;
+drop policy if exists admin_update_product_compatibilities on public.product_compatibilities;
+drop policy if exists admin_delete_product_compatibilities on public.product_compatibilities;
+drop policy if exists admin_insert_supplier_data on public.product_supplier_data;
+drop policy if exists admin_update_supplier_data on public.product_supplier_data;
+drop policy if exists admin_delete_supplier_data on public.product_supplier_data;
 
 create policy admin_insert_brands on public.brands for insert to authenticated with check ((select private.is_admin()));
 create policy admin_update_brands on public.brands for update to authenticated using ((select private.is_admin())) with check ((select private.is_admin()));
@@ -105,8 +135,7 @@ create policy admin_insert_supplier_data on public.product_supplier_data for ins
 create policy admin_update_supplier_data on public.product_supplier_data for update to authenticated using ((select private.is_admin())) with check ((select private.is_admin()));
 create policy admin_delete_supplier_data on public.product_supplier_data for delete to authenticated using ((select private.is_admin()));
 
-revoke all on function public.is_admin() from public, anon, authenticated;
-drop function public.is_admin();
+drop function if exists public.is_admin();
 
 create index if not exists admin_audit_admin_user_idx on public.admin_audit(admin_user_id);
 create index if not exists cart_items_product_idx on public.cart_items(product_id);

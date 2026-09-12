@@ -18,7 +18,7 @@ services:
       - key: CORS_ORIGIN_REGEX
         value: ^https://tymotors-[a-z0-9-]+\.vercel\.app$
       - key: FRONTEND_URL
-        value: https://tymotors.vercel.app
+        value: https://tymotors-git-develop-iapetse09-2414s-projects.vercel.app
       - key: STRIPE_AUTOMATIC_TAX
         value: "false"
       - key: FREE_SHIPPING_THRESHOLD_CENTS
@@ -37,3 +37,23 @@ services:
         sync: false
       - key: CLOUDINARY_URL
         sync: false
+      - key: EMAIL_ENABLED
+        value: "true"
+      - key: EMAIL_FROM_NAME
+        value: TYMotors
+      - key: EMAIL_FROM_ADDRESS
+        value: tyachatfr@gmail.com
+      - key: EMAIL_REPLY_TO
+        value: tyachatfr@gmail.com
+      - key: EMAIL_TOKEN_SECRET
+        sync: false
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USERNAME
+        value: tyachatfr@gmail.com
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_USE_TLS
+        value: "true"

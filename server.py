@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import logging
 import os
 from pathlib import Path
@@ -26,9 +26,13 @@ from app.compatibility import check_compatibility
 from app.admin import create_admin_router, search_filter, product_input_data
 from app.config import Settings, get_settings
 from app.schemas import (
-    AdminOrderUpdateInput, CartItemInput, CartUpdateInput, ContactInput, NewsletterInput,
-    ProductInput, ProductUpdateInput, ProfileUpdateInput, VehicleSelection, WishlistInput,
+    AdminOrderUpdateInput, AuthEmailInput, CartItemInput, CartUpdateInput, ContactInput,
+    EmailPreferencesInput, NewsletterInput, ProductInput, ProductUpdateInput, ProfileUpdateInput,
+    VehicleSelection, WelcomeEmailInput, WishlistInput,
 )
+from app.services.email_service import EmailService
+from app.services.email_templates import newsletter_confirmation, order_event, welcome
+from app.services.email_tokens import hash_confirmation_token, new_confirmation_token, verify_token
 from app.store import CatalogStore
 from app.supabase_rest import SupabaseError, SupabaseRest
 
@@ -44,6 +48,9 @@ stripe_client: StripeClient | None = None
 bearer = HTTPBearer(auto_error=False)
 checkout_attempts: dict[str, list[float]] = {}
 contact_attempts: dict[str, list[float]] = {}
+newsletter_attempts: dict[str, list[float]] = {}
+auth_email_attempts: dict[str, list[float]] = {}
+email_service = EmailService(settings, db)
 
 
 def _configure_cloudinary() -> None:
@@ -199,6 +206,48 @@ def _address(value: Any) -> dict[str, Any]:
     if not value: return {}
     if hasattr(value, "to_dict_recursive"): return value.to_dict_recursive()
     return dict(value)
+
+
+async def _send_order_email(kind: str, order_id: str, *, amount_cents: int | None = None,
+                            retry_log_id: str | None = None) -> dict[str, Any] | None:
+    """Best-effort delivery after the database transition has committed."""
+    try:
+        rows = await db.select("orders", params={"select": "*", "id": f"eq.{order_id}", "limit": 1})
+        if not rows or not rows[0].get("customer_email"):
+            return
+        order = rows[0]
+        items = await db.select("order_items", params={"select": "*", "order_id": f"eq.{order_id}", "order": "created_at.asc"})
+        content = order_event(kind, order, items, f"{settings.frontend_url}/account/orders/{order_id}", amount_cents=amount_cents)
+        suffix = str(amount_cents) if kind == "refund_confirmed" else "once"
+        if retry_log_id:
+            return await email_service.retry(retry_log_id, order["customer_email"], content)
+        return await email_service.send(recipient=order["customer_email"], email_type=kind, content=content,
+                idempotency_key=f"order:{order_id}:{kind}:{suffix}", user_id=order.get("user_id"), order_id=order_id,
+                metadata={"order_number": order.get("order_number"), **({"amount_cents": amount_cents} if amount_cents is not None else {})})
+    except Exception:
+        logger.exception("Order email could not be queued: %s %s", kind, order_id)
+        return None
+
+
+async def _start_newsletter_subscription(payload: NewsletterInput, user: dict[str, Any] | None) -> dict[str, bool]:
+    email = email_service.normalize_email(str(payload.email))
+    current = await db.select("newsletter_subscribers", params={"select": "id,status", "email": f"eq.{email}", "limit": 1})
+    if current and current[0].get("status") == "subscribed":
+        return {"pending": False, "already_subscribed": True}
+    raw_token, token_hash = new_confirmation_token()
+    expires_at = (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()
+    rows = await db.insert("newsletter_subscribers", {
+        "email": email, "locale": payload.locale[:8], "user_id": user["id"] if user else None,
+        "status": "pending", "consent_source": payload.consent_source,
+        "consent_at": datetime.now(timezone.utc).isoformat(), "confirmed_at": None, "unsubscribed_at": None,
+        "confirmation_token_hash": token_hash, "confirmation_expires_at": expires_at,
+    }, upsert=True, on_conflict="email")
+    subscriber_id = rows[0]["id"]
+    confirm_url = f"{settings.frontend_url}/newsletter/confirm?token={raw_token}"
+    await email_service.send(recipient=email, email_type="newsletter_confirmation",
+        content=newsletter_confirmation(confirm_url), idempotency_key=f"newsletter-confirm:{subscriber_id}:{token_hash[:16]}",
+        user_id=user["id"] if user else None, metadata={"subscriber_id": subscriber_id})
+    return {"pending": True, "already_subscribed": False}
 
 
 @api.get("/")
@@ -387,11 +436,101 @@ async def remove_wishlist(product_id: str, user: dict[str, Any] = Depends(requir
     return await _wishlist_response(user["id"])
 
 
-@api.post("/newsletter", status_code=201)
-async def newsletter(payload: NewsletterInput, user: dict[str, Any] | None = Depends(optional_user)):
-    await db.insert("newsletter_subscriptions", {"email": str(payload.email).lower(), "locale": payload.locale[:8],
-                    "user_id": user["id"] if user else None, "unsubscribed_at": None}, upsert=True, on_conflict="email")
-    return {"subscribed": True}
+@api.post("/newsletter", status_code=202)
+async def newsletter(payload: NewsletterInput, request: Request, user: dict[str, Any] | None = Depends(optional_user)):
+    if payload.website:
+        return {"pending": True, "already_subscribed": False}
+    _rate_limit(newsletter_attempts, f"{_client_key(request)}:{str(payload.email).lower()}", 4, 3600)
+    return await _start_newsletter_subscription(payload, user)
+
+
+@api.get("/newsletter/confirm")
+async def confirm_newsletter(token: str = Query(min_length=32, max_length=200)):
+    token_hash = hash_confirmation_token(token)
+    rows = await db.select("newsletter_subscribers", params={
+        "select": "id,status,confirmation_expires_at", "confirmation_token_hash": f"eq.{token_hash}", "limit": 1,
+    })
+    if not rows:
+        raise HTTPException(status_code=400, detail="Invalid newsletter confirmation link")
+    subscriber = rows[0]
+    if subscriber["status"] == "subscribed":
+        return {"confirmed": True, "already_confirmed": True}
+    expires = subscriber.get("confirmation_expires_at")
+    if not expires or datetime.fromisoformat(expires.replace("Z", "+00:00")) < datetime.now(timezone.utc):
+        raise HTTPException(status_code=410, detail="Newsletter confirmation link expired")
+    await db.update("newsletter_subscribers", {
+        "status": "subscribed", "confirmed_at": datetime.now(timezone.utc).isoformat(),
+        "unsubscribed_at": None, "confirmation_expires_at": None,
+    }, params={"id": f"eq.{subscriber['id']}", "status": "eq.pending"})
+    return {"confirmed": True, "already_confirmed": False}
+
+
+@api.get("/newsletter/unsubscribe")
+async def unsubscribe_newsletter(token: str = Query(min_length=32, max_length=1000)):
+    payload = verify_token(settings.email_token_secret, token, purpose="newsletter_unsubscribe")
+    if not payload or not payload.get("subscriber_id"):
+        raise HTTPException(status_code=400, detail="Invalid unsubscribe link")
+    await db.update("newsletter_subscribers", {
+        "status": "unsubscribed", "unsubscribed_at": datetime.now(timezone.utc).isoformat(),
+        "confirmation_token_hash": None, "confirmation_expires_at": None,
+    }, params={"id": f"eq.{payload['subscriber_id']}"})
+    return {"unsubscribed": True}
+
+
+@api.get("/me/email-preferences")
+async def email_preferences(user: dict[str, Any] = Depends(require_user)):
+    email = email_service.normalize_email(user.get("email") or "")
+    rows = await db.select("newsletter_subscribers", params={"select": "status", "email": f"eq.{email}", "limit": 1})
+    status = rows[0]["status"] if rows else "unsubscribed"
+    return {"newsletter": status == "subscribed", "status": status, "transactional": True}
+
+
+@api.patch("/me/email-preferences")
+async def update_email_preferences(payload: EmailPreferencesInput, request: Request,
+                                   user: dict[str, Any] = Depends(require_user)):
+    email = email_service.normalize_email(user.get("email") or "")
+    if payload.newsletter:
+        _rate_limit(newsletter_attempts, f"account:{user['id']}", 4, 3600)
+        result = await _start_newsletter_subscription(
+            NewsletterInput(email=email, locale="fr", consent_source="account"), user,
+        )
+        return {"newsletter": False, "status": "pending", **result, "transactional": True}
+    rows = await db.select("newsletter_subscribers", params={"select": "id", "email": f"eq.{email}", "limit": 1})
+    changes = {"status": "unsubscribed", "unsubscribed_at": datetime.now(timezone.utc).isoformat(),
+               "confirmation_token_hash": None, "confirmation_expires_at": None}
+    if rows:
+        await db.update("newsletter_subscribers", changes, params={"id": f"eq.{rows[0]['id']}"})
+    else:
+        await db.insert("newsletter_subscribers", {**changes, "email": email, "user_id": user["id"],
+            "locale": "fr", "consent_source": "account", "consent_at": datetime.now(timezone.utc).isoformat()})
+    return {"newsletter": False, "status": "unsubscribed", "transactional": True}
+
+
+@api.post("/auth/forgot-password", status_code=202)
+async def forgot_password(payload: AuthEmailInput, request: Request):
+    _rate_limit(auth_email_attempts, f"forgot:{_client_key(request)}:{str(payload.email).lower()}", 4, 3600)
+    await db.send_password_recovery(str(payload.email).lower(), f"{settings.frontend_url}/reset-password")
+    return {"accepted": True}
+
+
+@api.post("/auth/resend-confirmation", status_code=202)
+async def resend_confirmation(payload: AuthEmailInput, request: Request):
+    _rate_limit(auth_email_attempts, f"resend:{_client_key(request)}:{str(payload.email).lower()}", 4, 3600)
+    await db.resend_signup_confirmation(str(payload.email).lower(), f"{settings.frontend_url}/auth/confirm")
+    return {"accepted": True}
+
+
+@api.post("/auth/welcome", status_code=202)
+async def send_welcome(payload: WelcomeEmailInput, user: dict[str, Any] = Depends(require_user)):
+    if not user.get("email_confirmed_at"):
+        raise HTTPException(status_code=409, detail="Email confirmation required")
+    recipient = email_service.normalize_email(user.get("email") or "")
+    first_name = payload.first_name or (user.get("user_metadata") or {}).get("full_name")
+    first_name = first_name.strip().split()[0] if isinstance(first_name, str) and first_name.strip() else None
+    result = await email_service.send(recipient=recipient, email_type="welcome",
+        content=welcome(first_name, f"{settings.frontend_url}/account"), idempotency_key=f"welcome:{user['id']}",
+        user_id=user["id"])
+    return {"accepted": True, "delivery": result["status"]}
 
 
 @api.post("/contact", status_code=201)
@@ -495,12 +634,86 @@ async def admin_orders(limit: int = Query(default=25, ge=1, le=100), page: int =
     return await db.page("orders", params=params, page=page, limit=limit)
 
 
+@api.get("/admin/email-center")
+async def admin_email_center(admin: dict[str, Any] = Depends(require_admin)):
+    async def count(table: str, params: dict[str, Any]) -> int:
+        return (await db.page(table, params={"select": "id", **params}, page=1, limit=1))["total"]
+    return {
+        "newsletter": {
+            status: await count("newsletter_subscribers", {"status": f"eq.{status}"})
+            for status in ("subscribed", "pending", "unsubscribed")
+        },
+        "emails": {
+            status: await count("email_logs", {"status": f"eq.{status}"})
+            for status in ("sent", "queued", "failed")
+        },
+        "recent": await db.select("email_logs", params={
+            "select": "id,order_id,recipient,email_type,status,error_message,sent_at,created_at",
+            "order": "created_at.desc", "limit": 25,
+        }),
+    }
+
+
+@api.get("/admin/email-logs")
+async def admin_email_logs(page: int = Query(1, ge=1), limit: int = Query(25, ge=1, le=100),
+                           status: str = Query("", pattern="^(|queued|sent|failed)$"),
+                           admin: dict[str, Any] = Depends(require_admin)):
+    params = {"select": "*", "order": "created_at.desc,id.desc"}
+    if status:
+        params["status"] = f"eq.{status}"
+    return await db.page("email_logs", params=params, page=page, limit=limit)
+
+
+@api.get("/admin/newsletter-subscribers")
+async def admin_newsletter_subscribers(page: int = Query(1, ge=1), limit: int = Query(25, ge=1, le=100),
+                                       status: str = Query("", pattern="^(|pending|subscribed|unsubscribed)$"),
+                                       admin: dict[str, Any] = Depends(require_admin)):
+    params = {"select": "id,email,status,consent_source,consent_at,confirmed_at,unsubscribed_at,created_at",
+              "order": "created_at.desc,id.desc"}
+    if status:
+        params["status"] = f"eq.{status}"
+    return await db.page("newsletter_subscribers", params=params, page=page, limit=limit)
+
+
+@api.post("/admin/email-logs/{log_id}/retry", status_code=202)
+async def retry_email(log_id: str, admin: dict[str, Any] = Depends(require_admin)):
+    try:
+        log_id = str(uuid.UUID(log_id))
+    except ValueError:
+        raise HTTPException(422, "Invalid email log ID")
+    rows = await db.select("email_logs", params={"select": "*", "id": f"eq.{log_id}", "limit": 1})
+    allowed = {"order_confirmation", "payment_confirmed", "order_processing", "order_shipped",
+               "order_delivered", "order_cancelled", "refund_confirmed"}
+    if not rows or rows[0].get("status") not in {"failed", "queued"} or rows[0].get("email_type") not in allowed or not rows[0].get("order_id"):
+        raise HTTPException(409, "Email is not retryable")
+    if rows[0]["status"] == "queued":
+        created = datetime.fromisoformat(rows[0]["created_at"].replace("Z", "+00:00"))
+        if created > datetime.now(timezone.utc) - timedelta(minutes=5):
+            raise HTTPException(409, "Email delivery is still in progress")
+    amount = (rows[0].get("metadata") or {}).get("amount_cents")
+    result = await _send_order_email(rows[0]["email_type"], rows[0]["order_id"], amount_cents=amount, retry_log_id=log_id)
+    await _audit(admin, "email.retry", log_id, {"order_id": rows[0]["order_id"], "email_type": rows[0]["email_type"]})
+    return {"accepted": bool(result), "delivery": result["status"] if result else "failed"}
+
+
 @api.put("/admin/orders/{order_id}")
 async def update_order(order_id: str, payload: AdminOrderUpdateInput, admin: dict[str, Any] = Depends(require_admin)):
     try: order_id = str(uuid.UUID(order_id))
     except ValueError: raise HTTPException(422, "Invalid order ID")
-    return await db.rpc("admin_update_order", {"p_actor": admin["id"], "p_id": order_id, "p_status": payload.fulfillment_status,
+    before_rows = await db.select("orders", params={"select": "fulfillment_status", "id": f"eq.{order_id}", "limit": 1})
+    if not before_rows:
+        raise HTTPException(404, "Commande introuvable")
+    result = await db.rpc("admin_update_order", {"p_actor": admin["id"], "p_id": order_id, "p_status": payload.fulfillment_status,
         "p_tracking": payload.tracking_number, "p_expected": payload.expected_updated_at})
+    await db.update("orders", {"carrier": payload.carrier, "tracking_url": payload.tracking_url}, params={"id": f"eq.{order_id}"})
+    if before_rows[0]["fulfillment_status"] != payload.fulfillment_status:
+        email_kind = {
+            "processing": "order_processing", "shipped": "order_shipped",
+            "delivered": "order_delivered", "cancelled": "order_cancelled",
+        }.get(payload.fulfillment_status)
+        if email_kind:
+            await _send_order_email(email_kind, order_id)
+    return result
 
 
 @api.post("/create-checkout-session")
@@ -563,6 +776,8 @@ async def create_checkout_session(request: Request, promotion_code: str | None =
         await db.update("orders", {"status": "payment_failed", "payment_status": "failed"}, params={"id": f"eq.{order['id']}"})
         logger.exception("Stripe Checkout creation failed"); raise HTTPException(status_code=502, detail="Unable to create secure checkout")
     await db.update("orders", {"stripe_session_id": session.id}, params={"id": f"eq.{order['id']}"})
+    if order_payload.get("customer_email"):
+        await _send_order_email("order_confirmation", order["id"])
     return {"url": session.url, "order_reference": order["order_number"]}
 
 
@@ -597,7 +812,7 @@ async def _complete_checkout_payment(obj: Any) -> str | None:
     if not order_id:
         return None
     order_rows = await db.select("orders", params={
-        "select": "id,total_cents,currency,stripe_session_id", "id": f"eq.{order_id}", "limit": 1,
+        "select": "id,total_cents,currency,stripe_session_id,customer_email", "id": f"eq.{order_id}", "limit": 1,
     })
     if not order_rows:
         raise RuntimeError("Stripe event references an unknown order")
@@ -619,9 +834,12 @@ async def _complete_checkout_payment(obj: Any) -> str | None:
         "p_shipping_address": _address(shipping.get("address")), "p_billing_address": _address(customer.get("address"))})
     if completed is not True:
         raise RuntimeError("Order completion transaction was not applied")
-    orders = await db.select("orders", params={"select": "user_id", "id": f"eq.{order_id}", "limit": 1})
+    orders = await db.select("orders", params={"select": "user_id,customer_email", "id": f"eq.{order_id}", "limit": 1})
     if orders and orders[0].get("user_id") and obj.get("customer"):
         await db.update("profiles", {"stripe_customer_id": obj.get("customer")}, params={"id": f"eq.{orders[0]['user_id']}"})
+    if orders and not order_rows[0].get("customer_email"):
+        await _send_order_email("order_confirmation", order_id)
+    await _send_order_email("payment_confirmed", order_id)
     return order_id
 
 
@@ -661,12 +879,15 @@ async def stripe_webhook(request: Request, stripe_signature: str | None = Header
 async def _sync_refunds(payment_intent: str) -> None:
     if stripe_client is None:
         raise RuntimeError("Stripe client required to confirm refunds")
+    before = await db.select("orders", params={"select": "id,refunded_amount_cents", "stripe_payment_intent_id": f"eq.{payment_intent}", "limit": 1})
     refunds = await stripe_client.v1.refunds.list_async(params={"payment_intent": payment_intent, "limit": 100})
     succeeded = 0
     async for refund in refunds.auto_paging_iter():
         if refund.get("status") == "succeeded":
             succeeded += refund["amount"]
     await db.rpc("record_order_refund", {"p_payment_intent": payment_intent, "p_refunded": succeeded})
+    if before and succeeded > int(before[0].get("refunded_amount_cents") or 0):
+        await _send_order_email("refund_confirmed", before[0]["id"], amount_cents=succeeded)
 
 
 api.include_router(create_admin_router(

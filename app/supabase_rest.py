@@ -129,3 +129,24 @@ class SupabaseRest:
         if response.status_code >= 400:
             raise SupabaseError(response.status_code, self._detail(response))
         return response.json()
+
+    async def send_password_recovery(self, email: str, redirect_to: str) -> None:
+        response = await self.client.post(
+            f"{self.url}/auth/v1/recover",
+            params={"redirect_to": redirect_to},
+            json={"email": email},
+            headers={"apikey": self.publishable_key, "Content-Type": "application/json"},
+        )
+        # Keep the public response non-enumerating; only surface provider outages.
+        if response.status_code >= 500:
+            raise SupabaseError(response.status_code, self._detail(response))
+
+    async def resend_signup_confirmation(self, email: str, redirect_to: str) -> None:
+        response = await self.client.post(
+            f"{self.url}/auth/v1/resend",
+            params={"redirect_to": redirect_to},
+            json={"type": "signup", "email": email},
+            headers={"apikey": self.publishable_key, "Content-Type": "application/json"},
+        )
+        if response.status_code >= 500:
+            raise SupabaseError(response.status_code, self._detail(response))

@@ -164,8 +164,26 @@ class WishlistInput(BaseModel):
 
 
 class NewsletterInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     email: EmailStr
     locale: str = "fr"
+    consent_source: Literal["footer", "account", "checkout"] = "footer"
+    website: str = Field(default="", max_length=200)
+
+
+class EmailPreferencesInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    newsletter: bool
+
+
+class WelcomeEmailInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    first_name: str | None = Field(default=None, max_length=100)
+
+
+class AuthEmailInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    email: EmailStr
 
 
 class ContactInput(BaseModel):
@@ -181,6 +199,8 @@ class AdminOrderUpdateInput(BaseModel):
     expected_updated_at: str
     fulfillment_status: Literal["unfulfilled", "processing", "shipped", "delivered", "cancelled", "requires_review"]
     tracking_number: str | None = Field(default=None, max_length=200)
+    carrier: str | None = Field(default=None, max_length=100)
+    tracking_url: str | None = Field(default=None, max_length=1000, pattern=r"^https://")
 
 
 class ProfileUpdateInput(BaseModel):
