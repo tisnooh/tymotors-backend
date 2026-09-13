@@ -27,7 +27,7 @@ class Settings:
     cloudinary_api_key: str
     cloudinary_api_secret: str
     email_enabled: bool = False
-    email_provider: str = "smtp"
+    email_provider: str = "brevo"
     email_from_address: str = "tyachatfr@gmail.com"
     email_from_name: str = "TYMotors"
     email_reply_to: str = "tyachatfr@gmail.com"
@@ -96,13 +96,16 @@ def get_settings() -> Settings:
         cloudinary_api_key=os.getenv("CLOUDINARY_API_KEY", ""),
         cloudinary_api_secret=os.getenv("CLOUDINARY_API_SECRET", ""),
         email_enabled=os.getenv("EMAIL_ENABLED", "false").lower() in {"1", "true", "yes"},
-        email_provider=os.getenv("EMAIL_PROVIDER", "smtp").strip().lower(),
+        email_provider=(os.getenv("EMAIL_PROVIDER") or "brevo").strip().lower(),
         email_from_address=os.getenv("EMAIL_FROM_ADDRESS", "tyachatfr@gmail.com").strip(),
         email_from_name=os.getenv("EMAIL_FROM_NAME", "TYMotors").strip(),
         email_reply_to=os.getenv("EMAIL_REPLY_TO", "tyachatfr@gmail.com").strip(),
         email_token_secret=os.getenv("EMAIL_TOKEN_SECRET", ""),
         brevo_api_key=os.getenv("BREVO_API_KEY", ""),
-        brevo_api_url=os.getenv("BREVO_API_URL", "https://api.brevo.com/v3/smtp/email").strip(),
+        brevo_api_url=(
+            os.getenv("BREVO_API_URL")
+            or "https://api.brevo.com/v3/smtp/email"
+        ).strip(),
         smtp_host=os.getenv("SMTP_HOST", "smtp.gmail.com").strip(),
         smtp_port=int(os.getenv("SMTP_PORT", "587")),
         smtp_username=os.getenv("SMTP_USERNAME", "").strip(),

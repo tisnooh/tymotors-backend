@@ -1,7 +1,7 @@
 import asyncio
 from pathlib import Path
 
-from app.config import Settings
+from app.config import Settings, get_settings
 from app.services.email_service import EmailService
 from app.services.email_templates import EmailContent, order_event, welcome
 from app.services.email_tokens import new_confirmation_token, sign_token, verify_token
@@ -79,6 +79,18 @@ def test_brevo_configuration_requires_an_api_key():
         assert False, "validation should reject a missing Brevo API key"
     except RuntimeError as error:
         assert "BREVO_API_KEY" in str(error)
+
+
+def test_blank_render_email_variables_fall_back_to_brevo(monkeypatch):
+    monkeypatch.setenv("EMAIL_PROVIDER", "")
+    monkeypatch.setenv("BREVO_API_URL", "")
+    get_settings.cache_clear()
+
+    loaded = get_settings()
+
+    assert loaded.email_provider == "brevo"
+    assert loaded.brevo_api_url == "https://api.brevo.com/v3/smtp/email"
+    get_settings.cache_clear()
 
 
 def test_brevo_transport_sends_html_and_text(monkeypatch):
