@@ -31,8 +31,6 @@ html,body{{margin:0!important;padding:0!important;width:100%!important;backgroun
 table,td{{border-collapse:collapse!important}}img{{border:0;display:block}}a{{text-decoration:none}}
 .ty-dark{{background-color:#050608!important;background-image:linear-gradient(#050608,#050608)!important}}
 .ty-card{{background-color:#0A0B0E!important;background-image:linear-gradient(#0A0B0E,#0A0B0E)!important}}
-u + .body .gmail-screen{{background:#000;mix-blend-mode:screen}}
-u + .body .gmail-difference{{background:#000;mix-blend-mode:difference}}
 @media (prefers-color-scheme:dark){{.ty-dark{{background:#050608!important}}.ty-card{{background:#0A0B0E!important}}}}
 @media only screen and (max-width:480px){{.ty-shell{{padding:16px 12px!important}}.ty-header{{padding:24px 22px 20px!important}}.ty-main{{padding:30px 22px!important}}.ty-footer{{padding:20px 22px!important}}.ty-title{{font-size:28px!important;line-height:1.12!important}}}}
 </style></head>
@@ -40,18 +38,17 @@ u + .body .gmail-difference{{background:#000;mix-blend-mode:difference}}
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" bgcolor="#050608" class="ty-dark" style="width:100%;background:#050608;background-image:linear-gradient(#050608,#050608)"><tr><td align="center" class="ty-shell" style="padding:32px 14px">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" bgcolor="#0A0B0E" class="ty-card" style="width:100%;max-width:620px;background:#0A0B0E;background-image:linear-gradient(#0A0B0E,#0A0B0E);border:1px solid #232B3A;border-top:3px solid #E10600;border-radius:12px">
 <tr><td class="ty-header" style="padding:30px 32px 24px;border-bottom:1px solid #151A23">
-<div class="gmail-screen"><div class="gmail-difference"><div style="color:#FFFFFF;font:800 22px/1 Arial,sans-serif;letter-spacing:5px">TY<span style="color:#E10600;font-size:15px;vertical-align:top">●</span><span style="color:#C7CDD6">MOTORS</span></div>
-<div style="margin-top:12px;color:#8E97A6;font:10px/1.4 'Courier New',monospace;letter-spacing:2.4px;text-transform:uppercase">Automotive performance&nbsp;&nbsp;//&nbsp;&nbsp;2026</div></div></div>
+<div style="color:#FFFFFF;font:800 22px/1 Arial,sans-serif;letter-spacing:5px">TY<span style="color:#E10600;font-size:15px;vertical-align:top">●</span><span style="color:#C7CDD6">MOTORS</span></div>
+<div style="margin-top:12px;color:#8E97A6;font:10px/1.4 'Courier New',monospace;letter-spacing:2.4px;text-transform:uppercase">Automotive performance&nbsp;&nbsp;//&nbsp;&nbsp;2026</div>
 </td></tr>
 <tr><td class="ty-main" style="padding:38px 32px 40px">
-<div class="gmail-screen"><div class="gmail-difference">
 <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 20px"><tr><td width="30" style="border-top:1px solid #F2C94C;font-size:1px;line-height:1px">&nbsp;</td><td style="padding-left:12px;color:#F2C94C;font:700 10px/1.2 'Courier New',monospace;letter-spacing:2.4px;text-transform:uppercase">Message TYMotors</td></tr></table>
 <h1 class="ty-title" style="margin:0 0 24px;color:#FFFFFF;font:800 34px/1.12 Arial,sans-serif;letter-spacing:-0.8px">{escape(title)}</h1>
 <div style="height:1px;background:#232B3A;background-image:linear-gradient(90deg,#E10600 0,#E10600 54px,#232B3A 54px,#232B3A 100%);margin:0 0 26px">&nbsp;</div>
 {body_html}
-</div></div></td></tr>
+</td></tr>
 <tr><td class="ty-footer" style="padding:22px 32px;border-top:1px solid #151A23;color:#8E97A6;font:12px/1.6 Arial,sans-serif">
-<div class="gmail-screen"><div class="gmail-difference"><strong style="color:#C7CDD6;letter-spacing:0.5px">TYMOTORS</strong>&nbsp;&nbsp;·&nbsp;&nbsp;Pièces et accessoires automobiles.{footer_html}<br><span style="color:#596273">Performance. Style. Technologie.</span></div></div>
+<strong style="color:#C7CDD6;letter-spacing:0.5px">TYMOTORS</strong>&nbsp;&nbsp;·&nbsp;&nbsp;Pièces et accessoires automobiles.{footer_html}<br><span style="color:#596273">Performance. Style. Technologie.</span>
 </td></tr>
 </table></td></tr></table></body></html>"""
     return html, f"TYMOTORS\n\n{title}\n\n{body_text}\n\nTYMotors · Pièces et accessoires automobiles."

@@ -162,11 +162,12 @@ def test_email_layout_matches_the_dark_tymotors_identity_and_resists_gmail_inver
     content = welcome(None, "https://example.com/account")
 
     assert 'content="dark only"' in content.html
-    assert "gmail-difference" in content.html
+    assert "gmail-difference" not in content.html
     assert "#050608" in content.html
     assert "#0A0B0E" in content.html
     assert "#E10600" in content.html
     assert "#F2C94C" in content.html
+    assert "mix-blend-mode" not in content.html
     assert "Automotive performance" in content.html
 
 
