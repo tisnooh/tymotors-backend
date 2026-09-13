@@ -112,10 +112,9 @@ def get_settings() -> Settings:
         email_reply_to=os.getenv("EMAIL_REPLY_TO", "tyachatfr@gmail.com").strip(),
         email_token_secret=os.getenv("EMAIL_TOKEN_SECRET", ""),
         brevo_api_key=os.getenv("BREVO_API_KEY", ""),
-        brevo_api_url=(
-            os.getenv("BREVO_API_URL")
-            or "https://api.brevo.com/v3/smtp/email"
-        ).strip(),
+        # Pin the provider endpoint so a stale or mistyped environment value
+        # cannot redirect credentials or prevent the service from starting.
+        brevo_api_url="https://api.brevo.com/v3/smtp/email",
         smtp_host=os.getenv("SMTP_HOST", "smtp.gmail.com").strip(),
         smtp_port=int(os.getenv("SMTP_PORT", "587")),
         smtp_username=os.getenv("SMTP_USERNAME", "").strip(),

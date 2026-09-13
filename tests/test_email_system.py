@@ -93,6 +93,16 @@ def test_blank_render_email_variables_fall_back_to_brevo(monkeypatch):
     get_settings.cache_clear()
 
 
+def test_brevo_endpoint_is_pinned_when_render_value_is_invalid(monkeypatch):
+    monkeypatch.setenv("BREVO_API_URL", "https://invalid.example/email")
+    get_settings.cache_clear()
+
+    loaded = get_settings()
+
+    assert loaded.brevo_api_url == "https://api.brevo.com/v3/smtp/email"
+    get_settings.cache_clear()
+
+
 def test_brevo_key_overrides_stale_smtp_provider(monkeypatch):
     monkeypatch.setenv("EMAIL_PROVIDER", "smtp")
     monkeypatch.setenv("BREVO_API_KEY", "configured-brevo-key")
