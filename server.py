@@ -304,10 +304,10 @@ async def list_products(category: str | None = None, brand: str | None = None, m
     if q:
         term = q.strip().casefold(); products = [p for p in products if term in f"{p['name']} {p['subtitle']} {p['sku']}".casefold()]
     if brand: products = [p for p in products if brand in p["compatible_brands"] or any(c.get("brand_slug") == brand for c in p["compatibilities"])]
-    if model: products = [p for p in products if any((c.get("model") or "").casefold() == model.casefold() for c in p["compatibilities"])]
-    if chassis: products = [p for p in products if any(chassis.casefold() in {(c.get("chassis") or "").casefold(), (c.get("generation") or "").casefold()} for c in p["compatibilities"])]
-    if year is not None: products = [p for p in products if any((c.get("year_from") is None or year >= c["year_from"]) and (c.get("year_to") is None or year <= c["year_to"]) for c in p["compatibilities"])]
-    if body_type: products = [p for p in products if any(not c.get("body_types") or body_type.casefold() in {v.casefold() for v in c["body_types"]} for c in p["compatibilities"])]
+    if model: products = [p for p in products if p.get("status") != "active" or any((c.get("model") or "").casefold() == model.casefold() for c in p["compatibilities"])]
+    if chassis: products = [p for p in products if p.get("status") != "active" or any(chassis.casefold() in {(c.get("chassis") or "").casefold(), (c.get("generation") or "").casefold()} for c in p["compatibilities"])]
+    if year is not None: products = [p for p in products if p.get("status") != "active" or any((c.get("year_from") is None or year >= c["year_from"]) and (c.get("year_to") is None or year <= c["year_to"]) for c in p["compatibilities"])]
+    if body_type: products = [p for p in products if p.get("status") != "active" or any(not c.get("body_types") or body_type.casefold() in {v.casefold() for v in c["body_types"]} for c in p["compatibilities"])]
     if sort == "price_asc": products.sort(key=lambda p: p["price"])
     elif sort == "price_desc": products.sort(key=lambda p: p["price"], reverse=True)
     elif sort == "name": products.sort(key=lambda p: p["name"].casefold())
