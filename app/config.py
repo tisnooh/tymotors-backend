@@ -9,6 +9,16 @@ def _csv(name: str, default: str = "") -> list[str]:
     return [value.strip() for value in os.getenv(name, default).split(",") if value.strip()]
 
 
+def _email_provider() -> str:
+    configured = (os.getenv("EMAIL_PROVIDER") or "").strip().lower()
+    # Render's free tier blocks SMTP. A configured Brevo key is therefore the
+    # strongest signal that the HTTPS transport must be used, even when a
+    # stale EMAIL_PROVIDER=smtp value remains in the service environment.
+    if (os.getenv("BREVO_API_KEY") or "").strip():
+        return "brevo"
+    return configured or "brevo"
+
+
 @dataclass(frozen=True)
 class Settings:
     environment: str
@@ -96,7 +106,7 @@ def get_settings() -> Settings:
         cloudinary_api_key=os.getenv("CLOUDINARY_API_KEY", ""),
         cloudinary_api_secret=os.getenv("CLOUDINARY_API_SECRET", ""),
         email_enabled=os.getenv("EMAIL_ENABLED", "false").lower() in {"1", "true", "yes"},
-        email_provider=(os.getenv("EMAIL_PROVIDER") or "brevo").strip().lower(),
+        email_provider=_email_provider(),
         email_from_address=os.getenv("EMAIL_FROM_ADDRESS", "tyachatfr@gmail.com").strip(),
         email_from_name=os.getenv("EMAIL_FROM_NAME", "TYMotors").strip(),
         email_reply_to=os.getenv("EMAIL_REPLY_TO", "tyachatfr@gmail.com").strip(),

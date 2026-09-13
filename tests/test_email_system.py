@@ -93,6 +93,18 @@ def test_blank_render_email_variables_fall_back_to_brevo(monkeypatch):
     get_settings.cache_clear()
 
 
+def test_brevo_key_overrides_stale_smtp_provider(monkeypatch):
+    monkeypatch.setenv("EMAIL_PROVIDER", "smtp")
+    monkeypatch.setenv("BREVO_API_KEY", "configured-brevo-key")
+    get_settings.cache_clear()
+
+    loaded = get_settings()
+
+    assert loaded.email_provider == "brevo"
+    assert loaded.brevo_api_key == "configured-brevo-key"
+    get_settings.cache_clear()
+
+
 def test_brevo_transport_sends_html_and_text(monkeypatch):
     captured = {}
 
