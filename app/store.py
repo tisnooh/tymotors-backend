@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Any, Iterable
@@ -132,16 +133,20 @@ class CatalogStore:
             return []
         ids = [row["id"] for row in rows]
         category_ids = {row["category_id"] for row in rows}
-        categories = await self.db.select("categories", params={"select": "id,slug,name", "id": _in(category_ids)})
+        categories, images, compatibility_rows = await asyncio.gather(
+            self.db.select("categories", params={"select": "id,slug,name", "id": _in(category_ids)}),
+            self.db.select("product_images", params={"select": "*", "product_id": _in(ids), "order": "display_order.asc"}),
+            self.db.select("product_compatibilities", params={"select": "*", "product_id": _in(ids)}),
+        )
         cat_by_id = {row["id"]: row for row in categories}
-        images = await self.db.select("product_images", params={"select": "*", "product_id": _in(ids), "order": "display_order.asc"})
-        compatibility_rows = await self.db.select("product_compatibilities", params={"select": "*", "product_id": _in(ids)})
         brand_ids = {row["brand_id"] for row in compatibility_rows}
         model_ids = {row["vehicle_model_id"] for row in compatibility_rows if row.get("vehicle_model_id")}
         generation_ids = {row["generation_id"] for row in compatibility_rows if row.get("generation_id")}
-        brands = await self.db.select("brands", params={"select": "id,slug,name", "id": _in(brand_ids)}) if brand_ids else []
-        models = await self.db.select("vehicle_models", params={"select": "id,name", "id": _in(model_ids)}) if model_ids else []
-        generations = await self.db.select("vehicle_generations", params={"select": "id,name", "id": _in(generation_ids)}) if generation_ids else []
+        brands, models, generations = await asyncio.gather(
+            self.db.select("brands", params={"select": "id,slug,name", "id": _in(brand_ids)}) if brand_ids else asyncio.sleep(0, result=[]),
+            self.db.select("vehicle_models", params={"select": "id,name", "id": _in(model_ids)}) if model_ids else asyncio.sleep(0, result=[]),
+            self.db.select("vehicle_generations", params={"select": "id,name", "id": _in(generation_ids)}) if generation_ids else asyncio.sleep(0, result=[]),
+        )
         brand_by_id = {row["id"]: row for row in brands}
         model_by_id = {row["id"]: row for row in models}
         gen_by_id = {row["id"]: row for row in generations}
