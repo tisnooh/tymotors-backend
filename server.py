@@ -292,9 +292,12 @@ async def list_products(category: str | None = None, brand: str | None = None, m
                         chassis: str | None = None, year: int | None = Query(default=None, ge=1950, le=2100),
                         body_type: str | None = None, q: str | None = Query(default=None, max_length=120),
                         featured: bool | None = None,
+                        preview: bool = False,
                         sort: str = Query(default="newest", pattern="^(relevance|newest|price_asc|price_desc|name)$"),
                         page: int = Query(default=1, ge=1), limit: int = Query(default=24, ge=1, le=100)):
-    products = await catalog.hydrate_products(await catalog.product_rows())
+    products = await catalog.hydrate_products(await catalog.product_rows(public_only=not preview))
+    if preview:
+        products = [product for product in products if product.get("status") != "archived"]
     category = {"performance": "exterior", "technology": "multimedia-technology"}.get(category, category)
     if category: products = [p for p in products if p["category_slug"] == category]
     if featured is not None: products = [p for p in products if p["featured"] is featured]
@@ -314,8 +317,10 @@ async def list_products(category: str | None = None, brand: str | None = None, m
 
 
 @api.get("/products/{slug}")
-async def get_product(slug: str):
-    product = await catalog.product_by("slug", slug)
+async def get_product(slug: str, preview: bool = False):
+    product = await catalog.product_by("slug", slug, public_only=not preview)
+    if product and product.get("status") == "archived":
+        product = None
     if not product: raise HTTPException(status_code=404, detail="Product not found")
     return product
 
