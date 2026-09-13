@@ -158,6 +158,18 @@ def test_templates_escape_user_and_order_content():
     assert "&lt;img onerror" in content.html
 
 
+def test_email_layout_matches_the_dark_tymotors_identity_and_resists_gmail_inversion():
+    content = welcome(None, "https://example.com/account")
+
+    assert 'content="dark only"' in content.html
+    assert "gmail-difference" in content.html
+    assert "#050608" in content.html
+    assert "#0A0B0E" in content.html
+    assert "#E10600" in content.html
+    assert "#F2C94C" in content.html
+    assert "Automotive performance" in content.html
+
+
 def test_email_migration_enables_rls_and_unique_idempotency():
     sql = (Path(__file__).parents[1] / "supabase" / "migrations" / "20260912165642_complete_email_system.sql").read_text(encoding="utf-8")
     assert "newsletter_subscribers_email_normalized_idx" in sql

@@ -15,21 +15,44 @@ class EmailContent:
 
 def _button(label: str, url: str) -> str:
     return (
-        f'<a href="{escape(url, quote=True)}" style="display:inline-block;background:#e10600;color:#fff;'
-        'font:700 13px Arial,sans-serif;letter-spacing:1.6px;text-decoration:none;padding:15px 22px;'
-        f'border-radius:4px">{escape(label)}</a>'
+        f'<a href="{escape(url, quote=True)}" style="display:block;background:#E10600;'
+        'background-image:linear-gradient(#E10600,#E10600);color:#FFFFFF;font:800 12px/1.25 Arial,sans-serif;'
+        'letter-spacing:1.35px;text-align:center;text-decoration:none;text-transform:uppercase;'
+        f'padding:17px 18px;border:1px solid #FF1A12;border-radius:8px">{escape(label)}&nbsp;&nbsp;→</a>'
     )
 
 
 def _layout(title: str, body_html: str, body_text: str, *, footer_html: str = "") -> tuple[str, str]:
     html = f"""<!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head>
-<body style="margin:0;background:#050608;color:#fff;font-family:Arial,sans-serif">
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#050608"><tr><td align="center" style="padding:24px 12px">
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#0d1015;border:1px solid #242936">
-<tr><td style="padding:28px 30px;border-bottom:2px solid #e10600;font:700 22px Arial,sans-serif;letter-spacing:5px">TY<span style="color:#f2c94c">MOTORS</span></td></tr>
-<tr><td style="padding:34px 30px"><h1 style="margin:0 0 20px;font:700 30px/1.2 Arial,sans-serif;color:#fff">{escape(title)}</h1>{body_html}</td></tr>
-<tr><td style="padding:22px 30px;border-top:1px solid #242936;color:#8e94a3;font:12px/1.6 Arial,sans-serif">TYMotors · Pièces et accessoires automobiles.{footer_html}</td></tr>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<meta name="color-scheme" content="dark only"><meta name="supported-color-schemes" content="dark only">
+<style>
+html,body{{margin:0!important;padding:0!important;width:100%!important;background:#050608!important;color-scheme:dark only!important}}
+table,td{{border-collapse:collapse!important}}img{{border:0;display:block}}a{{text-decoration:none}}
+.ty-dark{{background-color:#050608!important;background-image:linear-gradient(#050608,#050608)!important}}
+.ty-card{{background-color:#0A0B0E!important;background-image:linear-gradient(#0A0B0E,#0A0B0E)!important}}
+u + .body .gmail-screen{{background:#000;mix-blend-mode:screen}}
+u + .body .gmail-difference{{background:#000;mix-blend-mode:difference}}
+@media (prefers-color-scheme:dark){{.ty-dark{{background:#050608!important}}.ty-card{{background:#0A0B0E!important}}}}
+@media only screen and (max-width:480px){{.ty-shell{{padding:16px 12px!important}}.ty-header{{padding:24px 22px 20px!important}}.ty-main{{padding:30px 22px!important}}.ty-footer{{padding:20px 22px!important}}.ty-title{{font-size:28px!important;line-height:1.12!important}}}}
+</style></head>
+<body class="body ty-dark" bgcolor="#050608" style="margin:0;background:#050608;background-image:linear-gradient(#050608,#050608);color:#FFFFFF;font-family:Arial,sans-serif;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" bgcolor="#050608" class="ty-dark" style="width:100%;background:#050608;background-image:linear-gradient(#050608,#050608)"><tr><td align="center" class="ty-shell" style="padding:32px 14px">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" bgcolor="#0A0B0E" class="ty-card" style="width:100%;max-width:620px;background:#0A0B0E;background-image:linear-gradient(#0A0B0E,#0A0B0E);border:1px solid #232B3A;border-top:3px solid #E10600;border-radius:12px">
+<tr><td class="ty-header" style="padding:30px 32px 24px;border-bottom:1px solid #151A23">
+<div class="gmail-screen"><div class="gmail-difference"><div style="color:#FFFFFF;font:800 22px/1 Arial,sans-serif;letter-spacing:5px">TY<span style="color:#E10600;font-size:15px;vertical-align:top">●</span><span style="color:#C7CDD6">MOTORS</span></div>
+<div style="margin-top:12px;color:#8E97A6;font:10px/1.4 'Courier New',monospace;letter-spacing:2.4px;text-transform:uppercase">Automotive performance&nbsp;&nbsp;//&nbsp;&nbsp;2026</div></div></div>
+</td></tr>
+<tr><td class="ty-main" style="padding:38px 32px 40px">
+<div class="gmail-screen"><div class="gmail-difference">
+<table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 20px"><tr><td width="30" style="border-top:1px solid #F2C94C;font-size:1px;line-height:1px">&nbsp;</td><td style="padding-left:12px;color:#F2C94C;font:700 10px/1.2 'Courier New',monospace;letter-spacing:2.4px;text-transform:uppercase">Message TYMotors</td></tr></table>
+<h1 class="ty-title" style="margin:0 0 24px;color:#FFFFFF;font:800 34px/1.12 Arial,sans-serif;letter-spacing:-0.8px">{escape(title)}</h1>
+<div style="height:1px;background:#232B3A;background-image:linear-gradient(90deg,#E10600 0,#E10600 54px,#232B3A 54px,#232B3A 100%);margin:0 0 26px">&nbsp;</div>
+{body_html}
+</div></div></td></tr>
+<tr><td class="ty-footer" style="padding:22px 32px;border-top:1px solid #151A23;color:#8E97A6;font:12px/1.6 Arial,sans-serif">
+<div class="gmail-screen"><div class="gmail-difference"><strong style="color:#C7CDD6;letter-spacing:0.5px">TYMOTORS</strong>&nbsp;&nbsp;·&nbsp;&nbsp;Pièces et accessoires automobiles.{footer_html}<br><span style="color:#596273">Performance. Style. Technologie.</span></div></div>
+</td></tr>
 </table></td></tr></table></body></html>"""
     return html, f"TYMOTORS\n\n{title}\n\n{body_text}\n\nTYMotors · Pièces et accessoires automobiles."
 
