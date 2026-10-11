@@ -27,7 +27,7 @@ from app.admin import create_admin_router, search_filter, product_input_data
 from app.config import Settings, get_settings
 from app.schemas import (
     AdminOrderUpdateInput, AuthEmailInput, CartItemInput, CartUpdateInput, ContactInput,
-    EmailPreferencesInput, NewsletterInput, ProductInput, ProductUpdateInput, ProfileUpdateInput,
+    EmailPreferencesInput, NewsletterInput, OrderTrackingLookupInput, ProductInput, ProductUpdateInput, ProfileUpdateInput,
     VehicleSelection, WelcomeEmailInput, WishlistInput,
 )
 from app.services.email_service import EmailService
@@ -50,6 +50,7 @@ checkout_attempts: dict[str, list[float]] = {}
 contact_attempts: dict[str, list[float]] = {}
 newsletter_attempts: dict[str, list[float]] = {}
 auth_email_attempts: dict[str, list[float]] = {}
+tracking_attempts: dict[str, list[float]] = {}
 email_service = EmailService(settings, db)
 
 
@@ -625,7 +626,28 @@ async def _orders_with_items(orders: list[dict[str, Any]]) -> list[dict[str, Any
         grouped.setdefault(item["order_id"], []).append({"product_id": item.get("product_id"), "name": item["product_name"],
             "slug": item["product_slug"], "sku": item["sku"], "quantity": item["quantity"], "unit_amount": item["unit_amount_cents"],
             "image": item.get("image_url"), "selected_vehicle": item.get("selected_vehicle"), "compatibility_result": item.get("compatibility_result")})
-    return [{**order, "items": grouped.get(order["id"], [])} for order in orders]
+    events = await db.select("order_tracking_events", params={"select": "*", "order_id": "in.(" + ",".join(ids) + ")", "order": "occurred_at.asc,id.asc"})
+    grouped_events: dict[str, list[dict[str, Any]]] = {}
+    for event in events:
+        if event.get("is_customer_visible"):
+            grouped_events.setdefault(event["order_id"], []).append(event)
+    return [{**order, "items": grouped.get(order["id"], []), "tracking_events": grouped_events.get(order["id"], [])} for order in orders]
+
+
+@api.post("/order-tracking")
+async def order_tracking(payload: OrderTrackingLookupInput, request: Request):
+    _rate_limit(tracking_attempts, _client_key(request), 10, 300)
+    rows = await db.select("orders", params={
+        "select": "id,order_number,customer_email,payment_status,fulfillment_status,carrier,tracking_number,tracking_url,created_at,paid_at,shipped_at,delivered_at",
+        "order_number": f"eq.{payload.order_number.upper()}",
+        "limit": 1,
+    })
+    if not rows or (rows[0].get("customer_email") or "").casefold() != str(payload.email).casefold():
+        raise HTTPException(status_code=404, detail="Commande introuvable avec ces informations")
+    order = rows[0]
+    order.pop("customer_email", None)
+    events = await db.select("order_tracking_events", params={"select": "*", "order_id": f"eq.{order['id']}", "order": "occurred_at.asc,id.asc"})
+    return {**order, "tracking_events": [event for event in events if event.get("is_customer_visible")]}
 
 
 @api.get("/admin/orders")

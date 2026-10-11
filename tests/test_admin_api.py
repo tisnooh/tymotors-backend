@@ -5,8 +5,8 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 import server
-from app.admin import PromotionInput, StockInput, product_input_data, search_filter
-from app.schemas import ProductInput, ProfileUpdateInput
+from app.admin import PromotionInput, StockInput, SupplierOrderInput, product_input_data, search_filter
+from app.schemas import OrderTrackingLookupInput, ProductInput, ProfileUpdateInput
 from tests.test_security_and_catalog import active_product_payload
 
 ADMIN = "10000000-0000-4000-8000-000000000001"
@@ -107,6 +107,48 @@ def test_promotion_dates_require_timezone_and_chronological_order():
 
 def test_inventory_payload_rejects_arbitrary_fields():
     with pytest.raises(ValidationError): StockInput(expected_stock=10, delta=1, reason="received", role="admin")
+
+
+def test_supplier_workflow_payload_is_strict_and_manual():
+    payload = SupplierOrderInput(expected_updated_at="2026-10-12T10:00:00Z", status="approved")
+    assert payload.agent_provider == "CJdropshipping"
+    with pytest.raises(ValidationError):
+        SupplierOrderInput(expected_updated_at="2026-10-12T10:00:00Z", status="auto_purchase")
+    with pytest.raises(ValidationError):
+        SupplierOrderInput(expected_updated_at="2026-10-12T10:00:00Z", status="approved", auto_pay=True)
+
+
+def test_tracking_lookup_requires_order_number_and_email():
+    assert OrderTrackingLookupInput(order_number="TY-20261012-ABC12345", email="client@example.com").email
+    with pytest.raises(ValidationError):
+        OrderTrackingLookupInput(order_number="ABC123", email="client@example.com")
+
+
+def test_public_tracking_returns_only_customer_visible_events(client, monkeypatch):
+    async def select(table, *, params=None):
+        if table == "orders":
+            return [{"id": ADMIN, "order_number": "TY-20261012-ABC12345", "customer_email": "client@example.com", "payment_status": "paid", "fulfillment_status": "processing"}]
+        if table == "order_tracking_events":
+            return [
+                {"id": "visible", "order_id": ADMIN, "title": "Paiement confirmé", "is_customer_visible": True},
+                {"id": "private", "order_id": ADMIN, "title": "Note interne", "is_customer_visible": False},
+            ]
+        return []
+    monkeypatch.setattr(server.db, "select", select)
+    response = client.post("/api/order-tracking", json={"order_number": "TY-20261012-ABC12345", "email": "client@example.com"})
+    assert response.status_code == 200
+    assert "customer_email" not in response.json()
+    assert [event["id"] for event in response.json()["tracking_events"]] == ["visible"]
+
+
+def test_public_tracking_rejects_a_different_email(client, monkeypatch):
+    async def select(table, *, params=None):
+        if table == "orders":
+            return [{"id": ADMIN, "order_number": "TY-20261012-ABC12345", "customer_email": "owner@example.com"}]
+        raise AssertionError("Tracking events must not be queried for an email mismatch")
+    monkeypatch.setattr(server.db, "select", select)
+    response = client.post("/api/order-tracking", json={"order_number": "TY-20261012-ABC12345", "email": "other@example.com"})
+    assert response.status_code == 404
 
 
 def test_upload_rejects_forged_webp(client):

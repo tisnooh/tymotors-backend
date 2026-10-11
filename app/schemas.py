@@ -203,6 +203,12 @@ class AdminOrderUpdateInput(BaseModel):
     tracking_url: str | None = Field(default=None, max_length=1000, pattern=r"^https://")
 
 
+class OrderTrackingLookupInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    order_number: str = Field(min_length=8, max_length=40, pattern=r"^TY-[A-Z0-9-]+$")
+    email: EmailStr
+
+
 class ProfileUpdateInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     full_name: str | None = Field(default=None, max_length=160)

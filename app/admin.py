@@ -45,6 +45,19 @@ class SettingsInput(StrictInput):
     currency: Literal["EUR"] = "EUR"
 
 
+class SupplierOrderInput(StrictInput):
+    expected_updated_at: AwareDatetime
+    status: Literal[
+        "pending_validation", "approved", "ordered", "received_by_agent",
+        "quality_control", "ready_to_ship", "requires_attention", "cancelled",
+    ]
+    alibaba_order_id: str | None = Field(default=None, max_length=200)
+    agent_order_id: str | None = Field(default=None, max_length=200)
+    agent_provider: str = Field(default="CJdropshipping", min_length=2, max_length=100)
+    agent_connection_status: Literal["not_connected", "onboarding", "connected"] = "not_connected"
+    notes: str | None = Field(default=None, max_length=2000)
+
+
 class PromotionInput(StrictInput):
     code: str = Field(pattern=r"^[A-Z0-9_-]{3,40}$")
     active: bool = False
@@ -104,12 +117,30 @@ def create_admin_router(db, catalog, require_admin, audit, stripe_test_mode: boo
             raise HTTPException(404, "Commande introuvable")
         payment_intent = rows[0].get("stripe_payment_intent_id")
         stripe_prefix = "https://dashboard.stripe.com/test/payments/" if stripe_test_mode else "https://dashboard.stripe.com/payments/"
+        supplier_rows = await db.select("supplier_orders", params={"order_id": f"eq.{order_id}", "limit": 1})
+        supplier_order = supplier_rows[0] if supplier_rows else None
+        if supplier_order:
+            supplier_order["items"] = await db.select(
+                "supplier_order_items",
+                params={"supplier_order_id": f"eq.{supplier_order['id']}", "order": "created_at.asc"},
+            )
         return {**rows[0],
                 "stripe_dashboard_url": stripe_prefix + payment_intent if payment_intent else None,
                 "items": await db.select("order_items", params={"order_id": f"eq.{order_id}", "order": "created_at.asc"}),
+                "supplier_order": supplier_order,
+                "tracking_events": await db.select("order_tracking_events", params={"order_id": f"eq.{order_id}", "order": "occurred_at.asc,id.asc"}),
                 "history": await db.select("admin_audit", params={"resource": f"eq.{order_id}", "order": "created_at.desc", "limit": 50}),
                 "emails": await db.select("email_logs", params={"order_id": f"eq.{order_id}", "order": "created_at.desc", "limit": 50}),
                 "returns": await db.select("returns", params={"order_id": f"eq.{order_id}", "order": "created_at.desc", "limit": 50})}
+
+    @router.put("/orders/{order_id}/supplier")
+    async def update_supplier_order(order_id: UUID, payload: SupplierOrderInput, admin=Depends(require_admin)):
+        return await db.rpc("admin_update_supplier_order", {
+            "p_actor": admin["id"], "p_order_id": str(order_id), "p_status": payload.status,
+            "p_alibaba_order_id": payload.alibaba_order_id, "p_agent_order_id": payload.agent_order_id,
+            "p_agent_provider": payload.agent_provider, "p_agent_connection_status": payload.agent_connection_status,
+            "p_notes": payload.notes, "p_expected": payload.expected_updated_at.isoformat(),
+        })
 
     @router.get("/inventory")
     async def inventory(page: int = Query(1, ge=1), limit: int = Query(25, ge=1, le=100),
