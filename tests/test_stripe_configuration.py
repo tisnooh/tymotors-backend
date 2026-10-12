@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import json
 import time
+from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
@@ -98,7 +99,7 @@ def test_real_sdk_recursively_converts_paid_checkout_data(monkeypatch, event_typ
         "type": event_type, "data": {"object": {"id": "cs_test_synthetic", "object": "checkout.session",
         "payment_status": "paid", "amount_total": 4900, "currency": "eur", "client_reference_id": order_id,
         "payment_intent": "pi_synthetic", "metadata": {"order_id": order_id},
-        "customer_details": {"email": "fixture@example.com", "name": "Client test", "address": {"country": "FR"}},
+        "customer_details": {"email": "fixture@example.com", "name": "Client test", "phone": "+33123456789", "address": {"country": "FR"}},
         "collected_information": {"shipping_details": {"address": {"country": "FR", "city": "Paris"}}}}}})
     response = TestClient(server.app).post("/api/stripe/webhook", content=payload, headers=headers)
     assert response.status_code == 200
@@ -108,6 +109,37 @@ def test_real_sdk_recursively_converts_paid_checkout_data(monkeypatch, event_typ
     assert rpc.call_args.args[1]["p_shipping_address"]["city"] == "Paris"
     assert rpc.call_args.args[1]["p_billing_address"]["country"] == "FR"
     email.assert_awaited_once_with("payment_confirmed", order_id)
+    assert any(call.args[0] == "orders" and call.args[1].get("customer_phone") == "+33123456789" for call in server.db.update.call_args_list)
+
+
+def test_checkout_uses_database_cents_and_separate_shipping(monkeypatch):
+    create = AsyncMock(return_value=SimpleNamespace(id="cs_test_fixture", url="https://checkout.stripe.com/test"))
+    monkeypatch.setattr(server, "stripe_client", SimpleNamespace(v1=SimpleNamespace(checkout=SimpleNamespace(sessions=SimpleNamespace(create_async=create)))))
+    monkeypatch.setattr(server, "settings", replace(server.settings, shipping_rate_cents=1500, free_shipping_threshold_cents=35000, shipping_countries=("FR",)))
+    monkeypatch.setattr(server, "_cart_for", AsyncMock(return_value={"id": "cart_fixture"}))
+    monkeypatch.setattr(server, "_cart_response", AsyncMock(return_value={"currency": "EUR", "items": [{
+        "id": "product_fixture", "slug": "fixture", "sku": "FIX", "name": "Test", "quantity": 2,
+        "status": "active", "stock": 5, "price": 0.01, "price_cents": 1999, "currency": "EUR", "images": [],
+    }]}))
+    monkeypatch.setattr(server.db, "insert", AsyncMock(side_effect=[[{"id": "order_fixture", "order_number": "TY-TEST"}], []]))
+    monkeypatch.setattr(server.db, "update", AsyncMock())
+    server.checkout_attempts.clear()
+    response = TestClient(server.app).post("/api/create-checkout-session", headers={"X-Session-Id": "guest_fixture"}, json={"price": 1})
+    assert response.status_code == 200
+    params = create.call_args.kwargs["params"]
+    assert params["line_items"][0]["price_data"]["unit_amount"] == 1999
+    assert params["line_items"][1]["price_data"]["unit_amount"] == 1500
+    assert params["line_items"][1]["price_data"]["product_data"]["name"] == "Livraison suivie"
+    assert params["shipping_address_collection"]["allowed_countries"] == ["FR"]
+    assert params["phone_number_collection"]["enabled"] is True
+    assert params["billing_address_collection"] == "required"
+    assert "payment_method_types" not in params
+
+
+def test_explicit_live_mode_requires_production_and_live_key():
+    with pytest.raises(RuntimeError, match="outside production"):
+        settings(email_enabled=False, stripe_mode="live", stripe_secret_key="sk_live_synthetic").validate()
+    settings(email_enabled=False, environment="production", stripe_mode="live", stripe_secret_key="sk_live_synthetic").validate()
 
 
 @pytest.mark.parametrize("livemode", [True, None])

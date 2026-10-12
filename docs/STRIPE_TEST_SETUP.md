@@ -14,11 +14,36 @@ Configurer dans le coffre de secrets / les variables privées Render du backend 
 
 Ne pas coller les clés dans le chat, Git, le frontend ou des captures d'écran. La création/entrée d'une nouvelle clé doit être effectuée par le propriétaire dans Stripe puis Render.
 
-Destination webhook test : `https://tymotors-backend-eu.onrender.com/api/stripe/webhook`.
+Destination webhook test : `<URL_BACKEND>/api/stripe/webhook` (URL de votre service Render, sans domaine imposé par le code).
 
 Événements : `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `payment_intent.payment_failed`, `charge.refunded`, `refund.created`, `refund.updated`, `refund.failed`.
 
 ## Validation de bout en bout
+
+### Recette locale sous PowerShell
+
+Configurer les variables privées du backend : `ENVIRONMENT=test`, `STRIPE_MODE=test`, `SITE_URL=http://localhost:3000`, `CORS_ORIGINS=http://localhost:3000`, une clé Stripe **test**, `SHIPPING_COUNTRIES=FR` et la base staging isolée. `SHIPPING_RATE_CENTS=1500`, `FREE_SHIPPING_THRESHOLD_CENTS=35000` sont des montants en centimes configurables.
+
+Installer la [Stripe CLI officielle](https://docs.stripe.com/stripe-cli), puis dans un terminal privé :
+
+```powershell
+stripe login
+stripe listen --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,checkout.session.expired,payment_intent.payment_failed,charge.refunded,refund.created,refund.updated,refund.failed --forward-to http://127.0.0.1:8000/api/stripe/webhook
+```
+
+Enregistrer le secret `whsec_…` annoncé par `listen` dans `STRIPE_WEBHOOK_SECRET` de l'environnement local privé, puis redémarrer le backend. Ne pas copier ce secret dans Git/chat/capture. Ce secret est distinct de celui du webhook Render.
+
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn server:app --host 127.0.0.1 --port 8000
+```
+
+Depuis le panier d'une **base de test uniquement**, payer avec `4242 4242 4242 4242`, date future, CVC `123`, adresse et téléphone de test. Une fixture isolée est nécessaire tant que les vrais produits ne sont pas validés. La page `/order-success` ne crée aucun paiement et ne confirme pas elle-même la commande : elle lit le résultat du webhook pendant 30 secondes, puis conserve le statut en attente.
+
+Vérifier le téléphone dans l'admin, les deux lignes Stripe (produits/livraison), la concordance des totaux, un seul mouvement de stock et le dossier fournisseur à validation manuelle. Rejouer l'événement signé avec `stripe events resend <EVENT_ID> --webhook-endpoint=<ENDPOINT_ID>` pour une destination distante de test. `stripe trigger checkout.session.completed` seul ne teste **pas** le panier TYMotors (pas de métadonnées de commande).
+
+Sources : [tests et carte 4242](https://docs.stripe.com/testing), [webhooks](https://docs.stripe.com/webhooks), [traitement après paiement](https://docs.stripe.com/checkout/fulfillment).
+
+La CLI Stripe n'est pas installée sur ce poste et le plugin demande une réauthentification. La recette avec un vrai Checkout sandbox reste **bloquée (action manuelle requise)** ; les tests signés du SDK et PostgreSQL restent exécutables sans secret.
 
 1. Utiliser un produit test actif, avec prix, stock, image, fournisseur et compatibilité vérifiés.
 2. Créer une session depuis un panier du site. Vérifier que Stripe affiche son mode test et les montants EUR corrects.

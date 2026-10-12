@@ -49,10 +49,12 @@ class Settings:
     smtp_username: str = ""
     smtp_password: str = ""
     smtp_use_tls: bool = True
+    stripe_mode: str = "test"
+    shipping_countries: tuple[str, ...] = ("FR", "BE", "DE", "ES", "IT", "LU", "NL", "PT")
 
     @property
     def stripe_test_mode(self) -> bool:
-        return self.stripe_secret_key.startswith(("sk_test_", "rk_test_"))
+        return self.stripe_mode == "test"
 
     def validate(self) -> None:
         if not self.supabase_url.startswith("https://") or ".supabase.co" not in self.supabase_url:
@@ -65,8 +67,14 @@ class Settings:
             raise RuntimeError("Publishable and service-role keys must be different")
         if "*" in self.cors_origins:
             raise RuntimeError("CORS_ORIGINS must not contain a wildcard")
-        if self.environment != "production" and self.stripe_secret_key and not self.stripe_test_mode:
+        if self.stripe_mode not in {"test", "live"}:
+            raise RuntimeError("STRIPE_MODE must be test or live")
+        if self.stripe_secret_key and self.stripe_mode == "test" and not self.stripe_secret_key.startswith(("sk_test_", "rk_test_")):
+            raise RuntimeError("A live Stripe key cannot be used in test mode")
+        if self.stripe_mode == "live" and (self.environment != "production" or not self.stripe_secret_key.startswith(("sk_live_", "rk_live_"))):
             raise RuntimeError("A live Stripe key cannot be used outside production")
+        if not self.shipping_countries or any(len(code) != 2 or not code.isalpha() or not code.isupper() for code in self.shipping_countries):
+            raise RuntimeError("SHIPPING_COUNTRIES must contain ISO two-letter country codes")
         if self.email_enabled:
             if not all((self.email_from_address, self.email_reply_to, self.email_token_secret)):
                 raise RuntimeError("Email delivery is enabled but its common configuration is incomplete")
@@ -98,7 +106,7 @@ def get_settings() -> Settings:
             os.getenv("SUPABASE_SECRET_KEY", "")
             or os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
         ),
-        frontend_url=os.getenv("FRONTEND_URL", "http://localhost:3000").rstrip("/"),
+        frontend_url=(os.getenv("SITE_URL") or os.getenv("FRONTEND_URL") or "http://localhost:3000").rstrip("/"),
         cors_origins=_csv("CORS_ORIGINS", "http://localhost:3000"),
         cors_origin_regex=os.getenv("CORS_ORIGIN_REGEX") or None,
         stripe_secret_key=os.getenv("STRIPE_SECRET_KEY", ""),
@@ -124,5 +132,7 @@ def get_settings() -> Settings:
         smtp_username=os.getenv("SMTP_USERNAME", "").strip(),
         smtp_password=os.getenv("SMTP_PASSWORD", ""),
         smtp_use_tls=os.getenv("SMTP_USE_TLS", "true").lower() in {"1", "true", "yes"},
+        stripe_mode=os.getenv("STRIPE_MODE", "test").strip().lower(),
+        shipping_countries=tuple(_csv("SHIPPING_COUNTRIES", "FR,BE,DE,ES,IT,LU,NL,PT")),
     )
     return settings

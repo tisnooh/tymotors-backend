@@ -22,6 +22,7 @@ await db.exec(await readFile(new URL('../supabase/migrations/20260912211934_emai
 await db.exec(await readFile(new URL('../supabase/migrations/20261011221114_supplier_fulfillment_workflow.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../supabase/migrations/20261011222034_supplier_fulfillment_indexes.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../supabase/migrations/20261012042643_supplier_link_refresh.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../supabase/migrations/20261012115851_checkout_customer_phone.sql',import.meta.url),'utf8'));
 let checks = 0;
 const one = async (sql,params=[]) => (await db.query(sql,params)).rows[0];
 async function rejects(sql,params,pattern) { await assert.rejects(db.query(sql,params),pattern); checks++; }

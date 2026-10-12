@@ -167,7 +167,7 @@ async def _cart_response(cart: dict[str, Any] | None) -> dict[str, Any]:
         product = by_id.get(row["product_id"])
         if not product: continue
         quantity = row["quantity"]
-        unit_amount_cents = round(product["price"] * 100)
+        unit_amount_cents = product["price_cents"]
         line_total_cents = unit_amount_cents * quantity
         subtotal_cents += line_total_cents
         selected_vehicle = row.get("selected_vehicle")
@@ -761,7 +761,8 @@ async def create_checkout_session(request: Request, promotion_code: str | None =
         if compatibility_result["status"] == "incompatible":
             raise HTTPException(status_code=409, detail=f"Produit incompatible avec le véhicule sélectionné : {item['name']}")
         requires_review = requires_review or compatibility_result["status"] != "compatible"
-        unit_amount = round(item["price"] * 100); subtotal_cents += unit_amount * quantity
+        # Integer cents come from the hydrated database product, never the browser.
+        unit_amount = item["price_cents"]; subtotal_cents += unit_amount * quantity
         product_data: dict[str, Any] = {"name": item["name"], "metadata": {"product_id": item["id"], "sku": item["sku"]}}
         if item["images"]: product_data["images"] = [item["images"][0]]
         line_items.append({"quantity": quantity, "price_data": {"currency": item["currency"].lower(), "unit_amount": unit_amount, "product_data": product_data}})
@@ -789,7 +790,7 @@ async def create_checkout_session(request: Request, promotion_code: str | None =
         "client_reference_id": order["id"], "integration_identifier": f"tymotors_checkout_{suffix}",
         "metadata": {"order_id": order["id"], "user_id": user["id"] if user else "guest"},
         "payment_intent_data": {"metadata": {"order_id": order["id"], "user_id": user["id"] if user else "guest"}},
-        "shipping_address_collection": {"allowed_countries": ["FR", "BE", "DE", "ES", "IT", "LU", "NL", "PT"]},
+        "shipping_address_collection": {"allowed_countries": list(settings.shipping_countries)},
         "billing_address_collection": "required", "phone_number_collection": {"enabled": True}}
     if order_payload.get("customer_email"): params["customer_email"] = order_payload["customer_email"]
     params["expires_at"] = int(time.time()) + 1800
@@ -817,16 +818,7 @@ async def checkout_session(stripe_session_id: str, x_session_id: str | None = He
     if not rows: raise HTTPException(status_code=404, detail="Order not found")
     order = rows[0]; allowed = bool(user and order.get("user_id") == user["id"]) or bool(not user and x_session_id and order.get("guest_session_id") == x_session_id)
     if not allowed: raise HTTPException(status_code=403, detail="Order access denied")
-    if order.get("payment_status") != "paid" and stripe_client is not None:
-        try:
-            session = await stripe_client.v1.checkout.sessions.retrieve_async(stripe_session_id)
-            session_data = session.to_dict()
-            if session_data.get("payment_status") in {"paid", "no_payment_required"}:
-                await _complete_checkout_payment(session_data)
-                rows = await db.select("orders", params={"select": "*", "id": f"eq.{order['id']}", "limit": 1})
-                order = rows[0]
-        except stripe.StripeError:
-            logger.exception("Unable to reconcile Stripe Checkout session %s", stripe_session_id)
+    # Read-only: signed webhooks alone authorize payment side effects.
     result = (await _orders_with_items([order]))[0]
     return {"paid": result["payment_status"] == "paid", "status": result["status"], "payment_status": result["payment_status"],
         "order_reference": result["order_number"], "customer_email": result.get("customer_email"), "items": result["items"],
@@ -864,6 +856,8 @@ async def _complete_checkout_payment(obj: Any) -> str | None:
         "p_shipping_address": _address(shipping.get("address")), "p_billing_address": _address(customer.get("address"))})
     if completed is not True:
         raise RuntimeError("Order completion transaction was not applied")
+    if customer.get("phone"):
+        await db.update("orders", {"customer_phone": str(customer["phone"])[:40]}, params={"id": f"eq.{order_id}"})
     orders = await db.select("orders", params={"select": "user_id,customer_email", "id": f"eq.{order_id}", "limit": 1})
     if orders and orders[0].get("user_id") and obj.get("customer"):
         await db.update("profiles", {"stripe_customer_id": obj.get("customer")}, params={"id": f"eq.{orders[0]['user_id']}"})
@@ -881,8 +875,8 @@ async def stripe_webhook(request: Request, stripe_signature: str | None = Header
     # verification so nested Checkout data supports dictionary operations too.
     try: event = stripe.Webhook.construct_event(payload, stripe_signature, settings.stripe_webhook_secret).to_dict()
     except (ValueError, stripe.SignatureVerificationError): raise HTTPException(status_code=400, detail="Invalid webhook signature")
-    if settings.stripe_test_mode and event.get("livemode") is not False:
-        raise HTTPException(status_code=400, detail="Only test Stripe events are accepted by this checkout")
+    if event.get("livemode") is not (not settings.stripe_test_mode):
+        raise HTTPException(status_code=400, detail="Stripe event mode does not match checkout configuration")
     event_id = event["id"]; existing = await db.select("stripe_events", params={"select": "status", "event_id": f"eq.{event_id}", "limit": 1})
     if existing and existing[0]["status"] == "completed": return {"received": True, "duplicate": True}
     if not existing:

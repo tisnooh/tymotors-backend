@@ -176,7 +176,7 @@ class CatalogStore:
             item = {
                 "id": row["id"], "slug": row["slug"], "sku": row["sku"], "name": row["name"],
                 "subtitle": row.get("subtitle") or "", "description": row.get("description") or "",
-                "price": _money(row["price_cents"]), "compare_at_price": _money(row.get("compare_at_price_cents")),
+                "price": _money(row["price_cents"]), "price_cents": row["price_cents"], "compare_at_price": _money(row.get("compare_at_price_cents")),
                 "currency": row.get("currency", "EUR"), "stock": row.get("stock", 0), "status": row.get("status"),
                 "is_verified": row.get("is_verified", False), "featured": row.get("featured", False),
                 "badges": row.get("badges") or [], "rating": float(row["rating"]) if row.get("rating") is not None else None,
