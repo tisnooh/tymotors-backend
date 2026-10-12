@@ -771,7 +771,7 @@ async def retry_email(log_id: str, admin: dict[str, Any] = Depends(require_admin
         raise HTTPException(422, "Invalid email log ID")
     rows = await db.select("email_logs", params={"select": "*", "id": f"eq.{log_id}", "limit": 1})
     allowed = {"order_confirmation", "payment_confirmed", "order_processing", "order_shipped",
-               "order_delivered", "order_cancelled", "refund_confirmed"}
+               "order_delivered", "order_cancelled", "refund_confirmed", "withdrawal_received"}
     if not rows or rows[0].get("status") not in {"failed", "queued"} or rows[0].get("email_type") not in allowed or not rows[0].get("order_id"):
         raise HTTPException(409, "Email is not retryable")
     if rows[0]["status"] == "queued":
@@ -779,7 +779,15 @@ async def retry_email(log_id: str, admin: dict[str, Any] = Depends(require_admin
         if created > datetime.now(timezone.utc) - timedelta(minutes=5):
             raise HTTPException(409, "Email delivery is still in progress")
     amount = (rows[0].get("metadata") or {}).get("amount_cents")
-    result = await _send_order_email(rows[0]["email_type"], rows[0]["order_id"], amount_cents=amount, retry_log_id=log_id)
+    if rows[0]['email_type'] == 'withdrawal_received':
+        from html import escape
+        receipt = (rows[0].get('metadata') or {}).get('receipt_text')
+        if not isinstance(receipt, str) or not receipt:
+            raise HTTPException(409, 'Withdrawal receipt is unavailable')
+        html, text = _layout('Demande de rétractation reçue', [escape(receipt).replace('\n','<br>')])
+        result = await email_service.retry(log_id, rows[0]['recipient'], EmailContent('TYMotors — demande de rétractation reçue', html, text))
+    else:
+        result = await _send_order_email(rows[0]["email_type"], rows[0]["order_id"], amount_cents=amount, retry_log_id=log_id)
     await _audit(admin, "email.retry", log_id, {"order_id": rows[0]["order_id"], "email_type": rows[0]["email_type"]})
     return {"accepted": bool(result), "delivery": result["status"] if result else "failed"}
 

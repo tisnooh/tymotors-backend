@@ -5,6 +5,7 @@ from functools import lru_cache
 import os
 import re
 from urllib.parse import urlsplit
+from pydantic import EmailStr, TypeAdapter
 
 
 def _csv(name: str, default: str = "") -> list[str]:
@@ -40,9 +41,9 @@ class Settings:
     cloudinary_api_secret: str
     email_enabled: bool = False
     email_provider: str = "brevo"
-    email_from_address: str = "tyachatfr@gmail.com"
+    email_from_address: str = ""
     email_from_name: str = "TYMotors"
-    email_reply_to: str = "tyachatfr@gmail.com"
+    email_reply_to: str = ""
     email_token_secret: str = ""
     brevo_api_key: str = ""
     brevo_api_url: str = "https://api.brevo.com/v3/smtp/email"
@@ -95,6 +96,13 @@ class Settings:
                 raise RuntimeError("Email delivery is enabled but its common configuration is incomplete")
             if len(self.email_token_secret) < 32:
                 raise RuntimeError("EMAIL_TOKEN_SECRET must contain at least 32 characters")
+            try:
+                for address in (self.email_from_address, self.email_reply_to):
+                    TypeAdapter(EmailStr).validate_python(address)
+                if any(char in self.email_from_name for char in '\r\n'):
+                    raise ValueError('Email header contains a newline')
+            except ValueError:
+                raise RuntimeError('EMAIL_FROM, EMAIL_REPLY_TO and EMAIL_FROM_NAME must be valid email headers') from None
             if self.email_provider == "brevo":
                 if not self.brevo_api_key:
                     raise RuntimeError("BREVO_API_KEY is required when EMAIL_PROVIDER=brevo")
@@ -113,6 +121,8 @@ class Settings:
 
 @lru_cache
 def get_settings() -> Settings:
+    # Legacy Render setting remains compatible; EMAIL_FROM is the canonical setting.
+    sender = (os.getenv('EMAIL_FROM') or os.getenv('EMAIL_FROM_ADDRESS') or '').strip()
     settings = Settings(
         environment=os.getenv("ENVIRONMENT", "test").lower(),
         supabase_url=os.getenv("SUPABASE_URL", "").rstrip("/"),
@@ -134,9 +144,9 @@ def get_settings() -> Settings:
         cloudinary_api_secret=os.getenv("CLOUDINARY_API_SECRET", ""),
         email_enabled=os.getenv("EMAIL_ENABLED", "false").lower() in {"1", "true", "yes"},
         email_provider=_email_provider(),
-        email_from_address=os.getenv("EMAIL_FROM_ADDRESS", "tyachatfr@gmail.com").strip(),
+        email_from_address=sender,
         email_from_name=os.getenv("EMAIL_FROM_NAME", "TYMotors").strip(),
-        email_reply_to=os.getenv("EMAIL_REPLY_TO", "tyachatfr@gmail.com").strip(),
+        email_reply_to=(os.getenv("EMAIL_REPLY_TO") or sender).strip(),
         email_token_secret=os.getenv("EMAIL_TOKEN_SECRET", ""),
         brevo_api_key=os.getenv("BREVO_API_KEY", ""),
         # Pin the provider endpoint so a stale or mistyped environment value
