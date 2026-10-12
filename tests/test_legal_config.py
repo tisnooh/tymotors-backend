@@ -28,3 +28,39 @@ def test_withdrawal_is_saved_without_automatic_refund(monkeypatch):
     assert result.status_code == 201 and result.json()['email_sent'] is False
     assert 'Commande' in result.json()['receipt_text']
     assert insert.call_args.args[0] == 'contact_messages'
+
+def test_withdrawal_admin_routes_are_protected():
+    client = TestClient(server.app)
+    assert client.get('/api/admin/withdrawal-requests').status_code == 401
+    assert client.patch('/api/admin/withdrawal-requests/10000000-0000-4000-8000-000000000009',json={'status':'closed','expected_status':'new'}).status_code == 401
+
+def test_withdrawal_status_uses_optimistic_update_and_no_refund(monkeypatch):
+    server.app.dependency_overrides[server.require_admin] = lambda:{'id':'fixture-admin'}
+    update = AsyncMock(return_value=[{'id':'fixture'}]); audit=AsyncMock()
+    monkeypatch.setattr(server.db,'update',update); monkeypatch.setattr(server,'_audit',audit)
+    try:
+        result = TestClient(server.app).patch('/api/admin/withdrawal-requests/10000000-0000-4000-8000-000000000009',json={'status':'closed','expected_status':'new'})
+        assert result.status_code == 200
+        assert update.call_args.args[0] == 'contact_messages' and update.call_args.kwargs['params']['status'] == 'eq.new'
+        audit.assert_awaited_once()
+    finally: server.app.dependency_overrides.pop(server.require_admin,None)
+
+def test_withdrawal_status_conflict_is_not_silent(monkeypatch):
+    server.app.dependency_overrides[server.require_admin] = lambda:{'id':'fixture-admin'}
+    monkeypatch.setattr(server.db,'update',AsyncMock(return_value=[]))
+    audit=AsyncMock(); monkeypatch.setattr(server,'_audit',audit)
+    try:
+        result=TestClient(server.app).patch('/api/admin/withdrawal-requests/10000000-0000-4000-8000-000000000009',json={'status':'closed','expected_status':'new'})
+        assert result.status_code == 409
+        audit.assert_not_awaited()
+    finally: server.app.dependency_overrides.pop(server.require_admin,None)
+
+def test_withdrawal_list_excludes_general_contact_messages(monkeypatch):
+    server.app.dependency_overrides[server.require_admin] = lambda:{'id':'fixture-admin'}
+    page=AsyncMock(return_value={'items':[], 'total':0, 'pages':0})
+    monkeypatch.setattr(server.db,'page',page)
+    try:
+        assert TestClient(server.app).get('/api/admin/withdrawal-requests').status_code == 200
+        assert page.call_args.kwargs['params']['subject'] == 'ilike.Rétractation TY-*'
+        assert 'message' in page.call_args.kwargs['params']['select']
+    finally: server.app.dependency_overrides.pop(server.require_admin,None)

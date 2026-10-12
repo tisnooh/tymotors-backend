@@ -120,6 +120,8 @@ def test_checkout_uses_database_cents_and_separate_shipping(monkeypatch):
     monkeypatch.setattr(server, "_cart_response", AsyncMock(return_value={"currency": "EUR", "items": [{
         "id": "product_fixture", "slug": "fixture", "sku": "FIX", "name": "Test", "quantity": 2,
         "status": "active", "stock": 5, "price": 0.01, "price_cents": 1999, "currency": "EUR", "images": [],
+        "selected_vehicle": {"brand_slug":"bmw", "compatibility_status":"compatible", "compatibility_reason":"Display-only label"},
+        "compatible_brands": ["bmw"],
     }]}))
     monkeypatch.setattr(server.db, "insert", AsyncMock(side_effect=[[{"id": "order_fixture", "order_number": "TY-TEST"}], []]))
     monkeypatch.setattr(server.db, "update", AsyncMock())
@@ -134,6 +136,7 @@ def test_checkout_uses_database_cents_and_separate_shipping(monkeypatch):
     assert params["phone_number_collection"]["enabled"] is True
     assert params["billing_address_collection"] == "required"
     assert "payment_method_types" not in params
+    assert server.db.insert.call_args_list[0].args[1]['requires_compatibility_review'] is True
 
 
 def test_explicit_live_mode_requires_production_and_live_key():

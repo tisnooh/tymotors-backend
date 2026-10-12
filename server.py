@@ -28,7 +28,7 @@ from app.config import Settings, get_settings
 from app.schemas import (
     AdminOrderUpdateInput, AuthEmailInput, CartItemInput, CartUpdateInput, ContactInput,
     EmailPreferencesInput, NewsletterInput, OrderTrackingLookupInput, ProductInput, ProductUpdateInput, ProfileUpdateInput,
-    VehicleSelection, WelcomeEmailInput, WishlistInput, WithdrawalInput, LoginInput,
+    VehicleSelection, WelcomeEmailInput, WishlistInput, WithdrawalInput, LoginInput, WithdrawalStatusInput,
 )
 from app.services.email_service import EmailService
 from app.services.email_templates import newsletter_confirmation, order_event, welcome
@@ -792,6 +792,21 @@ async def retry_email(log_id: str, admin: dict[str, Any] = Depends(require_admin
     return {"accepted": bool(result), "delivery": result["status"] if result else "failed"}
 
 
+@api.get('/admin/withdrawal-requests')
+async def withdrawal_requests(page: int = Query(1, ge=1), limit: int = Query(25, ge=1, le=100), admin: dict[str, Any] = Depends(require_admin)):
+    return await db.page('contact_messages', params={'select':'id,name,email,subject,message,status,created_at',
+        'subject':'ilike.Rétractation TY-*', 'order':'created_at.desc,id.desc'}, page=page, limit=limit)
+
+
+@api.patch('/admin/withdrawal-requests/{request_id}')
+async def update_withdrawal_request(request_id: uuid.UUID, payload: WithdrawalStatusInput, admin: dict[str, Any] = Depends(require_admin)):
+    rows = await db.update('contact_messages', {'status':payload.status}, params={'id':'eq.'+str(request_id),
+        'subject':'ilike.Rétractation TY-*', 'status':'eq.'+payload.expected_status})
+    if not rows: raise HTTPException(409, 'Request not found or updated by another administrator')
+    await _audit(admin, 'withdrawal.status', str(request_id), {'from':payload.expected_status, 'to':payload.status})
+    return {'updated':True}
+
+
 @api.put("/admin/orders/{order_id}")
 async def update_order(order_id: str, payload: AdminOrderUpdateInput, admin: dict[str, Any] = Depends(require_admin)):
     try: order_id = str(uuid.UUID(order_id))
@@ -826,7 +841,10 @@ async def create_checkout_session(request: Request, promotion_code: str | None =
     for item in cart_view["items"]:
         quantity = item["quantity"]
         if item["status"] != "active" or item["stock"] < quantity: raise HTTPException(status_code=409, detail=f"Unavailable product: {item['name']}")
-        compatibility_result = check_compatibility(item, VehicleSelection.model_validate(item["selected_vehicle"])) if item.get("selected_vehicle") else {"status": "unknown", "reason": "No vehicle selected"}
+        # Hydrated cart rows carry display-only compatibility metadata. Validate only
+        # vehicle facts, then recompute; never trust a carried 'compatible' label.
+        vehicle_facts = {key: value for key, value in (item.get('selected_vehicle') or {}).items() if key in VehicleSelection.model_fields}
+        compatibility_result = check_compatibility(item, VehicleSelection.model_validate(vehicle_facts)) if vehicle_facts else {"status": "unknown", "reason": "No vehicle selected"}
         if compatibility_result["status"] == "incompatible":
             raise HTTPException(status_code=409, detail=f"Produit incompatible avec le véhicule sélectionné : {item['name']}")
         requires_review = requires_review or compatibility_result["status"] != "compatible"

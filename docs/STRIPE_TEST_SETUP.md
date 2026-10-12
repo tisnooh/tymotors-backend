@@ -55,7 +55,9 @@ La CLI Stripe n'est pas installée sur ce poste et le plugin demande une réauth
 
 Le code accepte les clés restreintes de test et refuse les événements Stripe réels dans un checkout configuré avec une clé de test. Les tests locaux ne remplacent pas cette validation réelle dans le sandbox connecté.
 
-## Résultat vérifié le 12 octobre 2026
+## Résultat antérieur conservé — non revalidé après les commits de cette session
+
+Ce relevé décrit la précédente vérification distante du 12 octobre. Les nouveaux commits applicatifs de préparation ci-dessus restent locaux ; ils ne sont pas encore déployés. Ne pas présenter ce relevé comme une preuve du Checkout TYMotors après ces modifications.
 
 - Backend européen `tymotors-backend-eu`, Render Frankfurt, commit correctif `9860d88` déployé et état Live vérifié.
 - `FRONTEND_URL=https://tymotors.vercel.app` enregistré ; CORS autorise cette origine. `ENVIRONMENT=test` conservé.

@@ -24,8 +24,10 @@ await db.exec(await readFile(new URL('../supabase/migrations/20261011222034_supp
 await db.exec(await readFile(new URL('../supabase/migrations/20261012042643_supplier_link_refresh.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../supabase/migrations/20261012115851_checkout_customer_phone.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../supabase/migrations/20261012120138_supplier_directory.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../supabase/migrations/20261012163951_withdrawal_receipts.sql',import.meta.url),'utf8'));
 let checks = 0;
 const one = async (sql,params=[]) => (await db.query(sql,params)).rows[0];
+assert.match((await one("select pg_get_constraintdef(oid) definition from pg_constraint where conrelid='public.email_logs'::regclass and conname='email_logs_email_type_check'")).definition, /withdrawal_received/); checks++;
 async function rejects(sql,params,pattern) { await assert.rejects(db.query(sql,params),pattern); checks++; }
 const admin = '10000000-0000-4000-8000-000000000001', customer = '10000000-0000-4000-8000-000000000002';
 await db.query("insert into auth.users(id,email) values($1,'admin@example.test'),($2,'client@example.test')",[admin,customer]);

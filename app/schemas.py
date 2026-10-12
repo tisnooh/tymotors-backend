@@ -257,3 +257,9 @@ class WithdrawalInput(OrderTrackingLookupInput):
     name: str = Field(min_length=2, max_length=160)
     message: str = Field(default='', max_length=2000)
     confirmed: Literal[True]
+
+
+class WithdrawalStatusInput(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    status: Literal['new', 'in_progress', 'closed']
+    expected_status: Literal['new', 'in_progress', 'closed']
