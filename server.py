@@ -28,7 +28,7 @@ from app.config import Settings, get_settings
 from app.schemas import (
     AdminOrderUpdateInput, AuthEmailInput, CartItemInput, CartUpdateInput, ContactInput,
     EmailPreferencesInput, NewsletterInput, OrderTrackingLookupInput, ProductInput, ProductUpdateInput, ProfileUpdateInput,
-    VehicleSelection, WelcomeEmailInput, WishlistInput, WithdrawalInput,
+    VehicleSelection, WelcomeEmailInput, WishlistInput, WithdrawalInput, LoginInput,
 )
 from app.services.email_service import EmailService
 from app.services.email_templates import newsletter_confirmation, order_event, welcome
@@ -53,6 +53,7 @@ contact_attempts: dict[str, list[float]] = {}
 newsletter_attempts: dict[str, list[float]] = {}
 auth_email_attempts: dict[str, list[float]] = {}
 tracking_attempts: dict[str, list[float]] = {}
+login_attempts: dict[str, list[float]] = {}
 email_service = EmailService(settings, db)
 
 
@@ -87,16 +88,23 @@ async def site_configuration():
 
 def _rate_limit(bucket: dict[str, list[float]], key: str, maximum: int, window: int) -> None:
     now = time.monotonic()
+    # Bounded process-local storage. Multi-worker deployments need a shared limiter.
+    if key not in bucket and len(bucket) >= 10000:
+        for old_key, stamps in list(bucket.items()):
+            if not stamps or now - stamps[-1] >= window:
+                bucket.pop(old_key, None)
+        if len(bucket) >= 10000:
+            raise HTTPException(429, 'Too many requests', headers={'Retry-After': str(window)})
     current = [stamp for stamp in bucket.get(key, []) if now - stamp < window]
     if len(current) >= maximum:
-        raise HTTPException(status_code=429, detail="Too many requests")
+        raise HTTPException(status_code=429, detail="Too many requests", headers={'Retry-After': str(max(1, int(window - (now - current[0])) + 1))})
     current.append(now)
     bucket[key] = current
 
 
 def _client_key(request: Request) -> str:
-    forwarded = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
-    return forwarded or (request.client.host if request.client else "unknown")
+    # Uvicorn's trusted-proxy configuration owns proxy interpretation, never a raw client header.
+    return request.client.host if request.client else "unknown"
 
 
 def _checkout_frontend_url(request: Request) -> str:
@@ -480,6 +488,7 @@ async def remove_wishlist(product_id: str, user: dict[str, Any] = Depends(requir
 async def newsletter(payload: NewsletterInput, request: Request, user: dict[str, Any] | None = Depends(optional_user)):
     if payload.website:
         return {"pending": True, "already_subscribed": False}
+    _rate_limit(newsletter_attempts, 'ip:'+_client_key(request), 10, 3600)
     _rate_limit(newsletter_attempts, f"{_client_key(request)}:{str(payload.email).lower()}", 4, 3600)
     return await _start_newsletter_subscription(payload, user)
 
@@ -548,6 +557,7 @@ async def update_email_preferences(payload: EmailPreferencesInput, request: Requ
 
 @api.post("/auth/forgot-password", status_code=202)
 async def forgot_password(payload: AuthEmailInput, request: Request):
+    _rate_limit(auth_email_attempts, f'forgot-ip:{_client_key(request)}', 10, 3600)
     _rate_limit(auth_email_attempts, f"forgot:{_client_key(request)}:{str(payload.email).lower()}", 4, 3600)
     await db.send_password_recovery(str(payload.email).lower(), f"{settings.frontend_url}/reset-password")
     return {"accepted": True}
@@ -555,9 +565,23 @@ async def forgot_password(payload: AuthEmailInput, request: Request):
 
 @api.post("/auth/resend-confirmation", status_code=202)
 async def resend_confirmation(payload: AuthEmailInput, request: Request):
+    _rate_limit(auth_email_attempts, f'resend-ip:{_client_key(request)}', 10, 3600)
     _rate_limit(auth_email_attempts, f"resend:{_client_key(request)}:{str(payload.email).lower()}", 4, 3600)
     await db.resend_signup_confirmation(str(payload.email).lower(), f"{settings.frontend_url}/auth/confirm")
     return {"accepted": True}
+
+
+@api.post('/auth/login')
+async def login(payload: LoginInput, request: Request):
+    _rate_limit(login_attempts, 'ip:'+_client_key(request), 5, 60)
+    import hashlib
+    identity = hashlib.sha256(str(payload.email).lower().encode()).hexdigest()
+    _rate_limit(login_attempts, 'email:'+identity, 8, 900)
+    try:
+        return await db.sign_in_password(str(payload.email).lower(), payload.password)
+    except SupabaseError as error:
+        raise HTTPException(error.status_code, error.detail,
+                            headers={'Retry-After':'60'} if error.status_code == 429 else None) from None
 
 
 @api.post("/auth/welcome", status_code=202)
@@ -784,7 +808,10 @@ async def update_order(order_id: str, payload: AdminOrderUpdateInput, admin: dic
 async def create_checkout_session(request: Request, promotion_code: str | None = Query(None, max_length=40),
                                   x_session_id: str | None = Header(default=None), user: dict[str, Any] | None = Depends(optional_user)):
     if stripe_client is None: raise HTTPException(status_code=503, detail="Stripe test checkout is not configured")
-    actor = user["id"] if user else _session_id(x_session_id); _rate_limit(checkout_attempts, actor, 8, 60)
+    if not settings.stripe_test_mode and not legal_ready():
+        raise HTTPException(503, 'Legal identity must be completed before live checkout')
+    _rate_limit(checkout_attempts, 'ip:'+_client_key(request), 8, 60)
+    actor = user["id"] if user else _session_id(x_session_id); _rate_limit(checkout_attempts, 'actor:'+actor, 8, 60)
     cart = await _cart_for(user, x_session_id, create=False); cart_view = await _cart_response(cart)
     if not cart or not cart_view["items"]: raise HTTPException(status_code=400, detail="Cart is empty")
     line_items, order_items, subtotal_cents, requires_review = [], [], 0, False
@@ -1001,7 +1028,8 @@ async def security_headers(request: Request, call_next):
         "Referrer-Policy": "strict-origin-when-cross-origin", "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
         "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"})
     if request.url.scheme == "https": response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-    response.headers["Cache-Control"] = "no-store" if request.url.path.startswith("/api/admin") or "checkout" in request.url.path else "no-cache"
+    private = request.url.path.startswith(('/api/admin', '/api/auth', '/api/me', '/api/cart', '/api/wishlist', '/api/order-tracking', '/api/withdrawals')) or 'checkout' in request.url.path or request.headers.get('authorization')
+    response.headers["Cache-Control"] = "no-store" if private else "no-cache"
     return response
 
 

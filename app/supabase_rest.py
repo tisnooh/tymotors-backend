@@ -141,6 +141,22 @@ class SupabaseRest:
         if response.status_code >= 500:
             raise SupabaseError(response.status_code, self._detail(response))
 
+    async def sign_in_password(self, email: str, password: str) -> dict[str, Any]:
+        response = await self.client.post(
+            f'{self.url}/auth/v1/token', params={'grant_type': 'password'},
+            json={'email': email, 'password': password}, headers={'apikey': self.publishable_key},
+        )
+        if response.status_code == 429:
+            raise SupabaseError(429, 'Too many login attempts')
+        if response.status_code >= 500:
+            raise SupabaseError(502, 'Authentication service unavailable')
+        if response.status_code >= 400:
+            raise SupabaseError(401, 'Email ou mot de passe incorrect, ou compte non confirmé.')
+        payload = response.json()
+        if not payload.get('access_token') or not payload.get('refresh_token'):
+            raise SupabaseError(502, 'Authentication service unavailable')
+        return {key: payload[key] for key in ('access_token', 'refresh_token')}
+
     async def resend_signup_confirmation(self, email: str, redirect_to: str) -> None:
         response = await self.client.post(
             f"{self.url}/auth/v1/resend",

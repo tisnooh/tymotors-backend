@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import lru_cache
 import os
+import re
+from urllib.parse import urlsplit
 
 
 def _csv(name: str, default: str = "") -> list[str]:
@@ -57,7 +59,10 @@ class Settings:
         return self.stripe_mode == "test"
 
     def validate(self) -> None:
-        if not self.supabase_url.startswith("https://") or ".supabase.co" not in self.supabase_url:
+        project = urlsplit(self.supabase_url)
+        if (project.scheme != 'https' or not re.fullmatch(r'[a-z0-9-]+\.supabase\.co', project.hostname or '')
+                or project.username or project.password or project.port not in (None, 443)
+                or project.path not in ('', '/') or project.query or project.fragment):
             raise RuntimeError("SUPABASE_URL must be a hosted Supabase project URL")
         if not self.supabase_publishable_key:
             raise RuntimeError("SUPABASE_PUBLISHABLE_KEY is required")
@@ -67,6 +72,16 @@ class Settings:
             raise RuntimeError("Publishable and service-role keys must be different")
         if "*" in self.cors_origins:
             raise RuntimeError("CORS_ORIGINS must not contain a wildcard")
+        for origin in [self.frontend_url, *self.cors_origins]:
+            parsed = urlsplit(origin)
+            local = parsed.hostname in {'localhost', '127.0.0.1', '::1'}
+            if (not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment
+                    or parsed.path not in ('', '/') or (parsed.scheme != 'https' and not (local and parsed.scheme == 'http'))):
+                raise RuntimeError('SITE_URL and CORS_ORIGINS must be HTTPS origins (HTTP allowed only on loopback)')
+        if self.cors_origin_regex:
+            if not self.cors_origin_regex.startswith('^https://') or not self.cors_origin_regex.endswith('$'):
+                raise RuntimeError('CORS_ORIGIN_REGEX must be an anchored HTTPS expression')
+            re.compile(self.cors_origin_regex)
         if self.stripe_mode not in {"test", "live"}:
             raise RuntimeError("STRIPE_MODE must be test or live")
         if self.stripe_secret_key and self.stripe_mode == "test" and not self.stripe_secret_key.startswith(("sk_test_", "rk_test_")):

@@ -30,13 +30,14 @@ class ProductCompatibility(BaseModel):
 
 
 class VehicleSelection(BaseModel):
-    brand_slug: str
-    model: str | None = None
-    chassis: str | None = None
-    generation: str | None = None
+    model_config = ConfigDict(extra="forbid")
+    brand_slug: str = Field(min_length=1, max_length=100, pattern=r'^[a-z0-9-]+$')
+    model: str | None = Field(default=None, max_length=100)
+    chassis: str | None = Field(default=None, max_length=50)
+    generation: str | None = Field(default=None, max_length=100)
     year: int | None = Field(default=None, ge=1950, le=2100)
-    body_type: str | None = None
-    trim: str | None = None
+    body_type: str | None = Field(default=None, max_length=100)
+    trim: str | None = Field(default=None, max_length=100)
     has_camera: bool | None = None
     has_parking_sensors: bool | None = None
 
@@ -161,18 +162,21 @@ class ProductUpdateInput(BaseModel):
 
 
 class CartItemInput(BaseModel):
-    product_id: str
+    model_config = ConfigDict(extra="forbid")
+    product_id: str = Field(min_length=1, max_length=100, pattern=r'^[a-zA-Z0-9_-]+$')
     quantity: int = Field(default=1, ge=1, le=20)
     selected_vehicle: VehicleSelection | None = None
 
 
 class CartUpdateInput(BaseModel):
-    product_id: str
+    model_config = ConfigDict(extra="forbid")
+    product_id: str = Field(min_length=1, max_length=100, pattern=r'^[a-zA-Z0-9_-]+$')
     quantity: int = Field(ge=0, le=20)
 
 
 class WishlistInput(BaseModel):
-    product_id: str
+    model_config = ConfigDict(extra="forbid")
+    product_id: str = Field(min_length=1, max_length=100, pattern=r'^[a-zA-Z0-9_-]+$')
 
 
 class NewsletterInput(BaseModel):
@@ -198,7 +202,12 @@ class AuthEmailInput(BaseModel):
     email: EmailStr
 
 
+class LoginInput(AuthEmailInput):
+    password: str = Field(min_length=1, max_length=128)
+
+
 class ContactInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=2, max_length=100)
     email: EmailStr
     subject: str = Field(min_length=3, max_length=160)
@@ -213,6 +222,16 @@ class AdminOrderUpdateInput(BaseModel):
     tracking_number: str | None = Field(default=None, max_length=200)
     carrier: str | None = Field(default=None, max_length=100)
     tracking_url: str | None = Field(default=None, max_length=1000, pattern=r"^https://")
+
+    @field_validator('tracking_url')
+    @classmethod
+    def safe_tracking_url(cls, value):
+        from urllib.parse import urlsplit
+        if value:
+            parsed = urlsplit(value)
+            if not parsed.hostname or parsed.username or parsed.password or any(c.isspace() for c in value):
+                raise ValueError('Tracking URL must be HTTPS without credentials or whitespace')
+        return value
 
 
 class OrderTrackingLookupInput(BaseModel):
