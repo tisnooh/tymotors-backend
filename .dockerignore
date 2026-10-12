@@ -9,4 +9,8 @@ __pycache__
 .venv
 venv
 tests
+.security-tools
+.security-evidence
+.admin-test-runtime
+backups
 

@@ -30,15 +30,16 @@ def client(monkeypatch):
 
 
 def admin_routes():
-    for route in server.app.routes:
-        if getattr(route, "path", "").startswith("/api/admin") and route.path != "/api/admin/login":
-            for method in route.methods:
-                if method in {"HEAD", "OPTIONS"}: continue
-                path = route.path
+    # FastAPI >=0.143 includes routers lazily; enumerate the resolved schema.
+    for route_path, operations in server.app.openapi()['paths'].items():
+        if route_path.startswith("/api/admin") and route_path != "/api/admin/login":
+            for method in operations:
+                if method.upper() not in {"GET", "POST", "PUT", "PATCH", "DELETE"}: continue
+                path = route_path
                 for param in ("product_id", "order_id", "return_id", "promotion_id"):
                     path = path.replace("{" + param + "}", ADMIN)
                 path = path.replace("{slug}", "test-product").replace("{channel}", "leboncoin")
-                yield method, path
+                yield method.upper(), path
 
 
 @pytest.mark.parametrize("method,path", list(admin_routes()))

@@ -7,6 +7,7 @@ await db.exec(`
   create role anon; create role authenticated; create role service_role bypassrls;
   create schema auth;
   create table auth.users(id uuid primary key,email text,raw_user_meta_data jsonb default '{}');
+  create table auth.sessions(id uuid primary key,user_id uuid,not_after timestamptz);
   create function auth.uid() returns uuid language sql stable as $$
     select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid
   $$;
@@ -26,6 +27,16 @@ await db.exec(await readFile(new URL('../supabase/migrations/20261012115851_chec
 await db.exec(await readFile(new URL('../supabase/migrations/20261012120138_supplier_directory.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../supabase/migrations/20261012163951_withdrawal_receipts.sql',import.meta.url),'utf8'));
 let checks = 0;
+await db.exec(await readFile(new URL('../supabase/migrations/20261012184823_enforce_active_auth_session.sql',import.meta.url),'utf8'));
+const sessionUser='10000000-0000-4000-8000-000000000098', sessionId='10000000-0000-4000-8000-000000000099';
+await db.query('insert into auth.sessions values($1,$2,null)',[sessionId,sessionUser]);
+assert.equal((await db.query('select is_auth_session_active($1,$2) active',[sessionId,sessionUser])).rows[0].active,true);checks++;
+assert.equal((await db.query('select is_auth_session_active($1,$2) active',[sessionId,sessionId])).rows[0].active,false);checks++;
+await db.query("update auth.sessions set not_after=now()-interval '1 second'");
+assert.equal((await db.query('select is_auth_session_active($1,$2) active',[sessionId,sessionUser])).rows[0].active,false);checks++;
+await db.query('delete from auth.sessions');
+assert.equal((await db.query('select is_auth_session_active($1,$2) active',[sessionId,sessionUser])).rows[0].active,false);checks++;
+assert.equal((await db.query("select has_function_privilege('anon','public.is_auth_session_active(uuid,uuid)','EXECUTE') allowed")).rows[0].allowed,false);checks++;
 const one = async (sql,params=[]) => (await db.query(sql,params)).rows[0];
 assert.match((await one("select pg_get_constraintdef(oid) definition from pg_constraint where conrelid='public.email_logs'::regclass and conname='email_logs_email_type_check'")).definition, /withdrawal_received/); checks++;
 async function rejects(sql,params,pattern) { await assert.rejects(db.query(sql,params),pattern); checks++; }

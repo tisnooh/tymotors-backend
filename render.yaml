@@ -14,11 +14,13 @@ services:
       - key: ENVIRONMENT
         value: test
       - key: CORS_ORIGINS
-        value: http://localhost:3000,https://tymotors.vercel.app,https://tymotors-git-develop-iapetse09-2414s-projects.vercel.app
+        sync: false
       - key: CORS_ORIGIN_REGEX
-        value: ^https://tymotors-[a-z0-9-]+\.vercel\.app$
-      - key: FRONTEND_URL
-        value: https://tymotors-git-develop-iapetse09-2414s-projects.vercel.app
+        sync: false
+      - key: SITE_URL
+        sync: false
+      - key: STRIPE_MODE
+        value: test
       - key: STRIPE_AUTOMATIC_TAX
         value: "false"
       - key: FREE_SHIPPING_THRESHOLD_CENTS
@@ -43,10 +45,10 @@ services:
         value: brevo
       - key: EMAIL_FROM_NAME
         value: TYMotors
-      - key: EMAIL_FROM_ADDRESS
-        value: tyachatfr@gmail.com
+      - key: EMAIL_FROM
+        sync: false
       - key: EMAIL_REPLY_TO
-        value: tyachatfr@gmail.com
+        sync: false
       - key: EMAIL_TOKEN_SECRET
         sync: false
       - key: BREVO_API_KEY
@@ -58,7 +60,7 @@ services:
       - key: SMTP_PORT
         value: "587"
       - key: SMTP_USERNAME
-        value: tyachatfr@gmail.com
+        sync: false
       - key: SMTP_PASSWORD
         sync: false
       - key: SMTP_USE_TLS

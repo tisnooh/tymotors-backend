@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 from urllib.parse import quote
+from uuid import UUID
+import base64
+import json
 
 import httpx
 
@@ -128,7 +131,20 @@ class SupabaseRest:
             return None
         if response.status_code >= 400:
             raise SupabaseError(response.status_code, self._detail(response))
-        return response.json()
+        user = response.json()
+        # Supabase verifies signature/expiry first. Decoding alone never authenticates.
+        # Auth may still accept an access JWT after sign-out: check the live session
+        # on every API authorization, without caching revocation decisions.
+        try:
+            segment = access_token.split('.')[1]
+            claims = json.loads(base64.urlsafe_b64decode(segment + '=' * (-len(segment) % 4)))
+            session_id, user_id = str(UUID(claims['session_id'])), str(UUID(user['id']))
+            if str(UUID(claims['sub'])) != user_id:
+                return None
+        except (ValueError, KeyError, IndexError, TypeError):
+            return None
+        active = await self.rpc('is_auth_session_active', {'p_session_id': session_id, 'p_user_id': user_id})
+        return user if active is True else None
 
     async def send_password_recovery(self, email: str, redirect_to: str) -> None:
         response = await self.client.post(

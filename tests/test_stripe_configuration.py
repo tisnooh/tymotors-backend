@@ -126,7 +126,7 @@ def test_checkout_uses_database_cents_and_separate_shipping(monkeypatch):
     monkeypatch.setattr(server.db, "insert", AsyncMock(side_effect=[[{"id": "order_fixture", "order_number": "TY-TEST"}], []]))
     monkeypatch.setattr(server.db, "update", AsyncMock())
     server.checkout_attempts.clear()
-    response = TestClient(server.app).post("/api/create-checkout-session", headers={"X-Session-Id": "guest_fixture"}, json={"price": 1})
+    response = TestClient(server.app).post("/api/create-checkout-session", headers={"X-Session-Id": "guest_fixture_qa"}, json={"price": 1})
     assert response.status_code == 200
     params = create.call_args.kwargs["params"]
     assert params["line_items"][0]["price_data"]["unit_amount"] == 1999

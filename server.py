@@ -21,6 +21,9 @@ from pydantic import ValidationError
 import stripe
 from stripe import StripeClient
 from starlette.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
+import httpx
+from app.request_guard import RequestGuard
 
 from app.compatibility import check_compatibility
 from app.admin import create_admin_router, search_filter, product_input_data
@@ -78,6 +81,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="TYMotors API", version="2.0.0", lifespan=lifespan)
+app.add_middleware(RequestGuard)
 api = APIRouter(prefix="/api")
 
 
@@ -174,7 +178,7 @@ async def withdrawal(payload: WithdrawalInput, request: Request):
 
 
 def _session_id(value: str | None) -> str:
-    if not value or len(value) > 128:
+    if not value or not re.fullmatch(r'[A-Za-z0-9_-]{16,128}', value):
         raise HTTPException(status_code=400, detail="Missing or invalid X-Session-Id header")
     return value
 
@@ -268,7 +272,7 @@ async def _send_order_email(kind: str, order_id: str, *, amount_cents: int | Non
                 idempotency_key=f"order:{order_id}:{kind}:{suffix}", user_id=order.get("user_id"), order_id=order_id,
                 metadata={"order_number": order.get("order_number"), **({"amount_cents": amount_cents} if amount_cents is not None else {})})
     except Exception:
-        logger.exception("Order email could not be queued: %s %s", kind, order_id)
+        logger.error("Order email queue unavailable: %s %s", kind, order_id)
         return None
 
 
@@ -299,8 +303,11 @@ async def root(): return {"message": "TYMotors API", "version": "2.0.0", "databa
 
 @api.get("/health")
 async def health():
-    await db.select("brands", params={"select": "id", "limit": 1})
-    return {"status": "ok", "database": "supabase", "environment": settings.environment}
+    try:
+        await db.select("brands", params={"select": "id", "limit": 1})
+    except (SupabaseError, httpx.RequestError):
+        raise HTTPException(503, 'Service unavailable') from None
+    return {"status": "ok"}
 
 
 @api.get("/brands")
@@ -643,7 +650,7 @@ async def upload_image(file: UploadFile = File(...), admin: dict[str, Any] = Dep
                                              unique_filename=True, overwrite=False,
                                              transformation=[{"quality": "auto:good", "fetch_format": "auto"}])
     except Exception:
-        logger.exception("Cloudinary upload failed"); raise HTTPException(status_code=502, detail="Image storage failed")
+        logger.error("Cloudinary upload failed"); raise HTTPException(status_code=502, detail="Image storage failed")
     await _audit(admin, "image.upload", result.get("public_id", "unknown"), {"bytes": len(content)})
     return {"url": result["secure_url"], "public_id": result.get("public_id"), "width": result.get("width"), "height": result.get("height")}
 
@@ -892,7 +899,7 @@ async def create_checkout_session(request: Request, promotion_code: str | None =
         session = await stripe_client.v1.checkout.sessions.create_async(params=params, options={"idempotency_key": f"checkout_{order['id']}"})
     except stripe.StripeError:
         await db.update("orders", {"status": "payment_failed", "payment_status": "failed"}, params={"id": f"eq.{order['id']}"})
-        logger.exception("Stripe Checkout creation failed"); raise HTTPException(status_code=502, detail="Unable to create secure checkout")
+        logger.error("Stripe Checkout creation failed"); raise HTTPException(status_code=502, detail="Unable to create secure checkout")
     await db.update("orders", {"stripe_session_id": session.id}, params={"id": f"eq.{order['id']}"})
     if order_payload.get("customer_email"):
         await _send_order_email("order_confirmation", order["id"])
@@ -904,7 +911,7 @@ async def checkout_session(stripe_session_id: str, x_session_id: str | None = He
     rows = await db.select("orders", params={"select": "*", "stripe_session_id": f"eq.{stripe_session_id}", "limit": 1})
     if not rows: raise HTTPException(status_code=404, detail="Order not found")
     order = rows[0]; allowed = bool(user and order.get("user_id") == user["id"]) or bool(not user and x_session_id and order.get("guest_session_id") == x_session_id)
-    if not allowed: raise HTTPException(status_code=403, detail="Order access denied")
+    if not allowed: raise HTTPException(status_code=404, detail="Order not found")
     # Read-only: signed webhooks alone authorize payment side effects.
     result = (await _orders_with_items([order]))[0]
     return {"paid": result["payment_status"] == "paid", "status": result["status"], "payment_status": result["payment_status"],
@@ -987,7 +994,7 @@ async def stripe_webhook(request: Request, stripe_signature: str | None = Header
         await db.update("stripe_events", {"status": "completed", "completed_at": datetime.now(timezone.utc).isoformat()}, params={"event_id": f"eq.{event_id}"})
     except Exception as error:
         await db.update("stripe_events", {"status": "failed", "error_message": type(error).__name__}, params={"event_id": f"eq.{event_id}"})
-        logger.exception("Stripe event processing failed: %s", event_id); raise HTTPException(status_code=500, detail="Webhook processing failed")
+        logger.error("Stripe event processing failed: %s (%s)", event_id, type(error).__name__); raise HTTPException(status_code=500, detail="Webhook processing failed")
     return {"received": True}
 
 
@@ -1049,7 +1056,13 @@ async def supabase_error_handler(_: Request, error: SupabaseError):
 
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
-    response = await call_next(request)
+    from fastapi.responses import JSONResponse
+    try:
+        response = await call_next(request)
+    except Exception as error:
+        logger.error('Unhandled request failure (%s)', type(error).__name__)
+        response = JSONResponse(status_code=503 if isinstance(error, httpx.RequestError) else 500,
+                                content={'detail': 'Service unavailable'})
     response.headers.update({"X-Content-Type-Options": "nosniff", "X-Frame-Options": "DENY",
         "Referrer-Policy": "strict-origin-when-cross-origin", "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
         "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"})
@@ -1057,6 +1070,15 @@ async def security_headers(request: Request, call_next):
     private = request.url.path.startswith(('/api/admin', '/api/auth', '/api/me', '/api/cart', '/api/wishlist', '/api/order-tracking', '/api/withdrawals')) or 'checkout' in request.url.path or request.headers.get('authorization')
     response.headers["Cache-Control"] = "no-store" if private else "no-cache"
     return response
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(_: Request, error: RequestValidationError):
+    from fastapi.responses import JSONResponse
+    # Pydantic normally echoes input, which can expose passwords/contact bodies.
+    return JSONResponse(status_code=422, content={'detail': [
+        {'loc': list(e['loc']), 'type': e['type'], 'msg': 'Invalid input'} for e in error.errors()
+    ]})
 
 
 app.add_middleware(CORSMiddleware, allow_credentials=False, allow_origins=settings.cors_origins,

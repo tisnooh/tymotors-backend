@@ -19,3 +19,6 @@ assets/catalogue-gallery/
 
 .admin-test-runtime/
 supabase/.temp/
+.security-tools/
+.security-evidence/
+backups/
