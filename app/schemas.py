@@ -232,3 +232,9 @@ class ProfileUpdateInput(BaseModel):
     phone: str | None = Field(default=None, max_length=40)
     billing_address: dict[str, Any] | None = None
     shipping_address: dict[str, Any] | None = None
+
+
+class WithdrawalInput(OrderTrackingLookupInput):
+    name: str = Field(min_length=2, max_length=160)
+    message: str = Field(default='', max_length=2000)
+    confirmed: Literal[True]

@@ -28,12 +28,14 @@ from app.config import Settings, get_settings
 from app.schemas import (
     AdminOrderUpdateInput, AuthEmailInput, CartItemInput, CartUpdateInput, ContactInput,
     EmailPreferencesInput, NewsletterInput, OrderTrackingLookupInput, ProductInput, ProductUpdateInput, ProfileUpdateInput,
-    VehicleSelection, WelcomeEmailInput, WishlistInput,
+    VehicleSelection, WelcomeEmailInput, WishlistInput, WithdrawalInput,
 )
 from app.services.email_service import EmailService
 from app.services.email_templates import newsletter_confirmation, order_event, welcome
 from app.services.email_tokens import hash_confirmation_token, new_confirmation_token, verify_token
 from app.store import CatalogStore
+from app.site_config import public_site_configuration, order_document, legal_ready
+from app.services.email_templates import EmailContent, _layout
 from app.supabase_rest import SupabaseError, SupabaseRest
 
 ROOT_DIR = Path(__file__).parent
@@ -76,6 +78,11 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title="TYMotors API", version="2.0.0", lifespan=lifespan)
 api = APIRouter(prefix="/api")
+
+
+@api.get('/site-config')
+async def site_configuration():
+    return public_site_configuration(settings)
 
 
 def _rate_limit(bucket: dict[str, list[float]], key: str, maximum: int, window: int) -> None:
@@ -129,6 +136,33 @@ async def require_admin(user: dict[str, Any] = Depends(require_user)) -> dict[st
 async def _audit(admin: dict[str, Any], action: str, resource: str, metadata: dict[str, Any] | None = None) -> None:
     await db.insert("admin_audit", {"admin_user_id": admin["id"], "action": action,
                                     "resource": resource, "metadata": metadata or {}})
+
+
+@api.get('/admin/orders/{order_id}/document')
+async def admin_order_document(order_id: uuid.UUID, admin=Depends(require_admin)):
+    rows = await db.select('orders', params={'id': f'eq.{order_id}', 'limit': 1})
+    if not rows: raise HTTPException(404, 'Order not found')
+    items = await db.select('order_items', params={'order_id': f'eq.{order_id}'})
+    return order_document(rows[0], items)
+
+
+@api.post('/withdrawals', status_code=201)
+async def withdrawal(payload: WithdrawalInput, request: Request):
+    from html import escape
+    _rate_limit(contact_attempts, 'withdrawal:'+_client_key(request), 5, 3600)
+    rows = await db.select('orders', params={'select':'id,order_number', 'order_number':f'eq.{payload.order_number}', 'customer_email':f'eq.{str(payload.email).lower()}', 'limit':1})
+    if not rows: raise HTTPException(404, 'Commande introuvable pour ces informations')
+    stamp = datetime.now(timezone.utc).isoformat()
+    receipt = f'Demande de rétractation reçue le {stamp}\nCommande : {payload.order_number}\nNom : {payload.name}\nJe vous notifie ma rétractation du contrat.\n{payload.message}'
+    saved = await db.insert('contact_messages', {'name':payload.name, 'email':str(payload.email).lower(), 'subject':'Rétractation '+payload.order_number, 'message':receipt})
+    html, text = _layout('Votre demande de rétractation est enregistrée', '<p style="color:#C7CDD6;white-space:pre-wrap">'+escape(receipt)+'</p><p>Conservez cet accusé de réception. Aucun remboursement n’est déclenché automatiquement.</p>', receipt)
+    sent = False
+    try:
+        delivered = await email_service.send(recipient=str(payload.email), email_type='withdrawal_received', content=EmailContent('TYMotors — demande de rétractation reçue',html,text), idempotency_key='withdrawal:'+saved[0]['id'], order_id=rows[0]['id'], metadata={'receipt_text':receipt})
+        sent = delivered.get('sent', False)
+    except Exception:
+        logger.warning('Withdrawal stored; email receipt unavailable')
+    return {'reference':saved[0]['id'], 'received_at':stamp, 'receipt_text':receipt, 'email_sent':sent}
 
 
 def _session_id(value: str | None) -> str:
