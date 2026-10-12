@@ -90,19 +90,19 @@ TYMotors
 
 ## État technique constaté localement
 
-Le workflow existant gère la validation manuelle et les étapes fournisseur/agent. La migration `20261011221114_supplier_fulfillment_workflow.sql` utilise encore `CJdropshipping` comme fournisseur d'agent par défaut et `not_connected` comme état initial. La sélection commerciale de HyperSKU ne vaut pas connexion technique : ce défaut n'a pas été modifié et aucune migration n'a été appliquée pendant cette préparation.
+Le workflow existant gère la validation manuelle et les étapes fournisseur/agent. La migration `20261011221114_supplier_fulfillment_workflow.sql` utilise encore `CJdropshipping` comme fournisseur d'agent par défaut et `not_connected` comme état initial. La sélection commerciale de HyperSKU ne vaut pas connexion technique : ce défaut historique n'a pas été modifié. Le prestataire réel se renseigne par commande ; aucune connexion API HyperSKU n'est simulée.
 
 ### Préparation de l'admin le 12 octobre
 
-- Le prestataire logistique est désormais éditable par commande dans le code local ; le lien vers l'espace HyperSKU ou CJ suit le nom renseigné. Les anciens prestataires sont conservés, aucune connexion API n'est simulée.
+- Le prestataire logistique est désormais éditable par commande dans la version publiée ; le lien vers l'espace HyperSKU ou CJ suit le nom renseigné. Les anciens prestataires sont conservés, aucune connexion API n'est simulée.
 - Le champ privé `exact_source_url`, déjà accepté par le backend, est exposé dans l'éditeur produit avec validation HTTPS côté serveur.
 - Une action explicite récupère uniquement les liens manquants d'une commande depuis les fiches produits. Elle ne modifie ni les liens existants ni les coûts, ne valide pas la commande et ne lance aucun achat.
 - La récupération est réservée aux administrateurs, avec contrôle de concurrence, et refusée après validation, achat, expédition, annulation ou remboursement.
-- Migration additive locale : `20261012042643_supplier_link_refresh.sql`. Elle doit être publiée avant le backend/frontend utilisant la nouvelle action ; elle n'a pas encore été appliquée aux projets hébergés.
-- Contrôles locaux : 153 tests API, 47 contrôles PostgreSQL/PGlite, lint frontend, 6 tests frontend et build de production réussis.
-- Navigateur isolé : prestataire HyperSKU et état « Configuration en cours » enregistrés, lien exact enregistré depuis l'éditeur produit. La fenêtre native de confirmation de récupération a bloqué l'onglet d'automatisation ; le parcours complet de ce bouton reste à retester. L'appel HTTP local réel de récupération a ajouté une référence, sans achat, sans validation et sans événement client supplémentaire ; résultat affiché dans une nouvelle vue de l'admin. Preuve : `assets/hypersku-admin-local.png` à la racine du workspace.
+- Migration additive `20261012042643_supplier_link_refresh.sql` appliquée aux projets de staging et de production ; accès de la fonction RPC réservé au rôle serveur.
+- Contrôles de la préparation admin : 47 contrôles PostgreSQL/PGlite, lint frontend, 6 tests frontend et build de production réussis. Après les correctifs Stripe/suivi, les suites complètes comptent 168 tests backend et 17 tests frontend réussis ; les CI backend/frontend sont réussies.
+- Navigateur isolé : prestataire HyperSKU et état « Configuration en cours » enregistrés, lien exact enregistré depuis l'éditeur produit. La confirmation native a été remplacée par une confirmation intégrée ; annulation et récupération testées. L'appel HTTP local réel de récupération a ajouté une référence, sans achat, sans validation et sans événement client supplémentaire ; résultat affiché dans l'admin. Preuve : `assets/hypersku-admin-local.png` à la racine du workspace.
 
-Contrôle distant en lecture seule : le catalogue de staging contient 41 produits, dont 8 liens exacts renseignés. Le dossier fournisseur sans lien observé en production correspond à `[TEST STAGING] Validation Stripe`, et non à une référence automobile réelle. Ne pas lui attribuer arbitrairement un lien fournisseur ni effectuer d'achat.
+Contrôle distant en lecture seule : staging et production contiennent chacun 40 produits brouillons et une fixture archivée, aucun produit actif. Huit liens exacts sont renseignés. Le dossier fournisseur sans lien observé en production correspond à `[TEST STAGING] Validation Stripe`, et non à une référence automobile réelle. Ne pas lui attribuer arbitrairement un lien fournisseur ni effectuer d'achat.
 
 L'accès Open API est annoncé par HyperSKU, mais les URL d'API, les identifiants, les webhooks, le contrat de données et l'éligibilité de notre compte doivent être obtenus avant de programmer l'adaptateur réel.
 
