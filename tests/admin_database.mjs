@@ -170,6 +170,12 @@ await db.exec('begin; set local role anon;');
 await rejects('select * from suppliers',[],/permission denied/);await db.exec('rollback');
 console.log(JSON.stringify({checks,engine:'PostgreSQL/PGlite',result:'passed'}));
 if (process.argv.includes('--serve')) {
+  // Restore an obvious disposable product for browser journeys after RPC tests.
+  await db.query("update products set status='active',stock=10 where id=$1",[product]);
+  await db.query("update product_images set url='http://127.0.0.1:8765/qa-assets/fixture.svg' where product_id=$1",[product]);
+  const model=(await one("insert into vehicle_models(brand_id,slug,name) values($1,'series-3','Series 3') returning id",[brand])).id;
+  const generation=(await one("insert into vehicle_generations(vehicle_model_id,slug,name,chassis_codes,year_from,year_to,image_verified,stage_image_url,stage_image_alt) values($1,'f30','F30',array['F30'],2012,2019,true,'http://127.0.0.1:8765/qa-assets/fixture.svg','Photo fixture locale') returning id",[model])).id;
+  await db.query('update product_compatibilities set vehicle_model_id=$2,generation_id=$3 where product_id=$1',[product,model,generation]);
   const { createServer } = await import('node:http');
   createServer(async (req,res) => {
     try {
