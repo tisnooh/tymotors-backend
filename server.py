@@ -874,7 +874,9 @@ async def _complete_checkout_payment(obj: Any) -> str | None:
 async def stripe_webhook(request: Request, stripe_signature: str | None = Header(default=None, alias="Stripe-Signature")):
     if not settings.stripe_webhook_secret or not stripe_signature: raise HTTPException(status_code=400, detail="Missing webhook signature")
     payload = await request.body()
-    try: event = stripe.Webhook.construct_event(payload, stripe_signature, settings.stripe_webhook_secret)
+    # SDK resources are not dictionaries. Convert recursively after signature
+    # verification so nested Checkout data supports dictionary operations too.
+    try: event = stripe.Webhook.construct_event(payload, stripe_signature, settings.stripe_webhook_secret).to_dict()
     except (ValueError, stripe.SignatureVerificationError): raise HTTPException(status_code=400, detail="Invalid webhook signature")
     if settings.stripe_test_mode and event.get("livemode") is not False:
         raise HTTPException(status_code=400, detail="Only test Stripe events are accepted by this checkout")
@@ -912,8 +914,9 @@ async def _sync_refunds(payment_intent: str) -> None:
     refunds = await stripe_client.v1.refunds.list_async(params={"payment_intent": payment_intent, "limit": 100})
     succeeded = 0
     async for refund in refunds.auto_paging_iter():
-        if refund.get("status") == "succeeded":
-            succeeded += refund["amount"]
+        refund_data = refund.to_dict()
+        if refund_data.get("status") == "succeeded":
+            succeeded += refund_data["amount"]
     await db.rpc("record_order_refund", {"p_payment_intent": payment_intent, "p_refunded": succeeded})
     if before and succeeded > int(before[0].get("refunded_amount_cents") or 0):
         await _send_order_email("refund_confirmed", before[0]["id"], amount_cents=succeeded)

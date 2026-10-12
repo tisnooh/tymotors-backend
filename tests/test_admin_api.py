@@ -202,7 +202,7 @@ def test_pending_and_failed_refunds_never_reduce_revenue(monkeypatch):
     class RefundPage:
         async def auto_paging_iter(self):
             for status, amount in [("succeeded", 400), ("pending", 600), ("failed", 500)]:
-                yield {"status": status, "amount": amount}
+                yield server.stripe.Refund.construct_from({"object": "refund", "status": status, "amount": amount}, None)
     rpc = AsyncMock()
     monkeypatch.setattr(server.db, "rpc", rpc)
     monkeypatch.setattr(server.db, "select", AsyncMock(return_value=[{"id": "order-1", "refunded_amount_cents": 0}]))
