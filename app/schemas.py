@@ -220,6 +220,11 @@ class OrderTrackingLookupInput(BaseModel):
     order_number: str = Field(min_length=8, max_length=40, pattern=r"^TY-[A-Z0-9-]+$")
     email: EmailStr
 
+    @field_validator("order_number", mode="before")
+    @classmethod
+    def normalize_order_number(cls, value):
+        return value.strip().upper() if isinstance(value, str) else value
+
 
 class ProfileUpdateInput(BaseModel):
     model_config = ConfigDict(extra="forbid")

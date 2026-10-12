@@ -647,7 +647,10 @@ async def order_tracking(payload: OrderTrackingLookupInput, request: Request):
     order = rows[0]
     order.pop("customer_email", None)
     events = await db.select("order_tracking_events", params={"select": "*", "order_id": f"eq.{order['id']}", "order": "occurred_at.asc,id.asc"})
-    return {**order, "tracking_events": [event for event in events if event.get("is_customer_visible")]}
+    public_events = [{key: event.get(key) for key in ("id", "title", "description", "occurred_at")}
+                     for event in events if event.get("is_customer_visible")]
+    order.pop("id", None)
+    return {**order, "tracking_events": public_events}
 
 
 @api.get("/admin/orders")

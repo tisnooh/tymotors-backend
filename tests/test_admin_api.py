@@ -162,7 +162,8 @@ def test_public_tracking_returns_only_customer_visible_events(client, monkeypatc
             return [{"id": ADMIN, "order_number": "TY-20261012-ABC12345", "customer_email": "client@example.com", "payment_status": "paid", "fulfillment_status": "processing"}]
         if table == "order_tracking_events":
             return [
-                {"id": "visible", "order_id": ADMIN, "title": "Paiement confirmé", "is_customer_visible": True},
+                {"id": "visible", "order_id": ADMIN, "title": "Paiement confirmé", "is_customer_visible": True,
+                 "metadata": {"supplier_cost": 12}, "description": "Commande en préparation"},
                 {"id": "private", "order_id": ADMIN, "title": "Note interne", "is_customer_visible": False},
             ]
         return []
@@ -171,6 +172,14 @@ def test_public_tracking_returns_only_customer_visible_events(client, monkeypatc
     assert response.status_code == 200
     assert "customer_email" not in response.json()
     assert [event["id"] for event in response.json()["tracking_events"]] == ["visible"]
+    assert "id" not in response.json()
+    assert "metadata" not in response.json()["tracking_events"][0]
+    assert "order_id" not in response.json()["tracking_events"][0]
+
+
+def test_tracking_normalizes_pasted_order_number():
+    payload = OrderTrackingLookupInput(order_number="  ty-20261012-abc12345  ", email="client@example.com")
+    assert payload.order_number == "TY-20261012-ABC12345"
 
 
 def test_public_tracking_rejects_a_different_email(client, monkeypatch):
