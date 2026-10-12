@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
 
 class ProductCompatibility(BaseModel):
@@ -55,6 +55,18 @@ class SupplierData(BaseModel):
     moq: int | None = Field(default=None, ge=1)
     supplier_verified: bool = False
     notes: str | None = None
+
+    @field_validator("exact_source_url")
+    @classmethod
+    def valid_exact_source_url(cls, value):
+        from urllib.parse import urlparse
+        if not value or not value.strip():
+            return None
+        value = value.strip()
+        url = urlparse(value)
+        if url.scheme != "https" or not url.hostname or url.username or url.password or any(c.isspace() for c in value):
+            raise ValueError("Exact supplier link must be an HTTPS URL")
+        return value
 
 
 class ProductInput(BaseModel):

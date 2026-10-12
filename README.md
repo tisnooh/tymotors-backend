@@ -27,6 +27,9 @@ Le serveur relit prix, statut et stock dans PostgreSQL, enregistre une commande 
 Événements de staging :
 
 - `checkout.session.completed`
+- `checkout.session.async_payment_succeeded`
+- `checkout.session.async_payment_failed`
+- `checkout.session.expired`
 - `payment_intent.payment_failed`
 - `charge.refunded`
 - `refund.created`

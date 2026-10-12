@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 from pydantic import ValidationError
 import server
 from app.admin import PromotionInput, StockInput, SupplierOrderInput, product_input_data, search_filter
-from app.schemas import OrderTrackingLookupInput, ProductInput, ProfileUpdateInput
+from app.schemas import OrderTrackingLookupInput, ProductInput, ProfileUpdateInput, SupplierData
 from tests.test_security_and_catalog import active_product_payload
 
 ADMIN = "10000000-0000-4000-8000-000000000001"
@@ -122,6 +122,38 @@ def test_tracking_lookup_requires_order_number_and_email():
     assert OrderTrackingLookupInput(order_number="TY-20261012-ABC12345", email="client@example.com").email
     with pytest.raises(ValidationError):
         OrderTrackingLookupInput(order_number="ABC123", email="client@example.com")
+
+
+def test_supplier_exact_link_accepts_https_and_normalizes_empty():
+    assert SupplierData(exact_source_url="  ").exact_source_url is None
+    assert SupplierData(exact_source_url=" https://www.alibaba.com/product-detail/test.html ").exact_source_url == "https://www.alibaba.com/product-detail/test.html"
+    for url in ["javascript:alert(1)", "http://example.test/product", "https:///product", "https://user:password@example.test/product", "https://example.test/a b"]:
+        with pytest.raises(ValidationError):
+            SupplierData(exact_source_url=url)
+
+
+def test_supplier_links_refresh_dispatches_authenticated_actor(client, monkeypatch):
+    rpc = AsyncMock(return_value={"refreshed": 1})
+    monkeypatch.setattr(server.db, "rpc", rpc)
+    response = client.post(f"/api/admin/orders/{CUSTOMER}/supplier/refresh-links",
+                           headers={"Authorization": "Bearer admin-test-token"},
+                           json={"expected_updated_at": "2026-10-12T10:00:00Z"})
+    assert response.status_code == 200
+    assert response.json() == {"refreshed": 1}
+    rpc.assert_awaited_once_with("admin_refresh_supplier_links", {
+        "p_actor": ADMIN, "p_order_id": CUSTOMER, "p_expected": "2026-10-12T10:00:00+00:00",
+    })
+
+
+@pytest.mark.parametrize("payload", [{}, {"expected_updated_at": "2026-10-12T10:00:00"},
+    {"expected_updated_at": "2026-10-12T10:00:00Z", "auto_pay": True}])
+def test_supplier_links_refresh_rejects_invalid_input(client, monkeypatch, payload):
+    rpc = AsyncMock()
+    monkeypatch.setattr(server.db, "rpc", rpc)
+    response = client.post(f"/api/admin/orders/{CUSTOMER}/supplier/refresh-links",
+                           headers={"Authorization": "Bearer admin-test-token"}, json=payload)
+    assert response.status_code == 422
+    rpc.assert_not_called()
 
 
 def test_public_tracking_returns_only_customer_visible_events(client, monkeypatch):

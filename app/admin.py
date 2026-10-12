@@ -45,6 +45,10 @@ class SettingsInput(StrictInput):
     currency: Literal["EUR"] = "EUR"
 
 
+class SupplierLinksRefreshInput(StrictInput):
+    expected_updated_at: AwareDatetime
+
+
 class SupplierOrderInput(StrictInput):
     expected_updated_at: AwareDatetime
     status: Literal[
@@ -140,6 +144,13 @@ def create_admin_router(db, catalog, require_admin, audit, stripe_test_mode: boo
             "p_alibaba_order_id": payload.alibaba_order_id, "p_agent_order_id": payload.agent_order_id,
             "p_agent_provider": payload.agent_provider, "p_agent_connection_status": payload.agent_connection_status,
             "p_notes": payload.notes, "p_expected": payload.expected_updated_at.isoformat(),
+        })
+
+    @router.post("/orders/{order_id}/supplier/refresh-links")
+    async def refresh_supplier_links(order_id: UUID, payload: SupplierLinksRefreshInput, admin=Depends(require_admin)):
+        return await db.rpc("admin_refresh_supplier_links", {
+            "p_actor": admin["id"], "p_order_id": str(order_id),
+            "p_expected": payload.expected_updated_at.isoformat(),
         })
 
     @router.get("/inventory")

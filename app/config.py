@@ -50,6 +50,10 @@ class Settings:
     smtp_password: str = ""
     smtp_use_tls: bool = True
 
+    @property
+    def stripe_test_mode(self) -> bool:
+        return self.stripe_secret_key.startswith(("sk_test_", "rk_test_"))
+
     def validate(self) -> None:
         if not self.supabase_url.startswith("https://") or ".supabase.co" not in self.supabase_url:
             raise RuntimeError("SUPABASE_URL must be a hosted Supabase project URL")
@@ -61,7 +65,7 @@ class Settings:
             raise RuntimeError("Publishable and service-role keys must be different")
         if "*" in self.cors_origins:
             raise RuntimeError("CORS_ORIGINS must not contain a wildcard")
-        if self.environment != "production" and self.stripe_secret_key and not self.stripe_secret_key.startswith("sk_test_"):
+        if self.environment != "production" and self.stripe_secret_key and not self.stripe_test_mode:
             raise RuntimeError("A live Stripe key cannot be used outside production")
         if self.email_enabled:
             if not all((self.email_from_address, self.email_reply_to, self.email_token_secret)):

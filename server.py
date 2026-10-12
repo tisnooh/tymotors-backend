@@ -876,6 +876,8 @@ async def stripe_webhook(request: Request, stripe_signature: str | None = Header
     payload = await request.body()
     try: event = stripe.Webhook.construct_event(payload, stripe_signature, settings.stripe_webhook_secret)
     except (ValueError, stripe.SignatureVerificationError): raise HTTPException(status_code=400, detail="Invalid webhook signature")
+    if settings.stripe_test_mode and event.get("livemode") is not False:
+        raise HTTPException(status_code=400, detail="Only test Stripe events are accepted by this checkout")
     event_id = event["id"]; existing = await db.select("stripe_events", params={"select": "status", "event_id": f"eq.{event_id}", "limit": 1})
     if existing and existing[0]["status"] == "completed": return {"received": True, "duplicate": True}
     if not existing:
@@ -922,7 +924,7 @@ api.include_router(create_admin_router(
     catalog,
     require_admin,
     _audit,
-    stripe_test_mode=settings.stripe_secret_key.startswith("sk_test_"),
+    stripe_test_mode=settings.stripe_test_mode,
 ))
 app.include_router(api)
 
