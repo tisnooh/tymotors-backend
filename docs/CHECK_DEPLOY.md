@@ -71,6 +71,9 @@ native inspect ou l'entrée Node de la CLI avec les arguments correctement cité
 - Render : service API européen correct, dépôt backend / branche develop, **Live**
   sur le SHA attendu, pas seulement Build/Deploy en cours. Examiner le premier
   échec de build/startup sans recopier de secrets/logs PII ; ne pas changer de plan.
+- Logs applicatifs : pas d'access log brut/query token ; HTTPX/httpcore WARNING,
+  erreurs structurées sans PII. Contrôler aussi redaction/rétention du proxy/hébergeur,
+  qui n'est pas couvert par la configuration du logger Python.
 - En rollback, migrations compatibles à conserver ; ne pas restaurer la base
   automatiquement pour rollback un simple frontend. Décision backup séparée.
 

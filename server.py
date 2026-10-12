@@ -45,6 +45,11 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
 logger = logging.getLogger("tymotors")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+# HTTP client URLs include PostgREST filters; access URLs may contain newsletter
+# confirmation tokens. Keep structured application errors, never raw URL logs.
+logging.getLogger('httpx').setLevel(logging.WARNING)
+logging.getLogger('httpcore').setLevel(logging.WARNING)
+logging.getLogger('uvicorn.access').disabled = True
 
 settings: Settings = get_settings()
 db = SupabaseRest(settings.supabase_url, settings.supabase_service_role_key, settings.supabase_publishable_key)

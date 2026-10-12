@@ -25,7 +25,7 @@ Les réglages des comptes/infra non accessibles sont identifiés comme à vérif
 | SEC-06 | élevée | Suivi public et collecte formulaires. | Vérifié : email **et** référence nécessaires ; même 404 si l'un est faux. Réponse filtrée sans ID interne/email/adresse/données fournisseur. Limite 10 recherches/5 min/IP ; tests injection objets et limite. Pas de consultation publique par seul ID. |
 | SEC-07 | moyenne | Identifiant invité fallback Date/Math.random prévisible et validation trop souple. | Corrigé : Web Crypto UUID ou 192 bits aléatoires ; 16–128 caractères allowlist côté serveur. Valeur locale invalide remplacée. Une capacité persistante ancienne conforme n'est pas une preuve de propriété d'un compte. |
 | SEC-08 | élevée | Corps volumineux/stream sans Content-Length et lecture sans borne globale. | Corrigé : ASGI avant parsers, 1 MiB JSON, 9 MiB enveloppe upload (limite fichier existante 8 MiB inchangée), délai lecture total 15 s, query string 8 KiB. Tests taille déclarée/réelle et stream. Réglages proxy complémentaires à vérifier. |
-| SEC-09 | moyenne | Réponses Pydantic pouvaient renvoyer la valeur d'entrée, et traces SDK pouvaient contenir des données privées. | Corrigé : réponses validation sans `input`/`ctx`, erreurs inattendues génériques et en-têtes aussi sur erreur ; logs classe/statut/identifiant technique seulement, plus de traceback SDK dans le logger applicatif. Tests mot de passe non réémis et panne dépendance. |
+| SEC-09 | moyenne | Réponses Pydantic pouvaient renvoyer la valeur d'entrée, traces SDK et logs d'URL HTTP pouvaient contenir des données privées/tokens newsletter. | Corrigé : réponses validation sans `input`/`ctx`, erreurs inattendues génériques et en-têtes aussi sur erreur ; logs classe/statut/identifiant technique seulement, plus de traceback SDK dans le logger applicatif. Logs bruts Uvicorn désactivés, HTTPX/httpcore limité à WARNING. Tests mot de passe non réémis, panne dépendance et politique logs. Contrôler séparément redaction/rétention des logs du proxy/hébergeur. |
 | SEC-10 | élevée | Injections/XSS/uploads. | Vérifié : modèles Pydantic, UUID/allowlists, SQL paramétré et filtres PostgREST construits côté serveur. Pas de moteur MongoDB ni requête `$where` dans l'application ; objets/opérateurs inattendus rejetés avant base. Aucun `dangerouslySetInnerHTML`, eval ou injection innerHTML trouvé dans src. Emails échappés. Upload admin existant : MIME/extension-signature, taille, nom généré Cloudinary, pas de chemin utilisateur/overwrite. Gestion des images conservée. |
 | SEC-11 | critique | Paiement manipulé / faux webhook / double débit stock. | Contrôles existants vérifiés : prix entiers base et livraison serveur, panier/compatibilité revérifiés, signature Stripe sur corps brut, mode test, montant/devise/référence attendus ; événements uniques et RPC SQL atomique verrouillé. Tests signature absente/fausse/altérée/expirée sans écritures, rejeu/idempotence/stock. La redirection succès ne marque jamais payé. Checkout crée une commande **impayée**, webhook confirme son paiement. |
 | SEC-12 | moyenne | CSP/HSTS/CORS/HTTPS. | Backend CSP API default-none, nosniff, Frame DENY, Referrer/Permissions, no-store privé. Front CSP script-self, frame-ancestors-none, ajout HSTS un an. HTTPS et redirection gérés par Vercel/Render ; ne pas croire les X-Forwarded arbitraires. CORS origines explicites sans wildcard, regex previews optionnelle à restreindre à son équipe (ne pas accepter tous les `.vercel.app`). Vérifier proxy approuvé et HTTP→HTTPS en déploiement. |
@@ -86,6 +86,8 @@ vers un outillage maintenu pour supprimer les incompatibilités restantes.
   sans EXECUTE anon/authenticated. RPC nouvelle session : droits clients refusés
   et session inexistante refusée, staging et production. PGlite teste aussi
   rôle/mutations/idempotence/stock et expiration/révocation de session.
+- Vérification distante des grants : clients ne peuvent ni modifier leur rôle,
+  ni écrire directement orders/products ; anon ne lit pas orders/admin_audit.
 - Advisors Supabase : 5 INFO « RLS sans policy » sur tables fournisseur/événements
   **privées volontairement fermées**, pas une raison d'accorder l'accès public.
   [Explication officielle](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy).
@@ -120,3 +122,14 @@ Procédure paiement hébergé **sandbox** : TEST_STRIPE.md ; état publié : CHE
 Rotation exigée : **SMTP_PASSWORD exposé dans le chat**. Gitleaks clean n'exclut
 pas une fuite dans logs, exports, forks ou références Git non disponibles.
 Ne publier ni rapports non masqués ni commandes contenant des credentials.
+
+## Contrôle consolidé — 13 octobre 2026
+
+255 tests backend, 53 frontend (13 suites), 58 contrôles PostgreSQL, smoke signé,
+lint, pip check, compilation Python et build production réussis. Dernier audit
+Python toujours sans avis connu ; Yarn reste à 24 avis/12 paquets, 0 critique.
+Les titres de suivi/mentions/rétractation n'indiquent plus « page introuvable » ;
+pages privées noindex, canonicals sans token et origine de secours issue du
+navigateur, pas d'un domaine écrit en dur. Cela n'est pas un contrôle d'accès.
+Les logs d'URL et filtres DB bruts sont désactivés au runtime et dans Docker.
+Déploiements et recette navigateur finale détaillés dans PROGRESS.md.

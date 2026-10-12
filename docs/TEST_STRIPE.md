@@ -65,7 +65,7 @@ Redémarrer le backend après configuration ; garder le listener ouvert.
 
 ```powershell
 # Terminal backend
-.venv/Scripts/python.exe -m uvicorn server:app --host 127.0.0.1 --port 8000
+.venv/Scripts/python.exe -m uvicorn server:app --host 127.0.0.1 --port 8000 --no-access-log
 # Autre terminal, dossier frontend
 npx.cmd --yes yarn@1.22.22 start
 ```

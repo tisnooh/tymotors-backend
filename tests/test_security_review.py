@@ -7,6 +7,7 @@ import hmac
 import time
 from dataclasses import replace
 from unittest.mock import AsyncMock
+import logging
 import httpx
 import pytest
 from fastapi.testclient import TestClient
@@ -94,6 +95,12 @@ def test_invalid_webhook_signature_has_no_database_side_effect(monkeypatch, case
 def test_validation_does_not_echo_password_input():
     response = TestClient(server.app).post('/api/auth/login', json={'email': 'bad', 'password': {'private': 'never_echo_me'}})
     assert response.status_code == 422 and 'never_echo_me' not in response.text
+
+
+def test_raw_url_access_logs_cannot_disclose_tokens_or_database_filters():
+    assert logging.getLogger('uvicorn.access').disabled is True
+    assert logging.getLogger('httpx').level >= logging.WARNING
+    assert logging.getLogger('httpcore').level >= logging.WARNING
 
 
 def test_dependency_errors_are_generic_and_health_does_not_disclose_config(monkeypatch):
