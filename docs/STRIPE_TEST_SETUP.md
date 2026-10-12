@@ -1,5 +1,11 @@
 # Stripe — TYMotors en test uniquement
 
+Mise à jour 13 octobre : procédure actuelle dans **TEST_STRIPE.md**, smoke signé
+exécuté avec SDK réel + PostgreSQL jetable. CLI 1.53.1 installée localement hors
+Git ; les mentions « CLI absente / nouveaux commits non publiés » ci-dessous
+décrivent le relevé historique précédent, pas l'état actuel. Le paiement 4242
+hébergé reste une recette manuelle distincte, non prétendue réussie.
+
 Le paiement utilise Checkout hébergé, sans transmission de données de carte au serveur TYMotors. Ne pas activer le mode réel ni acheter des produits fournisseurs pendant ces tests.
 
 ## Compte et secrets
