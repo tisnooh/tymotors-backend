@@ -23,6 +23,7 @@ await db.exec(await readFile(new URL('../supabase/migrations/20261011221114_supp
 await db.exec(await readFile(new URL('../supabase/migrations/20261011222034_supplier_fulfillment_indexes.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../supabase/migrations/20261012042643_supplier_link_refresh.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../supabase/migrations/20261012115851_checkout_customer_phone.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../supabase/migrations/20261012120138_supplier_directory.sql',import.meta.url),'utf8'));
 let checks = 0;
 const one = async (sql,params=[]) => (await db.query(sql,params)).rows[0];
 async function rejects(sql,params,pattern) { await assert.rejects(db.query(sql,params),pattern); checks++; }
@@ -158,6 +159,15 @@ await db.query("update orders set payment_status='refunded',fulfillment_status='
 await rejects(refreshSQL,[admin,closed.id,closedSupplier.updated_at],/before approval and purchase/);
 const refreshPerms=(await db.query("select rolname,has_function_privilege(rolname,'public.admin_refresh_supplier_links(uuid,uuid,timestamptz)','EXECUTE') allowed from pg_roles where rolname in ('anon','authenticated','service_role')")).rows;
 assert.equal(refreshPerms.every(r=>r.allowed===(r.rolname==='service_role')),true);checks++;
+const supplierData={name:'Fixture supplier',url:'https://www.alibaba.com/product-detail/fixture_123.html',notes:'Manual only',product_ids:[product]};
+await rejects('select admin_save_supplier($1,null,$2,null)',[customer,supplierData],/Admin role required/);
+const directory=(await one('select admin_save_supplier($1,null,$2,null) data',[admin,supplierData])).data;
+assert.equal((await one('select count(*) n from supplier_products where supplier_id=$1',[directory.id])).n,1);checks++;
+await rejects('select admin_save_supplier($1,$2,$3,null)',[admin,directory.id,supplierData],/changed. Reload/);
+await db.query('select admin_save_supplier($1,$2,$3,$4)',[admin,directory.id,{...supplierData,product_ids:[]},directory.updated_at]);
+assert.equal((await one('select count(*) n from supplier_products where supplier_id=$1',[directory.id])).n,0);checks++;
+await db.exec('begin; set local role anon;');
+await rejects('select * from suppliers',[],/permission denied/);await db.exec('rollback');
 console.log(JSON.stringify({checks,engine:'PostgreSQL/PGlite',result:'passed'}));
 if (process.argv.includes('--serve')) {
   const { createServer } = await import('node:http');

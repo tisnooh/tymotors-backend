@@ -6,7 +6,7 @@ from uuid import UUID
 import re
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, Field, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, Field, HttpUrl, field_validator, model_validator
 
 
 class StrictInput(BaseModel):
@@ -47,6 +47,21 @@ class SettingsInput(StrictInput):
 
 class SupplierLinksRefreshInput(StrictInput):
     expected_updated_at: AwareDatetime
+
+
+class SupplierInput(StrictInput):
+    name: str = Field(min_length=2, max_length=160)
+    url: HttpUrl | None = None
+    notes: str = Field(default="", max_length=5000)
+    product_ids: list[UUID] = Field(default_factory=list, max_length=100)
+    expected_updated_at: AwareDatetime | None = None
+
+    @field_validator("url")
+    @classmethod
+    def secure_url(cls, value):
+        if value and (value.scheme != "https" or len(str(value)) > 1000 or value.username or value.password):
+            raise ValueError("Use a public HTTPS supplier link without credentials")
+        return value
 
 
 class SupplierOrderInput(StrictInput):
@@ -97,6 +112,31 @@ def product_input_data(product: dict, schema) -> dict:
 
 def create_admin_router(db, catalog, require_admin, audit, stripe_test_mode: bool = False):
     router = APIRouter(prefix="/admin", dependencies=[Depends(require_admin)])
+
+    @router.get("/suppliers")
+    async def suppliers(page: int = Query(1, ge=1), limit: int = Query(25, ge=1, le=100)):
+        result = await db.page("suppliers", params={"select": "*", "order": "name.asc,id.asc"}, page=page, limit=limit)
+        ids = [s["id"] for s in result["items"]]
+        links = await db.select("supplier_products", params={"supplier_id": "in.(" + ",".join(ids) + ")"}) if ids else []
+        for supplier in result["items"]:
+            supplier["product_ids"] = [r["product_id"] for r in links if r["supplier_id"] == supplier["id"]]
+        return result
+
+    @router.get("/supplier-product-options")
+    async def supplier_product_options():
+        return await db.select("products", params={"select": "id,name,sku,slug", "order": "name.asc", "limit": 1000})
+
+    @router.post("/suppliers", status_code=201)
+    async def create_supplier(payload: SupplierInput, admin=Depends(require_admin)):
+        return await db.rpc("admin_save_supplier", {"p_actor": admin["id"], "p_id": None,
+            "p_data": payload.model_dump(mode="json", exclude={"expected_updated_at"}), "p_expected": None})
+
+    @router.put("/suppliers/{supplier_id}")
+    async def edit_supplier(supplier_id: UUID, payload: SupplierInput, admin=Depends(require_admin)):
+        if not payload.expected_updated_at:
+            raise HTTPException(422, "Expected update timestamp required")
+        return await db.rpc("admin_save_supplier", {"p_actor": admin["id"], "p_id": str(supplier_id),
+            "p_data": payload.model_dump(mode="json", exclude={"expected_updated_at"}), "p_expected": payload.expected_updated_at.isoformat()})
 
     @router.get("/dashboard")
     async def dashboard(admin=Depends(require_admin)):
