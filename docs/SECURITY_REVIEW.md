@@ -171,7 +171,8 @@ lint, pip check, compilation Python et build production réussis. Dernier audit
 Python toujours sans avis connu ; Yarn réduit à 14 avis/7 paquets, 0 critique.
 14 tests de sécurité/compatibilité de l'outillage ajoutés. Les cinq résolutions
 n'altèrent pas les sources applicatives, GSAP/Lenis ni les images produit ; le
-build produit les mêmes noms/hash de bundles JS/CSS qu'avant ce correctif.
+build local, à environnement identique, produit les mêmes noms/hash de bundles
+JS/CSS qu'avant ce correctif. Le build hébergé peut différer avec ses variables publiques.
 Les titres de suivi/mentions/rétractation n'indiquent plus « page introuvable » ;
 pages privées noindex, canonicals sans token et origine de secours issue du
 navigateur, pas d'un domaine écrit en dur. Cela n'est pas un contrôle d'accès.
@@ -183,5 +184,16 @@ eu-west-3 ; staging contient 40 brouillons et 1 archive, aucun produit actif.
 Connecteur Stripe UNAUTHORIZED (réauthentification requise). Le dashboard sandbox
 montre un rejeu d'événement générique HTTP 200/dédupliqué, sans metadata de commande
 TYMotors : il ne valide pas notre panier, l'adresse/téléphone ni la carte 4242.
-Le contrôle navigateur Render s'est interrompu sur timeout CDP ; aucune clé
-serveur copiée, aucun envoi email ou restauration distante revendiqué.
+Après un timeout du premier onglet, contrôle Render repris dans un onglet neuf :
+le service européen affiche le commit documentaire d558383 Live, sans changement
+de forfait. Le dashboard confirme que Shell/SSH n'est pas disponible sur Free ;
+aucune commande serveur exécutée, clé copiée, émission d'email ou restauration
+distante revendiquée. Ces recettes opérateur restent manuelles, sans imposer
+une montée de forfait pour contourner le blocage.
+
+Publication frontend bbc9eda : CI 38336804041 success (tests d'outillage, Jest,
+build et secrets), Vercel READY et alias public corrélés au SHA. CI backend
+38336808537 success (Python 3.11/3.12, secrets). Contrôle HTTP hébergé 15/15 réussi.
+Ce sont des preuves de publication ciblées, pas un paiement 4242 ni une ouverture
+commerciale validée. Les résultats finaux et commits documentaires suivants
+sont consignés dans PROGRESS.md.
