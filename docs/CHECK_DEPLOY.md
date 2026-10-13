@@ -15,6 +15,7 @@ git diff --check
 .venv/Scripts/python.exe scripts/smoke_stripe.py
 # Frontend, dans son dossier
 npx.cmd --yes yarn@1.22.22 install --frozen-lockfile
+npx.cmd --yes yarn@1.22.22 test:toolchain
 npx.cmd --yes yarn@1.22.22 test --watchAll=false --runInBand
 npx.cmd --yes yarn@1.22.22 lint
 npx.cmd --yes yarn@1.22.22 build
@@ -45,6 +46,11 @@ et scope Production/Preview dans `vercel env ls` sans afficher/lire les secrets.
 Changer une env de build exige un nouveau déploiement. Ne pas utiliser `env pull`
 pour copier des secrets de production sur ce poste. Render prend les variables
 du runtime ; redéploiement après changement. `.env.example` sert de contrat.
+
+Outillage frontend : Node **22 ou 24** (CI 22, projet Vercel 24.x vérifié le
+13 octobre), Yarn 1.22.22 et `--frozen-lockfile`. Les résolutions transitives de
+sécurité sont testées via `test:toolchain` : ne pas supprimer ces contrôles pour
+masquer un avertissement de plage de dépendance. Détail dans SECURITY_REVIEW.md.
 
 Pas de futur domaine dans le code : renseigner URL Vercel actuelle dans SITE_URL,
 origines exactes sans chemin et sans trailing wildcard. CORS ≠ authentification.

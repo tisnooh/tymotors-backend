@@ -115,3 +115,18 @@ ne valide pas le panier ni la création d'une commande de ce site.
 Sources : [webhooks et corps brut](https://docs.stripe.com/webhooks),
 [cartes test](https://docs.stripe.com/testing). Passage live hors périmètre :
 uniquement après SIRET, conformité légale/produits et recette complète autorisée.
+
+## État externe réexaminé — 13 octobre 2026
+
+Le connecteur Stripe demande une réauthentification. Le dashboard sandbox est
+visible : destination test active et ancien événement générique dédupliqué en
+HTTP 200. Il ne comporte aucune metadata de commande TYMotors, son retour est
+extérieur au site et il ne collecte ni livraison ni téléphone. **Ce n'est pas
+la recette 4242 du panier**. Ne pas créer/modifier une vraie commande pour lui
+faire correspondre cet événement.
+
+Supabase staging est accessible, eu-west-3 : 40 produits draft, 1 archived,
+aucun actif au moment du contrôle. Le code et le smoke local sont vérifiés ;
+la recette hébergée reste bloquée (action manuelle requise : réauthentification,
+coffre sandbox configuré et référence staging isolée validée). Aucun produit
+réel activé ni clé Stripe créée/copiée pour contourner cette limite.
