@@ -7,6 +7,31 @@ confirme, sans créer une seconde commande. `/order-success` est seulement une l
 
 ## 1. Smoke test automatisé sans secrets
 
+### Disponibilité du catalogue pour les essais
+
+`STRIPE_MODE=test` + `TEST_CATALOG_ENABLED=true` (valeur par défaut en test)
+autorisent les produits **draft** à être essayés, avec la mention « Disponible
+pour les tests ». Les statuts, validations fournisseur/compatibilité et stocks
+réels restent inchangés. La limite de simulation est de 20 unités par référence,
+ce n'est pas une quantité de stock. Produits archivés toujours exclus, prix et
+frais lus/recalculés côté serveur, incompatibilité connue toujours refusée.
+
+Les nouvelles commandes sandbox portent `orders.is_test=true`. La migration
+`20261013063630_sandbox_catalog_orders.sql` doit être appliquée **avant** le
+backend : webhook signé/idempotent, stock réel inchangé, pas de dossier
+fournisseur ni remise en stock d'un retour de test. Le suivi précise qu'il s'agit
+d'un essai sans expédition ; l'admin et la page succès indiquent TEST. Les
+statistiques actuelles de l'admin peuvent inclure les essais, pas un CA réel.
+
+`TEST_CATALOG_ENABLED=false` restaure les aperçus non commandables.
+En `STRIPE_MODE=live`, les drafts sont automatiquement non commandables, même
+si ce drapeau a été oublié. Publication commerciale : validation existante de
+chaque produit, vrai stock et informations légales restent requis. Aucun live
+ni achat fournisseur autorisé par cette préparation.
+
+Carte d'essai dans Checkout hébergé : `4242 4242 4242 4242`, expiration future,
+CVC de trois chiffres. Voir [la documentation officielle Stripe](https://docs.stripe.com/testing).
+
 Depuis backend, Python du projet et Node installé :
 
 ```powershell

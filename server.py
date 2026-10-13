@@ -26,6 +26,7 @@ import httpx
 from app.request_guard import RequestGuard
 
 from app.compatibility import check_compatibility
+from app.catalog_availability import purchase_availability, purchasable
 from app.admin import create_admin_router, search_filter, product_input_data
 from app.config import Settings, get_settings
 from app.schemas import (
@@ -211,8 +212,8 @@ async def _cart_response(cart: dict[str, Any] | None) -> dict[str, Any]:
     if not item_rows:
         return {"items": [], "subtotal": 0, "shipping": 0, "total": 0, "currency": cart.get("currency", "EUR")}
     product_ids = [row["product_id"] for row in item_rows]
-    rows = await db.select("products", params={"select": "*", "id": "in.(" + ",".join(product_ids) + ")", "status": "eq.active"})
-    products = await catalog.hydrate_products(rows); by_id = {p["id"]: p for p in products}
+    rows = await db.select("products", params={"select": "*", "id": "in.(" + ",".join(product_ids) + ")", "status": "in.(active,draft)" if settings.test_catalog_available else "eq.active"})
+    products = await catalog.hydrate_products(rows); by_id = {p["id"]: purchase_availability(p, settings) for p in products}
     items, subtotal_cents = [], 0
     for row in item_rows:
         product = by_id.get(row["product_id"])
@@ -350,9 +351,10 @@ async def list_products(category: str | None = None, brand: str | None = None, m
                         preview: bool = False,
                         sort: str = Query(default="newest", pattern="^(relevance|newest|price_asc|price_desc|name)$"),
                         page: int = Query(default=1, ge=1), limit: int = Query(default=24, ge=1, le=100)):
-    products = await catalog.hydrate_products(await catalog.product_rows(public_only=not preview))
-    if preview:
+    products = await catalog.hydrate_products(await catalog.product_rows(public_only=not (preview or settings.test_catalog_available)))
+    if preview or settings.test_catalog_available:
         products = [product for product in products if product.get("status") != "archived"]
+    products = [purchase_availability(product, settings) for product in products]
     category = {"performance": "exterior", "technology": "multimedia-technology"}.get(category, category)
     if category: products = [p for p in products if p["category_slug"] == category]
     if featured is not None: products = [p for p in products if p["featured"] is featured]
@@ -373,16 +375,16 @@ async def list_products(category: str | None = None, brand: str | None = None, m
 
 @api.get("/products/{slug}")
 async def get_product(slug: str, preview: bool = False):
-    product = await catalog.product_by("slug", slug, public_only=not preview)
+    product = await catalog.product_by("slug", slug, public_only=not (preview or settings.test_catalog_available))
     if product and product.get("status") == "archived":
         product = None
     if not product: raise HTTPException(status_code=404, detail="Product not found")
-    return product
+    return purchase_availability(product, settings)
 
 
 @api.post("/products/{slug}/compatibility")
 async def product_compatibility(slug: str, vehicle: VehicleSelection):
-    product = await catalog.product_by("slug", slug)
+    product = await _purchasable_product("slug", slug)
     if not product: raise HTTPException(status_code=404, detail="Product not found")
     return check_compatibility(product, vehicle)
 
@@ -431,15 +433,22 @@ async def claim_guest_cart(x_session_id: str | None = Header(default=None), user
     return await _cart_response(user_cart)
 
 
+async def _purchasable_product(field: str, value: str) -> dict[str, Any] | None:
+    product = await catalog.product_by(field, value, public_only=not settings.test_catalog_available)
+    if not product or product.get('status') not in ({'active', 'draft'} if settings.test_catalog_available else {'active'}):
+        return None
+    return purchase_availability(product, settings)
+
+
 @api.post("/cart")
 async def add_to_cart(payload: CartItemInput, x_session_id: str | None = Header(default=None), user: dict[str, Any] | None = Depends(optional_user)):
-    product = await catalog.product_by("id", payload.product_id)
+    product = await _purchasable_product("id", payload.product_id)
     if not product: raise HTTPException(status_code=404, detail="Active product not found")
-    if product["stock"] < payload.quantity: raise HTTPException(status_code=409, detail="Insufficient stock")
+    if not purchasable(product, settings, payload.quantity): raise HTTPException(status_code=409, detail="Insufficient stock")
     cart = await _cart_for(user, x_session_id); assert cart
     existing = await db.select("cart_items", params={"select": "*", "cart_id": f"eq.{cart['id']}", "product_id": f"eq.{payload.product_id}", "limit": 1})
     quantity = payload.quantity + (existing[0]["quantity"] if existing else 0)
-    if quantity > 20 or quantity > product["stock"]: raise HTTPException(status_code=409, detail="Requested quantity is unavailable")
+    if not purchasable(product, settings, quantity): raise HTTPException(status_code=409, detail="Requested quantity is unavailable")
     row = {"cart_id": cart["id"], "product_id": payload.product_id, "quantity": quantity,
            "selected_vehicle": payload.selected_vehicle.model_dump() if payload.selected_vehicle else None}
     await db.insert("cart_items", row, upsert=True, on_conflict="cart_id,product_id")
@@ -453,8 +462,8 @@ async def update_cart(payload: CartUpdateInput, x_session_id: str | None = Heade
     if payload.quantity == 0:
         await db.delete("cart_items", params={"cart_id": f"eq.{cart['id']}", "product_id": f"eq.{payload.product_id}"})
     else:
-        product = await catalog.product_by("id", payload.product_id)
-        if not product or product["stock"] < payload.quantity: raise HTTPException(status_code=409, detail="Requested quantity is unavailable")
+        product = await _purchasable_product("id", payload.product_id)
+        if not product or not purchasable(product, settings, payload.quantity): raise HTTPException(status_code=409, detail="Requested quantity is unavailable")
         await db.update("cart_items", {"quantity": payload.quantity}, params={"cart_id": f"eq.{cart['id']}", "product_id": f"eq.{payload.product_id}"})
     return await _cart_response(cart)
 
@@ -475,8 +484,8 @@ async def _wishlist_response(user_id: str) -> dict[str, Any]:
     rows = await db.select("wishlists", params={"select": "product_id", "user_id": f"eq.{user_id}", "order": "created_at.desc"})
     if not rows: return {"items": []}
     ids = [row["product_id"] for row in rows]
-    products = await db.select("products", params={"select": "*", "id": "in.(" + ",".join(ids) + ")", "status": "eq.active"})
-    return {"items": await catalog.hydrate_products(products)}
+    products = await db.select("products", params={"select": "*", "id": "in.(" + ",".join(ids) + ")", "status": "in.(active,draft)" if settings.test_catalog_available else "eq.active"})
+    return {"items": [purchase_availability(p, settings) for p in await catalog.hydrate_products(products)]}
 
 
 @api.get("/wishlist")
@@ -485,7 +494,7 @@ async def get_wishlist(user: dict[str, Any] = Depends(require_user)): return awa
 
 @api.post("/wishlist")
 async def add_wishlist(payload: WishlistInput, user: dict[str, Any] = Depends(require_user)):
-    if not await catalog.product_by("id", payload.product_id): raise HTTPException(status_code=404, detail="Product not found")
+    if not await _purchasable_product("id", payload.product_id): raise HTTPException(status_code=404, detail="Product not found")
     await db.insert("wishlists", {"user_id": user["id"], "product_id": payload.product_id}, upsert=True, on_conflict="user_id,product_id")
     return await _wishlist_response(user["id"])
 
@@ -852,7 +861,7 @@ async def create_checkout_session(request: Request, promotion_code: str | None =
     line_items, order_items, subtotal_cents, requires_review = [], [], 0, False
     for item in cart_view["items"]:
         quantity = item["quantity"]
-        if item["status"] != "active" or item["stock"] < quantity: raise HTTPException(status_code=409, detail=f"Unavailable product: {item['name']}")
+        if not purchasable(item, settings, quantity): raise HTTPException(status_code=409, detail=f"Unavailable product: {item['name']}")
         # Hydrated cart rows carry display-only compatibility metadata. Validate only
         # vehicle facts, then recompute; never trust a carried 'compatible' label.
         vehicle_facts = {key: value for key, value in (item.get('selected_vehicle') or {}).items() if key in VehicleSelection.model_fields}
@@ -872,7 +881,7 @@ async def create_checkout_session(request: Request, promotion_code: str | None =
     order_payload = {"order_number": _order_number(), "user_id": user["id"] if user else None, "cart_id": cart["id"],
         "guest_session_id": None if user else x_session_id, "subtotal_cents": subtotal_cents, "shipping_amount_cents": shipping,
         "tax_amount_cents": 0, "total_cents": subtotal_cents + shipping, "currency": cart_view["currency"],
-        "requires_compatibility_review": requires_review}
+        "requires_compatibility_review": requires_review, "is_test": settings.stripe_test_mode}
     if user:
         profiles = await db.select("profiles", params={"select": "email,full_name,stripe_customer_id", "id": f"eq.{user['id']}", "limit": 1})
         if profiles: order_payload.update(customer_email=profiles[0].get("email"), customer_name=profiles[0].get("full_name"))
@@ -919,7 +928,7 @@ async def checkout_session(stripe_session_id: str, x_session_id: str | None = He
     if not allowed: raise HTTPException(status_code=404, detail="Order not found")
     # Read-only: signed webhooks alone authorize payment side effects.
     result = (await _orders_with_items([order]))[0]
-    return {"paid": result["payment_status"] == "paid", "status": result["status"], "payment_status": result["payment_status"],
+    return {"paid": result["payment_status"] == "paid", "is_test": result.get("is_test", False), "status": result["status"], "payment_status": result["payment_status"],
         "order_reference": result["order_number"], "customer_email": result.get("customer_email"), "items": result["items"],
         "subtotal": result["subtotal_cents"] / 100, "shipping": result["shipping_amount_cents"] / 100,
         "tax": result["tax_amount_cents"] / 100, "total": result["total_cents"] / 100, "currency": result["currency"],
@@ -933,11 +942,13 @@ async def _complete_checkout_payment(obj: Any) -> str | None:
     if not order_id:
         return None
     order_rows = await db.select("orders", params={
-        "select": "id,total_cents,currency,stripe_session_id,customer_email", "id": f"eq.{order_id}", "limit": 1,
+        "select": "id,total_cents,currency,stripe_session_id,customer_email,is_test", "id": f"eq.{order_id}", "limit": 1,
     })
     if not order_rows:
         raise RuntimeError("Stripe event references an unknown order")
     expected = order_rows[0]
+    if expected.get('is_test') and not settings.stripe_test_mode:
+        raise RuntimeError('A test order cannot be completed by a live payment')
     if obj.get("payment_status") == "no_payment_required" and expected["total_cents"] != 0:
         raise RuntimeError("A non-zero order cannot be completed without payment")
     if (

@@ -53,11 +53,17 @@ class Settings:
     smtp_password: str = ""
     smtp_use_tls: bool = True
     stripe_mode: str = "test"
+    test_catalog_enabled: bool = True
     shipping_countries: tuple[str, ...] = ("FR", "BE", "DE", "ES", "IT", "LU", "NL", "PT")
 
     @property
     def stripe_test_mode(self) -> bool:
         return self.stripe_mode == "test"
+
+    @property
+    def test_catalog_available(self) -> bool:
+        # Never opens drafts in live mode, even if the test flag was left enabled.
+        return self.stripe_test_mode and self.test_catalog_enabled
 
     def validate(self) -> None:
         project = urlsplit(self.supabase_url)
@@ -158,6 +164,7 @@ def get_settings() -> Settings:
         smtp_password=os.getenv("SMTP_PASSWORD", ""),
         smtp_use_tls=os.getenv("SMTP_USE_TLS", "true").lower() in {"1", "true", "yes"},
         stripe_mode=os.getenv("STRIPE_MODE", "test").strip().lower(),
+        test_catalog_enabled=os.getenv("TEST_CATALOG_ENABLED", "true").lower() in {"1", "true", "yes"},
         shipping_countries=tuple(_csv("SHIPPING_COUNTRIES", "FR,BE,DE,ES,IT,LU,NL,PT")),
     )
     return settings

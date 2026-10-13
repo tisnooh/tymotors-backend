@@ -8,7 +8,7 @@ def legal_ready(config=None):
     return all(value.get(key) for key in ('company_name','siret','address','contact_email','contact_phone','vat_mention','mediator_name','mediator_url','hosting_details','returns_address'))
 def public_site_configuration(settings):
     legal = legal_configuration()
-    return {'site_url': settings.frontend_url, 'stripe_mode': settings.stripe_mode, 'legal': legal, 'legal_ready': legal_ready(legal), 'shipping_rate_cents': settings.shipping_rate_cents, 'free_shipping_threshold_cents': settings.free_shipping_threshold_cents, 'shipping_countries': list(settings.shipping_countries)}
+    return {'site_url': settings.frontend_url, 'stripe_mode': settings.stripe_mode, 'test_catalog_available': settings.test_catalog_available, 'legal': legal, 'legal_ready': legal_ready(legal), 'shipping_rate_cents': settings.shipping_rate_cents, 'free_shipping_threshold_cents': settings.free_shipping_threshold_cents, 'shipping_countries': list(settings.shipping_countries)}
 def order_document(order, items):
     # This is deliberately NOT a fiscal invoice. Legal placeholders alone cannot
     # replace immutable invoice numbering, tax calculation and legal review.

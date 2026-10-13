@@ -2,6 +2,14 @@
 
 ## Portée et limites
 
+Complément disponibilité sandbox : le propriétaire autorise désormais les essais
+du catalogue. `TEST_CATALOG_ENABLED` ne fonctionne qu'en Stripe test, sans
+publication commerciale ni stock inventé. Commandes `is_test` non expédiables,
+stock non décrémenté, création fournisseur et retour en stock bloqués en SQL ;
+les contrôles prix, compatibilité, auth et signature restent actifs. Les recettes
+hébergées indiquées comme bloquées plus bas sont historiques et ne doivent pas
+être assimilées à la vérification de ce nouveau mode documentée dans PROGRESS.md.
+
 Revue du frontend React, FastAPI, client PostgREST/Auth, migrations SQL, scripts,
 Docker/Render, Vercel et CI. Architecture réelle : **Supabase PostgreSQL/Auth**, pas
 MongoDB. Aucun paiement live, produit activé, changement de photo ou GSAP, ni 2FA

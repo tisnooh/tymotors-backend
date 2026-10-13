@@ -28,6 +28,7 @@ await db.exec(await readFile(new URL('../supabase/migrations/20261012120138_supp
 await db.exec(await readFile(new URL('../supabase/migrations/20261012163951_withdrawal_receipts.sql',import.meta.url),'utf8'));
 let checks = 0;
 await db.exec(await readFile(new URL('../supabase/migrations/20261012184823_enforce_active_auth_session.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../supabase/migrations/20261013063630_sandbox_catalog_orders.sql',import.meta.url),'utf8'));
 const sessionUser='10000000-0000-4000-8000-000000000098', sessionId='10000000-0000-4000-8000-000000000099';
 await db.query('insert into auth.sessions values($1,$2,null)',[sessionId,sessionUser]);
 assert.equal((await db.query('select is_auth_session_active($1,$2) active',[sessionId,sessionUser])).rows[0].active,true);checks++;
@@ -66,6 +67,23 @@ async function order(quantity=2){
   return o;
 }
 const paid=await order();
+const sandbox=await order();
+await db.query("update orders set is_test=true,stripe_session_id='cs_test_isolated' where id=$1",[sandbox.id]);
+await db.query("select complete_paid_order($1,'pi_test_isolated','client@example.test','Test','{}','{}')",[sandbox.id]);
+await db.query("select complete_paid_order($1,'pi_test_isolated','client@example.test','Test','{}','{}')",[sandbox.id]);
+assert.equal((await one('select stock from products where id=$1',[product])).stock,12);checks++;
+assert.equal((await one('select stock_applied_at from orders where id=$1',[sandbox.id])).stock_applied_at,null);checks++;
+assert.equal((await one('select count(*) n from supplier_orders where order_id=$1',[sandbox.id])).n,0);checks++;
+assert.equal((await one("select count(*) n from admin_audit where action='order.paid' and resource=$1",[sandbox.id])).n,1);checks++;
+assert.match((await one("select description from order_tracking_events where order_id=$1",[sandbox.id])).description,/aucun débit réel/);checks++;
+await rejects('select private.ensure_supplier_order($1)',[sandbox.id],/Test orders cannot enter supplier fulfillment/);
+const testLine=await one('select id from order_items where order_id=$1',[sandbox.id]);
+await rejects("insert into returns(order_id,order_item_id,quantity,reason,restocked_at) values($1,$2,1,'Test return',now())",[sandbox.id,testLine.id],/Test returns cannot restock real inventory/);
+const badSandbox=await order();
+await db.query("update orders set is_test=true,stripe_session_id='cs_live_isolated' where id=$1",[badSandbox.id]);
+await rejects("select complete_paid_order($1,'pi_bad','client@example.test','Test','{}','{}')",[badSandbox.id],/sandbox Checkout session/);
+// Remove these disposable scenarios before the legacy real-order metric assertions.
+await db.query('delete from orders where id in ($1,$2)',[sandbox.id,badSandbox.id]);
 const complete="select complete_paid_order($1,'pi_fixture','client@example.test','Client','{}','{}')";
 await db.query(complete,[paid.id]);await db.query(complete,[paid.id]);
 assert.equal((await one('select stock from products where id=$1',[product])).stock,10);checks++;
