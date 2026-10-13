@@ -122,3 +122,15 @@ ne vaut pas autorisation d'ouvrir aux vraies ventes.
 Résultats et SHA définitifs dans **PROGRESS.md à la racine**. Les anciens relevés
 de STRIPE_TEST_SETUP.md sont datés/historiques. Aucune réussite Checkout réel,
 email réel, DNS, backup réel ou SIRET affirmée sans preuve correspondante.
+
+Complément sécurité : voir **SECURITY_REVIEW.md** (nouvel audit 1 avis braces,
+contre 14 auparavant) et **ACCOUNT_SECURITY.md** (rotation SMTP/MFA/restauration
+réelles à effectuer soi-même). La baseline CI est exacte, visible et expirante ;
+pas une approbation de sécurité du paquet résiduel. Actions CI verrouillées sur
+SHA et audit pip strict, sans activation commerciale.
+
+Le serveur React local écoute maintenant uniquement sur 127.0.0.1 par défaut.
+`HOST`, `DEV_ALLOWED_HOSTS` et `DEV_ALLOWED_ORIGINS` sont des options **locales**
+pour accès LAN/intégration approuvée, pas des variables Vercel/Render à remplir.
+Ne jamais les définir à `all`, `*` ou une origine non fiable. Les hooks
+CRA/visual/health et WebSocket restent derrière les contrôles du serveur.

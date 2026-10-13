@@ -43,6 +43,7 @@ Les réglages des comptes/infra non accessibles sont identifiés comme à vérif
 | SEC-16 | moyenne | Limites process-local et disponibilité. | Stockage limiteur borné à 10k clés, timeout HTTPX (20 s/connect 10 s), request guard, erreurs génériques, `/api/health` retourne uniquement état sans URL/base/env. Limiteurs non distribués : multiworker/autoscaling exige un compteur partagé/WAF. Free Render peut dormir, ce n'est pas corrigé par changer CORS. |
 | SEC-17 | élevée | Sauvegardes / restauration / infra. | Guide et scripts dans BACKUPS.md. Backup réel chiffré hors hôte + restauration staging restent à exécuter ; sans credentials/outils pg_dump/mongodump, aucune sauvegarde distante prétendue. Revoir rôles DB, ACL réseau/TLS, secrets dashboards, PITR/rétention suivant plan. |
 | SEC-18 | moyenne | RGPD/rétention et documents légaux. | Minimisation publique/track, pas de carte stockée, tokens newsletter hashés, opt-in/refus par défaut. Pas de purge arbitraire des factures/commandes : fixer délais légaux avec responsable et procédure d'accès/suppression/anonymisation, prestataires/DPA et stockage sauvegardes chiffré. Identité/SIRET/TVA/médiateur non inventés ; indispensables avant vente réelle. |
+| SEC-19 | moyenne | Actions CI auparavant référencées par tags mutables ; audit frontend non bloquant sur de nouveaux avis. | Actions checkout/setup-node/setup-python/gitleaks verrouillées sur SHA upstream vérifiés, credentials Git non persistés. Audit frontend échoue sur nouvel avis/version/gravité, avis critique, service indisponible ou exception expirée. Une exception visible pour braces, valable jusqu'au 13 novembre 2026 ; ce n'est pas une déclaration de sûreté. Audit pip strict ajouté à CI. |
 
 ## Dépendances : reproduction et traitement des résidus
 
@@ -105,7 +106,7 @@ Sources éditeur : [serializer injection](https://github.com/yahoo/serialize-jav
 [parser](https://github.com/postcss/postcss-selector-parser/security/advisories/GHSA-rj75-hqrm-r3gf),
 [traversal middleware](https://github.com/webpack/webpack-dev-middleware/security/advisories/GHSA-g84c-rxfj-3j2c).
 
-### Résidus non corrigés
+### État historique avant le nouveau complément
 
 | Paquet restant | Version | Gravité fournisseur | Traitement restant |
 | --- | --- | --- | --- |
@@ -129,10 +130,59 @@ risque de poste/CI : ne pas exposer le dev-server ni exécuter de PR non fiable
 avec des secrets. CRA/react-scripts 5 doit faire l'objet d'une migration dédiée
 vers un outillage maintenu pour supprimer les incompatibilités restantes.
 
+### Nouveau complément : 13 avis retirés, 1 reste ouvert
+
+Nouveau scan du lock installé : **1 avis distinct / 1 paquet, braces 3.0.3**,
+0 critique. Yarn compte 11 chemins élevés vers ce même avis, pas 11 failles.
+L'état 14/7 ci-dessus décrit le point de départ, pas le résultat de ce complément.
+
+| Frontière corrigée | Traitement ciblé | Contrôles de compatibilité |
+| --- | --- | --- |
+| SVGO 1 / nth-check 1 | Loader complet `@svgr/webpack` 8.1.0, pas override des anciennes feuilles incompatibles. `svgo:false` inchangé dans CRA. | Vraie compilation de fixture avec chaîne SVGR + file-loader : URL par défaut, composant nommé, ref/title/viewBox et rendu React. Aucun import ni image applicative modifié. |
+| WDS 4 / node-forge | WDS 5.2.6, utilisant selfsigned 5.5.0 sans node-forge. Adaptateur CRACO final après wrapper visual. | HTTPS/schema, lifecycle, hooks source-overlay/visual/health, WebSocket/HMR et recompilation. Alias `_stats` par getter vers `stats`, jamais copie périmée. Routers des hooks **après** contrôles WDS, avant bundle ; hooks after en queue. |
+| Exposition du serveur local | HOST loopback par défaut avant CRA start ; allowedHosts explicites, CORS wildcard retiré. Host WDS et garde Origin commun aux hooks/bundles. | Vraies requêtes HTTP Host (pas fetch qui peut le remplacer), Origin étranger, cross-site et WebSocket refusés ; origine locale et source-overlay/health/ping valides. Accès LAN volontaire : HOST + DEV_ALLOWED_HOSTS explicites ; DEV_ALLOWED_ORIGINS pour intégration externe explicitement approuvée. Aucun `all`, `auto` ni wildcard. |
+| Traversal WDM | WDM 7.4.6 corrigé par upstream, avec **backport local versionné** dans `patches/webpack-dev-middleware+7.4.6.patch`. | Le défaut upstream `end===0` confond fichier vide et premier octet. Une seule ligne distingue taille réellement nulle via statSync. Patch appliqué par postinstall `--error-on-fail` et vérifié par HTTP GET/HEAD, 0/1/N octets, ranges initiaux/intermédiaires/suffixes, 416 et recompilation. Contournement slash final conservé en défense complémentaire. |
+| sprintf-js | js-yaml 4.3.2 retire argparse 1/sprintf-js du seul consommateur NYC restant. | Chargement YAML hérité via **vrai** load-nyc-config, build/Jest/couverture. Tags JavaScript exécutables refusés ; aucune config NYC applicative ancienne ni appel safeLoad restant dans ces callers. |
+
+Le correctif WDM n'est ni une modification d'images ni une suppression d'alerte :
+la version upstream ferme le traversal ; le petit patch corrige sa régression.
+Les tests vérifient aussi que l'installation n'a pas ignoré postinstall.
+Une installation frozen a d'abord refusé un contexte de patch incomplet, puis
+a été relancée avec le bon contexte ; aucun succès de cette première tentative
+revendiqué. Les tests ont ensuite identifié le changement de nom des stats WDS,
+corrigé par alias ; erreurs de fixtures/contrôle Host ajustées, pas masquées.
+
+La revue indépendante a reproduit un contournement **WebSocket** avec une
+origine IP étrangère : WDS permet les IP et son isSameOrigin accepte un Host
+local autorisé. Un garde Express seul ne couvre pas les upgrades. Correction
+dans le même adaptateur : restriction `isSameOrigin` par instance WDS, ET
+contrôle d'origine complète partagé (schéma/host/port), sans changer le prototype
+ni les validations WDS précédentes. Tests IPv4/IPv6 étrangères et port distinct,
+origine locale exacte, Origin explicitement approuvée et rechargement HMR.
+Les réponses WS refusées ne contiennent ni hash ni source/erreur de compilation.
+
+`GHSA-vfj7-8cjw-p6xm` **reste ouvert** : braces utilisé par les globs
+Tailwind/chokidar/micromatch ; aucun correctif upstream publié au scan.
+Exception CI exacte et expirante (`frontend/tests/dependency-baseline.json`),
+sans exception pour d'autres versions, avis ni gravités. Ne jamais exécuter des
+PR non fiables avec des secrets, ni donner des globs non fiables à ces outils.
+La CI affiche explicitement l'avis connu même lorsqu'elle accepte cette dette.
+Réévaluer avant le 13 novembre ; ne pas repousser automatiquement l'expiration.
+
+Sources primaires : [migration WDS5](https://github.com/webpack/webpack-dev-server/blob/v5.2.6/migration-v5.md),
+[helper WDM concerné](https://raw.githubusercontent.com/webpack/webpack-dev-middleware/v7.4.6/src/utils/compatibleAPI.js),
+[migration YAML4](https://raw.githubusercontent.com/nodeca/js-yaml/master/docs/migrate_v3_to_v4.md),
+[avis braces](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm).
+
 ## Base et déploiement : preuves et réglages manuels
 
-- PostgreSQL production : **0 table public sans RLS** ; fonctions contrôlées
-  sans EXECUTE anon/authenticated. RPC nouvelle session : droits clients refusés
+- PostgreSQL production/staging : **0 table public sans RLS**, ssl=on et TLS
+  minimum 1.2 relus dans les deux projets. RPC de mutations contrôlés
+  sans EXECUTE anon/authenticated. Exception volontaire : `private.is_admin()`
+  exécutable par les clients, SQL stable/search_path vide, sans argument, rôle
+  calculé uniquement depuis `auth.uid()` ; nécessaire aux policies RLS. Ne pas
+  révoquer ce helper pour faire disparaître une exception de comptage.
+  RPC nouvelle session : droits clients refusés
   et session inexistante refusée, staging et production. PGlite teste aussi
   rôle/mutations/idempotence/stock et expiration/révocation de session.
 - Vérification distante des grants : clients ne peuvent ni modifier leur rôle,
@@ -157,6 +207,18 @@ vers un outillage maintenu pour supprimer les incompatibilités restantes.
   n'est pas une dépendance actuelle et ses dashboards n'ont pas été vérifiés.**
 - Activer MFA des comptes Stripe/Vercel/Render/GitHub/Supabase/Atlas (si utilisé).
   C'est distinct d'ajouter une 2FA sur la page admin, non demandé.
+- Contrôle GitHub actuel : API branch protection retourne « Branch not protected »
+  pour frontend/main et backend/develop. Mettre des règles PR + checks requis
+  et interdire force-push ; ne pas en inventer l'activation. L'API compte retourne
+  MFA `null` (non disponible), pas `false` ni une confirmation d'activation.
+- Version PostgreSQL annoncée par les deux bases : 17.6. Vérifier au dashboard
+  la mise à niveau disponible et ses consignes après sauvegarde/restauration.
+  Le changelog fournisseur annonce de nouveaux correctifs mineurs ; le numéro
+  seul ne prouve pas quels correctifs ont été rétroportés dans le build hébergé.
+  Aucun upgrade/downtime, achat de plan ou changement de grants effectué ici.
+- Procédures propriétaire et preuves réellement disponibles :
+  [ACCOUNT_SECURITY.md](ACCOUNT_SECURITY.md). Rotation SMTP/MFA et restauration
+  réelle restent **bloquées (action propriétaire requise)**, pas terminées.
 
 ## Recette et secrets à régénérer
 
@@ -172,7 +234,7 @@ Rotation exigée : **SMTP_PASSWORD exposé dans le chat**. Gitleaks clean n'excl
 pas une fuite dans logs, exports, forks ou références Git non disponibles.
 Ne publier ni rapports non masqués ni commandes contenant des credentials.
 
-## Contrôle consolidé — 13 octobre 2026
+## Contrôle consolidé historique — avant le complément dépendances/comptes
 
 255 tests backend, 53 frontend (13 suites), 58 contrôles PostgreSQL, smoke signé,
 lint, pip check, compilation Python et build production réussis. Dernier audit
@@ -205,3 +267,23 @@ build et secrets), Vercel READY et alias public corrélés au SHA. CI backend
 Ce sont des preuves de publication ciblées, pas un paiement 4242 ni une ouverture
 commerciale validée. Les résultats finaux et commits documentaires suivants
 sont consignés dans PROGRESS.md.
+
+## Recette du complément dépendances/comptes — 13 octobre 2026
+
+- Installation Yarn frozen réussie, patch WDM appliqué explicitement ; **24/24**
+  tests d'outillage/politique passent, dont les contrôles HTTP et WebSocket avec
+  une origine approuvée (cas positif) et les origines IP/port étrangers refusées.
+- **57 tests frontend / 14 suites avec couverture**, lint et build production
+  final avec ESLint activé réussis ; **265 tests backend**, pip check et compilation
+  Python réussis. Vrai Uvicorn loopback isolé : GET `/api/` 200, puis arrêt.
+- Audit du lock : **1 avis distinct braces**, 11 chemins élevés. Le gate CI
+  accepte seulement l'exception datée ; aucun avis critique ni nouvel avis
+  accepté. Audit pip strict : aucune vulnérabilité connue. Une tentative d'audit
+  indisponible a échoué fermement, puis la relance complète a réussi.
+- Sources applicatives `src/` et `public/` inchangées ; aucune modification du
+  Hero, du storytelling GSAP, des images ou de leur gestion. Pas de comparaison
+  prétendue des bundles avec un ancien build à environnement identique.
+- Push, CI, SHA publiés, contrôles HTTP/navigateur et scan des commits après
+  publication sont consignés dans le journal racine `PROGRESS.md`.
+- Rotation SMTP, MFA, protection des branches et sauvegarde/restauration
+  demeurent des actions propriétaire, détaillées dans ACCOUNT_SECURITY.md.
