@@ -26,6 +26,7 @@ import httpx
 from app.request_guard import RequestGuard
 
 from app.compatibility import check_compatibility
+from app.vehicle_catalog import matches_verified_vehicle
 from app.catalog_availability import purchase_availability, purchasable
 from app.admin import create_admin_router, search_filter, product_input_data
 from app.config import Settings, get_settings
@@ -349,6 +350,8 @@ async def list_products(category: str | None = None, brand: str | None = None, m
                         body_type: str | None = None, q: str | None = Query(default=None, max_length=120),
                         featured: bool | None = None,
                         preview: bool = False,
+                        strict_vehicle: bool = False, trim: str | None = None,
+                        has_camera: bool | None = None, has_parking_sensors: bool | None = None,
                         sort: str = Query(default="newest", pattern="^(relevance|newest|price_asc|price_desc|name)$"),
                         page: int = Query(default=1, ge=1), limit: int = Query(default=24, ge=1, le=100)):
     products = await catalog.hydrate_products(await catalog.product_rows(public_only=not (preview or settings.test_catalog_available)))
@@ -360,17 +363,31 @@ async def list_products(category: str | None = None, brand: str | None = None, m
     if featured is not None: products = [p for p in products if p["featured"] is featured]
     if q:
         term = q.strip().casefold(); products = [p for p in products if term in f"{p['name']} {p['subtitle']} {p['sku']}".casefold()]
-    if brand: products = [p for p in products if brand in p["compatible_brands"] or any(c.get("brand_slug") == brand for c in p["compatibilities"])]
-    if model: products = [p for p in products if p.get("status") != "active" or any((c.get("model") or "").casefold() == model.casefold() for c in p["compatibilities"])]
-    if chassis: products = [p for p in products if p.get("status") != "active" or any(chassis.casefold() in {(c.get("chassis") or "").casefold(), (c.get("generation") or "").casefold()} for c in p["compatibilities"])]
-    if year is not None: products = [p for p in products if p.get("status") != "active" or any((c.get("year_from") is None or year >= c["year_from"]) and (c.get("year_to") is None or year <= c["year_to"]) for c in p["compatibilities"])]
-    if body_type: products = [p for p in products if p.get("status") != "active" or any(not c.get("body_types") or body_type.casefold() in {v.casefold() for v in c["body_types"]} for c in p["compatibilities"])]
+    if strict_vehicle:
+        if not brand or not brand.strip() or not model or not model.strip() or not chassis or not chassis.strip():
+            raise HTTPException(422, "La marque, le modèle et la génération sont requis")
+        try:
+            vehicle = VehicleSelection(brand_slug=brand, model=model, chassis=chassis, year=year,
+                                       body_type=body_type, trim=trim, has_camera=has_camera,
+                                       has_parking_sensors=has_parking_sensors)
+        except ValidationError:
+            raise HTTPException(422, "Sélection de véhicule invalide") from None
+        products = [p for p in products if matches_verified_vehicle(p, vehicle)]
+    else:
+        if brand: products = [p for p in products if brand in p["compatible_brands"] or any(c.get("brand_slug") == brand for c in p["compatibilities"])]
+        if model: products = [p for p in products if p.get("status") != "active" or any((c.get("model") or "").casefold() == model.casefold() for c in p["compatibilities"])]
+        if chassis: products = [p for p in products if p.get("status") != "active" or any(chassis.casefold() in {(c.get("chassis") or "").casefold(), (c.get("generation") or "").casefold()} for c in p["compatibilities"])]
+        if year is not None: products = [p for p in products if p.get("status") != "active" or any((c.get("year_from") is None or year >= c["year_from"]) and (c.get("year_to") is None or year <= c["year_to"]) for c in p["compatibilities"])]
+        if body_type: products = [p for p in products if p.get("status") != "active" or any(not c.get("body_types") or body_type.casefold() in {v.casefold() for v in c["body_types"]} for c in p["compatibilities"])]
     if sort == "price_asc": products.sort(key=lambda p: p["price"])
     elif sort == "price_desc": products.sort(key=lambda p: p["price"], reverse=True)
     elif sort == "name": products.sort(key=lambda p: p["name"].casefold())
     else: products.sort(key=lambda p: p.get("created_at") or "", reverse=True)
     total = len(products); start = (page - 1) * limit
-    return {"items": products[start:start + limit], "total": total, "page": page, "limit": limit, "pages": (total + limit - 1) // limit}
+    result = {"items": products[start:start + limit], "total": total, "page": page, "limit": limit, "pages": (total + limit - 1) // limit}
+    if strict_vehicle:
+        result["fitment_scope"] = "verified_vehicle"
+    return result
 
 
 @api.get("/products/{slug}")
