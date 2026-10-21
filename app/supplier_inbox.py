@@ -56,6 +56,13 @@ class SupplierInput(BaseModel):
     notes: str = Field(default="", max_length=2000)
 
 
+class SupplierUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=160)
+    alibaba_url: HttpUrl | None = None
+    whatsapp_opt_in: bool | None = None
+    notes: str | None = Field(default=None, max_length=2000)
+
+
 class SupplierMessageInput(BaseModel):
     body: str = Field(min_length=1, max_length=4000)
     channel: str = Field(default="whatsapp", pattern=r"^(whatsapp|alibaba)$")
@@ -156,6 +163,17 @@ def create_supplier_router(db: SupabaseRest, require_admin: Callable[..., Any]) 
         })
         return rows[0]
 
+    @router.patch("/admin/suppliers/{supplier_id}")
+    async def update_supplier(supplier_id: UUID, payload: SupplierUpdate, admin: dict = Depends(require_admin)):
+        await _get_supplier(supplier_id)
+        changes = payload.model_dump(exclude_unset=True)
+        if "alibaba_url" in changes and changes["alibaba_url"] is not None:
+            changes["alibaba_url"] = str(changes["alibaba_url"])
+        if not changes:
+            raise HTTPException(status_code=422, detail="No fields to update")
+        updated = await db.update("supplier_contacts", changes, params={"id": f"eq.{supplier_id}"})
+        return _admin_supplier(updated)
+
     @router.get("/admin/suppliers/{supplier_id}/messages")
     async def messages(supplier_id: UUID, admin: dict = Depends(require_admin)):
         await _get_supplier(supplier_id)
@@ -190,7 +208,7 @@ def create_supplier_router(db: SupabaseRest, require_admin: Callable[..., Any]) 
         token = os.getenv("WHATSAPP_ACCESS_TOKEN", "")
         number_id = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "")
         api_version = os.getenv("WHATSAPP_GRAPH_API_VERSION", "v24.0")
-        if not token or not number_id or not re.fullmatch(r"v[0-9]+\\.[0-9]+", api_version):
+        if not token or not number_id or not re.fullmatch(r"v[0-9]+\.[0-9]+", api_version):
             raise HTTPException(status_code=503, detail="WhatsApp connection is incomplete")
         rows = await db.select("supplier_messages", params={
             "select": "*", "id": f"eq.{message_id}", "status": "eq.draft",
