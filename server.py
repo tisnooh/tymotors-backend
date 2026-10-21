@@ -42,6 +42,7 @@ from app.store import CatalogStore
 from app.site_config import public_site_configuration, order_document, legal_ready
 from app.services.email_templates import EmailContent, _layout
 from app.supabase_rest import SupabaseError, SupabaseRest
+from app.supplier_inbox import create_supplier_router
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
@@ -1053,6 +1054,7 @@ api.include_router(create_admin_router(
     _audit,
     stripe_test_mode=settings.stripe_test_mode,
 ))
+api.include_router(create_supplier_router(db, require_admin))
 app.include_router(api)
 
 
