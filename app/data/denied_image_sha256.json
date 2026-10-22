@@ -1,0 +1,15 @@
+{
+  "reviewed_on": "2026-10-22",
+  "source": "SCP explicit refusal; director-cycle/images/local-image-provenance-audit.json",
+  "scope": "Exact known binary copies only; not visual recognition or permission for unknown images.",
+  "sha256": [
+    "33f540de939f1a387aa068b9edf916966c50894cfc2154a9ea9a492692f9b483",
+    "4a58f92b3e972d60b2c3ba60629edeaf72b4407d0116a77f1ef6fdc21d9ca64b",
+    "7d9070b10f329c392b71ae3677b70ecdb8c5554d8682d85063ce1ccc63edc2c6",
+    "9b0c5b7e45585ea98d6c605b4f3ab7ceb2bf907855be8409a9fc44d54b3068da",
+    "b6f1e2fa315ad0a298b6ee0b2f7949fe90f537372cdeb297ab35c256cad26c0c",
+    "c62f5290accee36a36148abc466d6ee125bfa3ecae2c2d8bf5258897c7d8b6e9",
+    "eb10e706ea54977675252d93e1bfe718c6e104b837b9827b1e67b3151f050c4f",
+    "f9ecfb53b7624562218430213156bd1b08f845e0584cbcf7f0e25fb7f3934255"
+  ]
+}

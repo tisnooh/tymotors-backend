@@ -106,8 +106,11 @@ class ProductInput(BaseModel):
     @model_validator(mode="after")
     def active_is_complete(self):
         from urllib.parse import urlparse
+        from app.product_image_policy import image_usage_denied
         if len(self.images) > 20 or any(urlparse(url).scheme != "https" or not urlparse(url).hostname for url in self.images):
             raise ValueError("At most 20 HTTPS image URLs are allowed")
+        if any(image_usage_denied(url) for url in self.images):
+            raise ValueError("Image use denied by its source: remove the restricted photo before saving")
         if self.compare_at_price is not None and self.compare_at_price <= self.price:
             raise ValueError("compare_at_price must exceed price")
         if self.status != "active":

@@ -7,6 +7,7 @@ from typing import Any, Iterable
 
 from app.schemas import ProductInput
 from app.supabase_rest import SupabaseRest
+from app.product_image_policy import image_usage_denied
 
 
 def _in(values: Iterable[str]) -> str:
@@ -152,7 +153,8 @@ class CatalogStore:
         gen_by_id = {row["id"]: row for row in generations}
         image_by_product: dict[str, list[dict[str, Any]]] = defaultdict(list)
         for image in images:
-            image_by_product[image["product_id"]].append(image)
+            if not image_usage_denied(image.get("url")):
+                image_by_product[image["product_id"]].append(image)
         compat_by_product: dict[str, list[dict[str, Any]]] = defaultdict(list)
         for rule in compatibility_rows:
             compat_by_product[rule["product_id"]].append({

@@ -668,6 +668,9 @@ async def upload_image(file: UploadFile = File(...), admin: dict[str, Any] = Dep
     if file.content_type not in {"image/jpeg", "image/png", "image/webp", "image/avif"}: raise HTTPException(status_code=415, detail="Unsupported image type")
     content = await file.read(8 * 1024 * 1024 + 1)
     if len(content) > 8 * 1024 * 1024: raise HTTPException(status_code=413, detail="Image exceeds 8 MB")
+    from app.product_image_policy import image_bytes_usage_denied
+    if image_bytes_usage_denied(content):
+        raise HTTPException(status_code=422, detail="Image use denied by its source; upload an independently authorized replacement")
     signatures = {
         "image/jpeg": content.startswith(b"\xff\xd8\xff"),
         "image/png": content.startswith(b"\x89PNG\r\n\x1a\n"),
@@ -714,6 +717,7 @@ async def archive_product(slug: str, admin: dict[str, Any] = Depends(require_adm
 
 
 async def _orders_with_items(orders: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    from app.product_image_policy import permitted_image
     if not orders: return []
     ids = [order["id"] for order in orders]
     rows = await db.select("order_items", params={"select": "*", "order_id": "in.(" + ",".join(ids) + ")", "order": "created_at.asc"})
@@ -721,7 +725,7 @@ async def _orders_with_items(orders: list[dict[str, Any]]) -> list[dict[str, Any
     for item in rows:
         grouped.setdefault(item["order_id"], []).append({"product_id": item.get("product_id"), "name": item["product_name"],
             "slug": item["product_slug"], "sku": item["sku"], "quantity": item["quantity"], "unit_amount": item["unit_amount_cents"],
-            "image": item.get("image_url"), "selected_vehicle": item.get("selected_vehicle"), "compatibility_result": item.get("compatibility_result")})
+            "image": permitted_image(item.get("image_url")), "selected_vehicle": item.get("selected_vehicle"), "compatibility_result": item.get("compatibility_result")})
     events = await db.select("order_tracking_events", params={"select": "*", "order_id": "in.(" + ",".join(ids) + ")", "order": "occurred_at.asc,id.asc"})
     grouped_events: dict[str, list[dict[str, Any]]] = {}
     for event in events:

@@ -8,12 +8,15 @@ context, supplier markings and included accessories.
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from app.product_image_policy import image_usage_denied
 BACKGROUND = ROOT / "assets" / "catalogue-style" / "studio-background-v2.png"
 OUTPUT_DIR = ROOT / "assets" / "catalogue-gallery"
 UPLOAD_MANIFEST = ROOT / "data" / "product_ai_catalogue_uploads.json"
@@ -47,9 +50,16 @@ def framed_source(source: Image.Image) -> Image.Image:
     return result.convert("RGB")
 
 
+def publishable_slugs(manifest: dict) -> list[str]:
+    # Frozen historical input is not a photo licence. A later rights refusal
+    # prevents re-generating/reusing the corresponding derived gallery asset.
+    return sorted(image["product_slug"] for image in manifest["images"]
+                  if not image_usage_denied(image.get("delivery_url")))
+
+
 def main() -> None:
     manifest = json.loads(UPLOAD_MANIFEST.read_text(encoding="utf-8-sig"))
-    slugs = sorted(image["product_slug"] for image in manifest["images"])
+    slugs = publishable_slugs(manifest)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     for slug in slugs:
         output_path = OUTPUT_DIR / f"{slug}-context.png"

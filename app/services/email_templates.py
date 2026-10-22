@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from html import escape
 from typing import Any
 from urllib.parse import urlparse
+from app.product_image_policy import permitted_image
 
 
 @dataclass(frozen=True)
@@ -92,7 +93,7 @@ def _order_summary(order: dict[str, Any], items: list[dict[str, Any]]) -> tuple[
         vehicle_text = " ".join(str(vehicle.get(k) or "") for k in ("brand_slug", "model", "generation", "year")).strip()
         sku = escape(str(item.get("sku") or ""))
         extra = f'<br><span style="color:#8e94a3;font-size:12px">{sku}{" · " if sku and vehicle_text else ""}{escape(vehicle_text)}</span>' if sku or vehicle_text else ""
-        image_url = str(item.get("image_url") or "")
+        image_url = permitted_image(str(item.get("image_url") or "")) or ""
         parsed = urlparse(image_url)
         image = f'<img src="{escape(image_url, quote=True)}" width="58" height="58" alt="" style="display:block;width:58px;height:58px;object-fit:cover;border-radius:5px">' if parsed.scheme == "https" and parsed.hostname else ""
         html_rows.append(f'<tr><td width="68" style="padding:10px 10px 10px 0">{image}</td><td style="padding:10px 0;color:#fff">{name}{extra} × {quantity}</td><td align="right" style="color:#fff">{price}</td></tr>')
