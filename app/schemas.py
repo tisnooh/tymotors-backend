@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from typing import Any, Literal
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
 
 class ProductCompatibility(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    id: UUID | None = None
     brand_slug: str = Field(pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
     model: str | None = Field(default=None, max_length=100)
     chassis: str | None = Field(default=None, max_length=50)
@@ -168,6 +170,7 @@ class ProductUpdateInput(BaseModel):
 class CartItemInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     product_id: str = Field(min_length=1, max_length=100, pattern=r'^[a-zA-Z0-9_-]+$')
+    variant_id: UUID | None = None
     quantity: int = Field(default=1, ge=1, le=20)
     selected_vehicle: VehicleSelection | None = None
 
@@ -175,6 +178,7 @@ class CartItemInput(BaseModel):
 class CartUpdateInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     product_id: str = Field(min_length=1, max_length=100, pattern=r'^[a-zA-Z0-9_-]+$')
+    cart_item_id: UUID | None = None
     quantity: int = Field(ge=0, le=20)
 
 

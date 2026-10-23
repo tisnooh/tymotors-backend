@@ -79,14 +79,20 @@ class Database:
         args=",".join(self.ident(k)+f"=>${i+1}" for i,k in enumerate(payload))
         return (await self.query(f"select public.{self.ident(function)}({args}) result",values))[0]["result"]
 
-    async def insert(self, table, payload, **_):
+    async def insert(self, table, payload, *, upsert=False, on_conflict=None):
         records = payload if isinstance(payload, list) else [payload]
         rows = []
         for record in records:
             cols = ','.join(self.ident(k) for k in record)
             values = [json.dumps(v) if isinstance(v, (dict, list)) else v for v in record.values()]
             slots = ','.join(f'${i+1}' for i in range(len(values)))
-            rows.extend(await self.query(f'insert into public.{self.ident(table)}({cols}) values({slots}) returning *', values))
+            conflict = ''
+            if upsert:
+                keys = (on_conflict or 'id').split(',')
+                target = ','.join(self.ident(key) for key in keys)
+                updates = ','.join(f'{self.ident(key)}=excluded.{self.ident(key)}' for key in record if key not in keys)
+                conflict = f' on conflict ({target}) do update set {updates}' if updates else f' on conflict ({target}) do nothing'
+            rows.extend(await self.query(f'insert into public.{self.ident(table)}({cols}) values({slots}){conflict} returning *', values))
         return rows
 
     async def update(self, table, payload, *, params):

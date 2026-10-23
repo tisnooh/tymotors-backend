@@ -5,7 +5,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Any, Iterable
 
-from app.schemas import ProductInput
+from app.schemas import ProductCompatibility, ProductInput
 from app.supabase_rest import SupabaseRest
 from app.product_image_policy import image_usage_denied
 from app.catalogue_copy_policy import reviewed_product_copy
@@ -256,6 +256,8 @@ class CatalogStore:
         return model["id"], generation["id"] if generation else None
 
     async def write_product(self, payload: ProductInput, *, product_id: str | None = None) -> dict[str, Any]:
+        if product_id:
+            raise ValueError("Existing products require the audited atomic product writer")
         data = payload.model_dump()
         category_id = await self._category_id(data["category_slug"])
         base = {
@@ -313,7 +315,7 @@ class CatalogStore:
 
     async def write_product_atomic(self, payload: ProductInput, *, actor: str, product_id: str | None = None,
                                    expected_updated_at: str | None = None) -> dict[str, Any]:
-        data = payload.model_dump()
+        data = payload.model_dump(mode="json")
         category_id = await self._category_id(data["category_slug"])
         base = {key: data[key] for key in (
             "slug", "sku", "name", "subtitle", "description", "subcategory", "currency", "stock", "status",
@@ -322,11 +324,45 @@ class CatalogStore:
             "delivery_estimate", "low_stock_threshold", "tags")}
         base.update(category_id=category_id, price_cents=_cents(data["price"]),
                     compare_at_price_cents=_cents(data["compare_at_price"]), legacy_compatible_brands=data["compatible_brands"])
+        existing_raw: dict[str, dict[str, Any]] = {}
+        existing_public: dict[str, dict[str, Any]] = {}
+        if product_id:
+            raw_rows = await self.db.select("product_compatibilities", params={"select": "*", "product_id": f"eq.{product_id}"})
+            existing_raw = {row["id"]: row for row in raw_rows}
+            current = await self.product_by("id", product_id, public_only=False, include_admin=True)
+            if not current:
+                raise ValueError("Product not found")
+            existing_public = {
+                str(rule["id"]): ProductCompatibility.model_validate(rule).model_dump(mode="json", exclude={"id"})
+                for rule in current.get("compatibilities", [])
+            }
         rules = []
+        used_ids: set[str] = set()
         for rule in data["compatibilities"]:
+            rule_id = rule.get("id")
+            content = {key: value for key, value in rule.items() if key != "id"}
+            if rule_id:
+                if rule_id not in existing_raw:
+                    raise ValueError("Compatibility ID does not belong to this product")
+            elif product_id:
+                matches = [key for key, value in existing_public.items() if value == content]
+                if len(matches) > 1:
+                    raise ValueError("Ambiguous legacy compatibility; send explicit IDs")
+                rule_id = matches[0] if matches else None
+            if rule_id:
+                if rule_id in used_ids:
+                    raise ValueError("Duplicate compatibility ID")
+                used_ids.add(rule_id)
+                if existing_public.get(rule_id) == content:
+                    # Hydration may show a model/generation name through a FK.
+                    # A title-only edit must not re-resolve names, alter raw FKs,
+                    # or refresh the original verification actor/date.
+                    rules.append(existing_raw[rule_id].copy())
+                    continue
             brand_id = await self._brand_id(rule["brand_slug"])
             vehicle_model_id, generation_id = await self._vehicle_ids(brand_id, rule["model"], rule["generation"], rule["chassis"])
             rules.append({
+                **({"id": rule_id} if rule_id else {}),
                 "brand_id": brand_id, "vehicle_model_id": vehicle_model_id, "generation_id": generation_id,
                 "model_name": rule["model"], "chassis": rule["chassis"], "generation_name": rule["generation"],
                 "year_from": rule["year_from"], "year_to": rule["year_to"], "body_types": rule["body_types"],

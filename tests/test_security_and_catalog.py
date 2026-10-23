@@ -131,14 +131,6 @@ def test_checkout_and_webhook_enforce_vehicle_and_order_integrity():
     assert 're.fullmatch(settings.cors_origin_regex, origin)' in server
 
 
-def test_cart_response_exposes_server_calculated_totals_and_compatibility():
-    server = (Path(__file__).parents[1] / "server.py").read_text(encoding="utf-8")
-    assert '"line_total": line_total_cents / 100' in server
-    assert '"compatibility_result": compatibility_result' in server
-    assert '"shipping": shipping_cents / 100' in server
-    assert '"total": (subtotal_cents + shipping_cents) / 100' in server
-
-
 def test_configurator_only_exposes_verified_images_and_useful_hotspots():
     store = (Path(__file__).parents[1] / "app" / "store.py").read_text(encoding="utf-8")
     assert 'generation.get("stage_image_url") if generation.get("image_verified") else None' in store

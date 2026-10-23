@@ -18,6 +18,7 @@ assets/review-sheets/
 assets/catalogue-gallery/
 
 .admin-test-runtime/
+tools/sql-tests/node_modules/
 supabase/.temp/
 .security-tools/
 .security-evidence/

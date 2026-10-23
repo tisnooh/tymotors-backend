@@ -12,5 +12,6 @@ tests
 .security-tools
 .security-evidence
 .admin-test-runtime
+tools/sql-tests/node_modules
 backups
 

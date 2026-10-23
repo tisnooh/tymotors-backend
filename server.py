@@ -29,6 +29,8 @@ from app.compatibility import check_compatibility
 from app.vehicle_catalog import matches_verified_vehicle
 from app.catalog_availability import purchase_availability, purchasable
 from app.admin import create_admin_router, search_filter, product_input_data
+from app.commerce_api import create_commerce_router
+from app.cart_service import CartService
 from app.config import Settings, get_settings
 from app.schemas import (
     AdminOrderUpdateInput, AuthEmailInput, CartItemInput, CartUpdateInput, ContactInput,
@@ -207,49 +209,7 @@ async def _cart_for(user: dict[str, Any] | None, session_id: str | None, *, crea
 
 
 async def _cart_response(cart: dict[str, Any] | None) -> dict[str, Any]:
-    if not cart:
-        return {"items": [], "subtotal": 0, "shipping": 0, "total": 0, "currency": "EUR"}
-    item_rows = await db.select("cart_items", params={"select": "*", "cart_id": f"eq.{cart['id']}", "order": "created_at.asc"})
-    if not item_rows:
-        return {"items": [], "subtotal": 0, "shipping": 0, "total": 0, "currency": cart.get("currency", "EUR")}
-    product_ids = [row["product_id"] for row in item_rows]
-    rows = await db.select("products", params={"select": "*", "id": "in.(" + ",".join(product_ids) + ")", "status": "in.(active,draft)" if settings.test_catalog_available else "eq.active"})
-    products = await catalog.hydrate_products(rows); by_id = {p["id"]: purchase_availability(p, settings) for p in products}
-    items, subtotal_cents = [], 0
-    for row in item_rows:
-        product = by_id.get(row["product_id"])
-        if not product: continue
-        quantity = row["quantity"]
-        unit_amount_cents = product["price_cents"]
-        line_total_cents = unit_amount_cents * quantity
-        subtotal_cents += line_total_cents
-        selected_vehicle = row.get("selected_vehicle")
-        compatibility_result = (
-            check_compatibility(product, VehicleSelection.model_validate(selected_vehicle))
-            if selected_vehicle else {"status": "unknown", "reason": "No vehicle selected"}
-        )
-        if selected_vehicle:
-            selected_vehicle = {
-                **selected_vehicle,
-                "compatibility_status": compatibility_result["status"],
-                "compatibility_reason": compatibility_result.get("reason"),
-            }
-        items.append({
-            **product,
-            "product_id": product["id"],
-            "quantity": quantity,
-            "selected_vehicle": selected_vehicle,
-            "compatibility_result": compatibility_result,
-            "line_total": line_total_cents / 100,
-        })
-    shipping_cents = 0 if not items or subtotal_cents >= settings.free_shipping_threshold_cents else settings.shipping_rate_cents
-    return {
-        "items": items,
-        "subtotal": subtotal_cents / 100,
-        "shipping": shipping_cents / 100,
-        "total": (subtotal_cents + shipping_cents) / 100,
-        "currency": cart.get("currency", "EUR"),
-    }
+    return await CartService(db, catalog, settings).response(cart)
 
 
 def _order_number() -> str:
@@ -435,19 +395,10 @@ async def get_cart(x_session_id: str | None = Header(default=None), user: dict[s
 @api.post("/cart/claim")
 async def claim_guest_cart(x_session_id: str | None = Header(default=None), user: dict[str, Any] = Depends(require_user)):
     guest_id = _session_id(x_session_id)
-    guest_rows = await db.select("carts", params={"select": "*", "guest_session_id": f"eq.{guest_id}", "limit": 1})
     user_cart = await _cart_for(user, None)
     assert user_cart
-    if not guest_rows or guest_rows[0]["id"] == user_cart["id"]:
-        return await _cart_response(user_cart)
-    guest_cart = guest_rows[0]
-    guest_items = await db.select("cart_items", params={"select": "*", "cart_id": f"eq.{guest_cart['id']}"})
-    for item in guest_items:
-        existing = await db.select("cart_items", params={"select": "quantity", "cart_id": f"eq.{user_cart['id']}", "product_id": f"eq.{item['product_id']}", "limit": 1})
-        quantity = min(20, item["quantity"] + (existing[0]["quantity"] if existing else 0))
-        await db.insert("cart_items", {"cart_id": user_cart["id"], "product_id": item["product_id"],
-            "quantity": quantity, "selected_vehicle": item.get("selected_vehicle")}, upsert=True, on_conflict="cart_id,product_id")
-    await db.delete("carts", params={"id": f"eq.{guest_cart['id']}"})
+    await db.rpc('commerce_cart_claim', {'p_cart_id': user_cart['id'], 'p_user_id': user['id'],
+                 'p_guest_session': guest_id, 'p_test_mode': settings.test_catalog_available})
     return await _cart_response(user_cart)
 
 
@@ -462,14 +413,13 @@ async def _purchasable_product(field: str, value: str) -> dict[str, Any] | None:
 async def add_to_cart(payload: CartItemInput, x_session_id: str | None = Header(default=None), user: dict[str, Any] | None = Depends(optional_user)):
     product = await _purchasable_product("id", payload.product_id)
     if not product: raise HTTPException(status_code=404, detail="Active product not found")
-    if not purchasable(product, settings, payload.quantity): raise HTTPException(status_code=409, detail="Insufficient stock")
+    if payload.variant_id is None and not purchasable(product, settings, payload.quantity): raise HTTPException(status_code=409, detail="Insufficient stock")
     cart = await _cart_for(user, x_session_id); assert cart
-    existing = await db.select("cart_items", params={"select": "*", "cart_id": f"eq.{cart['id']}", "product_id": f"eq.{payload.product_id}", "limit": 1})
-    quantity = payload.quantity + (existing[0]["quantity"] if existing else 0)
-    if not purchasable(product, settings, quantity): raise HTTPException(status_code=409, detail="Requested quantity is unavailable")
-    row = {"cart_id": cart["id"], "product_id": payload.product_id, "quantity": quantity,
-           "selected_vehicle": payload.selected_vehicle.model_dump() if payload.selected_vehicle else None}
-    await db.insert("cart_items", row, upsert=True, on_conflict="cart_id,product_id")
+    await db.rpc('commerce_cart_add', {'p_cart_id': cart['id'], 'p_user_id': user['id'] if user else None,
+                 'p_guest_session': None if user else _session_id(x_session_id), 'p_product_id': payload.product_id,
+                 'p_variant_id': str(payload.variant_id) if payload.variant_id else None, 'p_quantity': payload.quantity,
+                 'p_vehicle': payload.selected_vehicle.model_dump() if payload.selected_vehicle else None,
+                 'p_test_mode': settings.test_catalog_available})
     return await _cart_response(cart)
 
 
@@ -477,18 +427,18 @@ async def add_to_cart(payload: CartItemInput, x_session_id: str | None = Header(
 async def update_cart(payload: CartUpdateInput, x_session_id: str | None = Header(default=None), user: dict[str, Any] | None = Depends(optional_user)):
     cart = await _cart_for(user, x_session_id, create=False)
     if not cart: return await _cart_response(None)
-    if payload.quantity == 0:
-        await db.delete("cart_items", params={"cart_id": f"eq.{cart['id']}", "product_id": f"eq.{payload.product_id}"})
-    else:
-        product = await _purchasable_product("id", payload.product_id)
-        if not product or not purchasable(product, settings, payload.quantity): raise HTTPException(status_code=409, detail="Requested quantity is unavailable")
-        await db.update("cart_items", {"quantity": payload.quantity}, params={"cart_id": f"eq.{cart['id']}", "product_id": f"eq.{payload.product_id}"})
+    await db.rpc('commerce_cart_update', {'p_cart_id': cart['id'], 'p_user_id': user['id'] if user else None,
+                 'p_guest_session': None if user else _session_id(x_session_id),
+                 'p_line_id': str(payload.cart_item_id) if payload.cart_item_id else None,
+                 'p_product_id': payload.product_id, 'p_quantity': payload.quantity,
+                 'p_test_mode': settings.test_catalog_available})
     return await _cart_response(cart)
 
 
 @api.delete("/cart/{product_id}")
-async def remove_cart_item(product_id: str, x_session_id: str | None = Header(default=None), user: dict[str, Any] | None = Depends(optional_user)):
-    return await update_cart(CartUpdateInput(product_id=product_id, quantity=0), x_session_id, user)
+async def remove_cart_item(product_id: str, cart_item_id: uuid.UUID | None = Query(default=None),
+                           x_session_id: str | None = Header(default=None), user: dict[str, Any] | None = Depends(optional_user)):
+    return await update_cart(CartUpdateInput(product_id=product_id, quantity=0, cart_item_id=cart_item_id), x_session_id, user)
 
 
 @api.delete("/cart")
@@ -880,6 +830,8 @@ async def create_checkout_session(request: Request, promotion_code: str | None =
     actor = user["id"] if user else _session_id(x_session_id); _rate_limit(checkout_attempts, 'actor:'+actor, 8, 60)
     cart = await _cart_for(user, x_session_id, create=False); cart_view = await _cart_response(cart)
     if not cart or not cart_view["items"]: raise HTTPException(status_code=400, detail="Cart is empty")
+    if (cart_view.get('checkout_available') is False or any(item.get('variant_id') or item.get('line_blocked_reason') for item in cart_view['items'])):
+        raise HTTPException(409, 'Une offre fournisseur et une livraison confirmées sont nécessaires avant le paiement.')
     line_items, order_items, subtotal_cents, requires_review = [], [], 0, False
     for item in cart_view["items"]:
         quantity = item["quantity"]
@@ -1059,6 +1011,7 @@ api.include_router(create_admin_router(
     stripe_test_mode=settings.stripe_test_mode,
 ))
 app.include_router(api)
+app.include_router(create_commerce_router(db, catalog, require_admin, settings.shipping_countries))
 
 
 @app.exception_handler(SupabaseError)
@@ -1084,6 +1037,15 @@ async def supabase_error_handler(_: Request, error: SupabaseError):
         "Promotion usage limit": "Le nombre maximum d’utilisations du code est atteint.",
         "No eligible products": "Aucun produit du panier n’est éligible à ce code.",
         "duplicate key": "Un produit ou code avec cet identifiant existe déjà.",
+        "Cart line is ambiguous": "Plusieurs lignes existent : sélectionnez la ligne exacte du panier.",
+        "Cart line product mismatch": "Cette ligne ne correspond pas au produit demandé.",
+        "Cart not found or not owned": "Ce panier n’est pas accessible.",
+        "Cart quantity exceeds": "La quantité demandée dépasse la limite autorisée.",
+        "Cart line limit reached": "Le nombre maximum de lignes du panier est atteint.",
+        "Explicit variant selection required": "Sélectionnez la variante exacte de cet article.",
+        "Variant does not belong": "Cette variante ne correspond pas à cet article.",
+        "Variant unavailable": "Cette variante n’est pas disponible.",
+        "Product unavailable": "Cet article n’est pas disponible.",
     }
     for fragment, message in messages.items():
         if fragment in error.detail:

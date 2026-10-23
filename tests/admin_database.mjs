@@ -1,7 +1,14 @@
 // Disposable PostgreSQL engine: no hosted database or production fixtures.
-import { PGlite } from '../.admin-test-runtime/node_modules/@electric-sql/pglite/dist/index.js';
-import { readFile } from 'node:fs/promises';
+import { readFile, access } from 'node:fs/promises';
 import assert from 'node:assert/strict';
+let runtime;
+for (const url of [new URL('../tools/sql-tests/node_modules/@electric-sql/pglite/dist/index.js',import.meta.url),
+                  new URL('../.admin-test-runtime/node_modules/@electric-sql/pglite/dist/index.js',import.meta.url),
+                  new URL('../../../backend/.admin-test-runtime/node_modules/@electric-sql/pglite/dist/index.js',import.meta.url)]) {
+  try { await access(url); runtime=url.href; break; } catch {}
+}
+if (!runtime) throw new Error('Existing PGlite runtime missing');
+const { PGlite } = await import(runtime);
 const db = new PGlite();
 await db.exec(`
   create role anon; create role authenticated; create role service_role bypassrls;
@@ -29,6 +36,9 @@ await db.exec(await readFile(new URL('../supabase/migrations/20261012163951_with
 let checks = 0;
 await db.exec(await readFile(new URL('../supabase/migrations/20261012184823_enforce_active_auth_session.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../supabase/migrations/20261013063630_sandbox_catalog_orders.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../supabase/migrations/20261023132803_commerce_foundation.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../supabase/migrations/20261023232733_commerce_cart_identity.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../supabase/migrations/20261023233030_commerce_stable_fitment_save.sql',import.meta.url),'utf8'));
 const sessionUser='10000000-0000-4000-8000-000000000098', sessionId='10000000-0000-4000-8000-000000000099';
 await db.query('insert into auth.sessions values($1,$2,null)',[sessionId,sessionUser]);
 assert.equal((await db.query('select is_auth_session_active($1,$2) active',[sessionId,sessionUser])).rows[0].active,true);checks++;

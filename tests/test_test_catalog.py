@@ -52,12 +52,16 @@ def test_draft_cart_server_gate_not_browser_flag(monkeypatch, mode, expected):
     monkeypatch.setattr(server, '_cart_for', AsyncMock(return_value={'id': 'cart'}))
     monkeypatch.setattr(server, '_cart_response', AsyncMock(return_value={'items': [draft()]}))
     monkeypatch.setattr(server.db, 'select', AsyncMock(return_value=[]))
-    insert = AsyncMock()
-    monkeypatch.setattr(server.db, 'insert', insert)
+    rpc = AsyncMock()
+    monkeypatch.setattr(server.db, 'rpc', rpc)
     response = TestClient(server.app).post('/api/cart', json={'product_id': draft()['id'], 'quantity': 2},
                                           headers={'X-Session-Id': 'isolated_test_catalog_capability'})
     assert response.status_code == expected
-    assert insert.await_count == (1 if mode == 'test' else 0)
+    assert rpc.await_count == (1 if mode == 'test' else 0)
+    if mode == 'test':
+        assert rpc.call_args.args[0] == 'commerce_cart_add'
+        assert rpc.call_args.args[1]['p_test_mode'] is True
+        assert rpc.call_args.args[1]['p_variant_id'] is None
 
 
 @pytest.mark.parametrize('enabled,expected', [(True, 200), (False, 409)])

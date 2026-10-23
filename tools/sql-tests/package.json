@@ -1,0 +1,9 @@
+{
+  "name": "tymotors-disposable-sql-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pinned PostgreSQL-in-WASM runtime for isolated migration regression tests only",
+  "dependencies": {
+    "@electric-sql/pglite": "0.5.8"
+  }
+}
