@@ -37,6 +37,7 @@ class VehicleSelection(BaseModel):
     generation: str | None = Field(default=None, max_length=100)
     year: int | None = Field(default=None, ge=1950, le=2100)
     body_type: str | None = Field(default=None, max_length=100)
+    facelift: Literal["pre-lci", "lci", "unknown"] | None = None
     trim: str | None = Field(default=None, max_length=100)
     has_camera: bool | None = None
     has_parking_sensors: bool | None = None

@@ -8,6 +8,7 @@ from typing import Any, Iterable
 from app.schemas import ProductInput
 from app.supabase_rest import SupabaseRest
 from app.product_image_policy import image_usage_denied
+from app.catalogue_copy_policy import reviewed_product_copy
 
 
 def _in(values: Iterable[str]) -> str:
@@ -203,7 +204,7 @@ class CatalogStore:
                     "margin_percent": float(supplier["margin_percent"]) if supplier.get("margin_percent") is not None else None,
                     "moq": supplier.get("moq"), "supplier_verified": supplier.get("supplier_verified", False), "notes": supplier.get("notes"),
                 }
-            result.append(item)
+            result.append(reviewed_product_copy(item))
         return result
 
     async def product_by(self, field: str, value: str, *, public_only: bool = True, include_admin: bool = False) -> dict[str, Any] | None:

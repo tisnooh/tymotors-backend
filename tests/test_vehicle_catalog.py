@@ -5,13 +5,16 @@ import pytest
 from fastapi.testclient import TestClient
 
 import server
+from app.compatibility import check_compatibility
 from app.schemas import VehicleSelection
 from app.vehicle_catalog import matches_verified_vehicle
 
 
 def vehicle(**overrides):
-    return VehicleSelection(brand_slug='mercedes-benz', model='Classe A', chassis='W177',
-                            **{'year': 2020, 'body_type': 'Berline', 'trim': 'AMG Line', **overrides})
+    return VehicleSelection(**{
+        'brand_slug': 'mercedes-benz', 'model': 'Classe A', 'chassis': 'W177',
+        'year': 2020, 'body_type': 'Berline', 'trim': 'AMG Line', **overrides,
+    })
 
 
 def rule(**overrides):
@@ -56,11 +59,79 @@ def test_matching_is_exact_normalized_and_generation_alias_is_supported():
     assert not matches_verified_vehicle(product(compatibilities=[rule(chassis='W177 AMG')]), vehicle())
 
 
-def test_optional_unknown_details_remain_candidates_not_a_fit_confirmation():
-    assert matches_verified_vehicle(product(), vehicle(year=None, body_type=None, trim=None))
+def test_unknown_required_details_are_not_labeled_verified_vehicle():
+    assert not matches_verified_vehicle(product(), vehicle(year=None, body_type=None, trim=None))
     assert matches_verified_vehicle(product(), vehicle())
     assert not matches_verified_vehicle(product(compatibilities=[rule(camera_compatible=False)]), vehicle(has_camera=True))
     assert not matches_verified_vehicle(product(compatibilities=[rule(parking_sensor_compatible=False)]), vehicle(has_parking_sensors=True))
+
+
+@pytest.mark.parametrize('selection', [
+    {'year': None}, {'body_type': None}, {'trim': None},
+    {'has_camera': True}, {'has_parking_sensors': True},
+])
+def test_strict_candidates_and_final_fitment_have_the_same_unknown_gates(selection):
+    assert not matches_verified_vehicle(product(), vehicle(**selection))
+
+
+@pytest.mark.parametrize('overrides', [
+    {'notes': 'WITHOUT ACC only'}, {'year_from': None}, {'year_to': None},
+    {'facelift': 'pre-lci'}, {'camera_compatible': False},
+    {'parking_sensor_compatible': True},
+])
+def test_unresolved_rule_conditions_do_not_enter_verified_vehicle_scope(overrides):
+    assert not matches_verified_vehicle(product(compatibilities=[rule(**overrides)]), vehicle())
+
+
+def test_single_generation_alias_is_not_a_grouped_chassis_authorization():
+    item = product(compatibilities=[rule(chassis=None, generation='W177 / V177')])
+    assert not matches_verified_vehicle(item, vehicle(chassis='W177 / V177'))
+
+
+@pytest.mark.parametrize('separator', ['/', ',', ';', '|', '+', '&', 'et', 'ou', 'and', 'OR'])
+@pytest.mark.parametrize('location', ['chassis', 'generation'])
+def test_grouped_identifiers_never_confirm_in_either_path(separator, location):
+    grouped = f'W177 {separator} V177'
+    overrides = {'chassis': grouped} if location == 'chassis' else {'chassis': None, 'generation': grouped}
+    item = product(compatibilities=[rule(**overrides)])
+    original = deepcopy(item)
+    for selected_chassis in (grouped, 'W177'):
+        selection = vehicle(chassis=selected_chassis)
+        assert check_compatibility(item, selection)['status'] != 'compatible'
+        assert not matches_verified_vehicle(item, selection)
+    assert item == original
+
+
+@pytest.mark.parametrize('chassis', ['W177', '9YA', '992.1', 'MQB-A0', 'KAND-A', 'SANDERO'])
+def test_precise_alias_and_chassis_have_identical_confirmation_semantics(chassis):
+    selection = vehicle(chassis=chassis)
+    for overrides in ({'chassis': chassis}, {'chassis': None, 'generation': f' {chassis.lower()} '}):
+        item = product(compatibilities=[rule(**overrides)])
+        original = deepcopy(item)
+        assert check_compatibility(item, selection)['status'] == 'compatible'
+        assert matches_verified_vehicle(item, selection)
+        assert item == original
+
+
+@pytest.mark.parametrize('overrides', [
+    {'chassis': None, 'generation': 'W177', 'model': None},
+    {'chassis': None, 'generation': 'W177', 'brand_slug': None},
+    {'chassis': None, 'generation': None},
+    {'chassis': 'W177', 'notes': 'WITHOUT ACC only'},
+])
+def test_alias_normalization_does_not_bypass_missing_evidence_or_manual_conditions(overrides):
+    item = product(compatibilities=[rule(**overrides)])
+    selection = vehicle()
+    assert check_compatibility(item, selection)['status'] != 'compatible'
+    assert not matches_verified_vehicle(item, selection)
+
+
+def test_confirmed_explicit_equipment_and_phase_are_accepted_without_mutation():
+    item = product(compatibilities=[rule(facelift='pre-lci', camera_compatible=False)])
+    original = deepcopy(item)
+    assert matches_verified_vehicle(item, vehicle(facelift='pre-lci', has_camera=False))
+    assert not matches_verified_vehicle(item, vehicle(facelift='lci', has_camera=False))
+    assert item == original
 
 
 def mock_catalog(monkeypatch, products):
@@ -75,7 +146,8 @@ def test_strict_api_filters_before_pagination_and_preserves_general_demo_shop(mo
     mock_catalog(monkeypatch, previews + matches)
     client = TestClient(server.app)
     params = {'preview': True, 'brand': 'mercedes-benz', 'model': 'Classe A', 'chassis': 'W177',
-              'year': 2020, 'strict_vehicle': True, 'limit': 12, 'page': 2, 'category': 'performance'}
+              'year': 2020, 'body_type': 'Berline', 'trim': 'AMG Line',
+              'strict_vehicle': True, 'limit': 12, 'page': 2, 'category': 'performance'}
     response = client.get('/api/products', params=params)
     assert response.status_code == 200
     data = response.json()
@@ -85,6 +157,16 @@ def test_strict_api_filters_before_pagination_and_preserves_general_demo_shop(mo
     general = client.get('/api/products', params={'preview': True, 'brand': 'mercedes-benz', 'limit': 100}).json()
     assert general['total'] == 15
     assert 'fitment_scope' not in general
+
+
+def test_strict_api_does_not_present_missing_required_details_as_verified(monkeypatch):
+    mock_catalog(monkeypatch, [product()])
+    response = TestClient(server.app).get('/api/products', params={
+        'preview': True, 'strict_vehicle': True, 'brand': 'mercedes-benz',
+        'model': 'Classe A', 'chassis': 'W177', 'year': 2020,
+    })
+    assert response.status_code == 200
+    assert response.json()['items'] == []
 
 
 def test_w177_api_does_not_suggest_w205_or_unqualified_demo_references(monkeypatch):

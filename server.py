@@ -9,7 +9,7 @@ import random
 import re
 import string
 import time
-from typing import Any
+from typing import Any, Literal
 import uuid
 
 import cloudinary
@@ -351,6 +351,7 @@ async def list_products(category: str | None = None, brand: str | None = None, m
                         featured: bool | None = None,
                         preview: bool = False,
                         strict_vehicle: bool = False, trim: str | None = None,
+                        facelift: Literal['pre-lci', 'lci', 'unknown'] | None = None,
                         has_camera: bool | None = None, has_parking_sensors: bool | None = None,
                         sort: str = Query(default="newest", pattern="^(relevance|newest|price_asc|price_desc|name)$"),
                         page: int = Query(default=1, ge=1), limit: int = Query(default=24, ge=1, le=100)):
@@ -368,7 +369,7 @@ async def list_products(category: str | None = None, brand: str | None = None, m
             raise HTTPException(422, "La marque, le modèle et la génération sont requis")
         try:
             vehicle = VehicleSelection(brand_slug=brand, model=model, chassis=chassis, year=year,
-                                       body_type=body_type, trim=trim, has_camera=has_camera,
+                                       body_type=body_type, trim=trim, facelift=facelift, has_camera=has_camera,
                                        has_parking_sensors=has_parking_sensors)
         except ValidationError:
             raise HTTPException(422, "Sélection de véhicule invalide") from None

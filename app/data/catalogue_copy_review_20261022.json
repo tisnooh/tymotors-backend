@@ -1,0 +1,154 @@
+{
+  "reviewed_on": "2026-10-22",
+  "decision": "Local-only editorial restrictions, rechecked across all 40 live titles/descriptions on 2026-10-23. Existing eight title restrictions and dashcam wording retained; one Porsche spoiler opening no longer implies a complete supplied assembly. No product, supplier identity, fitment, right, price, delivery, warranty or publication approved.",
+  "rechecked_on": "2026-10-23",
+  "audit_report": "data/catalogue-review-2026-10-23/catalogue/product-copy-audit.json",
+  "preserve_future_edits": true,
+  "changes": [
+    {
+      "id": "0c5e4a70-a2ec-4603-8926-1b869e6b02f9",
+      "slug": "porsche-911-rear-spoiler",
+      "fields": {
+        "description": {
+          "before": "Un ensemble de spoiler arrière au style GT pour un projet Porsche 911 992. La compatibilité 991, la matière ABS et la finition noir mat précédemment annoncées ne sont pas documentées. Vérifier la référence exacte, les éléments du kit, les fixations et l’intégration du troisième feu stop. Le visuel retouché de présentation ne constitue pas une preuve de montage.",
+          "after": "Un spoiler arrière de style GT envisagé pour un projet Porsche 911 992. La compatibilité 991, la matière ABS et la finition noir mat précédemment annoncées ne sont pas documentées. Vérifier la référence exacte, les éléments du kit, les fixations et l’intégration du troisième feu stop. Le visuel retouché de présentation ne constitue pas une preuve de montage.",
+          "reason": "Ne pas annoncer un ensemble de spoiler livré lorsque le contenu de la référence réellement approvisionnée n'est pas confirmé. Conserver les exclusions et réserves existantes ; ne sélectionner ni type précis, ni matière, ni montage.",
+          "proof": [
+            "data/catalogue-review-2026-10-23/catalogue/live-copy-snapshot.json#porsche-911-rear-spoiler",
+            "data/catalogue-review-2026-10-22/director-cycle/fitment/product-fitment-audit.json#porsche-911-rear-spoiler"
+          ]
+        }
+      }
+    },
+    {
+      "id": "476dcb34-ccf9-4363-84d0-0a1bd3ed2ccb",
+      "slug": "audi-logo-door-projectors",
+      "fields": {
+        "name": {
+          "before": "Projecteurs Logo Audi",
+          "after": "Éclairage de portière à projection — projet Audi",
+          "reason": "Le motif Audi réellement projeté n'est pas confirmé sur la variante approvisionnée ; le titre ne doit pas garantir les anneaux.",
+          "proof": [
+            "after.json#audi-logo-door-projectors",
+            "director-cycle/fitment/product-fitment-audit.json"
+          ]
+        }
+      }
+    },
+    {
+      "id": "34faa23f-691f-4ac3-abb7-cbf8ddc27c2a",
+      "slug": "bmw-logo-door-projectors",
+      "fields": {
+        "name": {
+          "before": "Projecteurs Logo BMW",
+          "after": "Éclairage de portière à projection — projet BMW",
+          "reason": "Aucun kit exact ni motif vendu confirmé ; retirer toute promesse de projection BMW et toute reprise de contenu SCP.",
+          "proof": [
+            "after.json#bmw-logo-door-projectors",
+            "director-cycle/fitment/product-fitment-audit.json",
+            "director-cycle/suppliers/replies-analysis.json#SCP"
+          ]
+        }
+      }
+    },
+    {
+      "id": "f5ebbc38-7bcd-4665-a814-67f8ae8b46ed",
+      "slug": "dashcam-4k-pro",
+      "fields": {
+        "name": {
+          "before": "Dashcam double caméra",
+          "after": "Caméra embarquée — configuration à confirmer",
+          "reason": "Le nombre de caméras livrées n'est pas confirmé pour une référence retenue. Le titre « double caméra » est plus affirmatif que la preuve disponible.",
+          "proof": [
+            "after.json#dashcam-4k-pro",
+            "director-cycle/fitment/product-fitment-audit.json"
+          ]
+        },
+        "description": {
+          "before": "Un ensemble de caméras pour un projet d’enregistrement des trajets. La résolution native 4K, le GPS, la vision nocturne, le mode stationnement et la capacité de carte mémoire ne sont pas confirmés pour la référence retenue. Vérifier l’alimentation, le câblage arrière et le contenu du kit. Le mode stationnement peut nécessiter une alimentation et des accessoires spécifiques.",
+          "after": "Une caméra embarquée pour un projet d’enregistrement des trajets. La résolution native 4K, le GPS, la vision nocturne, le mode stationnement et la capacité de carte mémoire ne sont pas confirmés pour la référence retenue. Vérifier l’alimentation, le câblage arrière et le contenu du kit. Le mode stationnement peut nécessiter une alimentation et des accessoires spécifiques.",
+          "reason": "Retirer la promesse implicite de plusieurs caméras sans modifier les réserves sur résolution, GPS, stationnement, câblage et contenu.",
+          "proof": [
+            "after.json#dashcam-4k-pro",
+            "director-cycle/fitment/product-fitment-audit.json#dashcam-4k-pro"
+          ]
+        }
+      }
+    },
+    {
+      "id": "c1a23d5c-751b-4306-80a1-aaac27f5e267",
+      "slug": "mercedes-logo-door-projectors",
+      "fields": {
+        "name": {
+          "before": "Projecteurs Logo Mercedes",
+          "after": "Éclairage de portière à projection — projet Mercedes-Benz",
+          "reason": "Le motif réellement projeté n'est pas confirmé ; un titre « Logo Mercedes » peut promettre l'étoile sans preuve.",
+          "proof": [
+            "after.json#mercedes-logo-door-projectors",
+            "director-cycle/fitment/product-fitment-audit.json"
+          ]
+        }
+      }
+    },
+    {
+      "id": "74e660ea-d1aa-4e62-b8a2-61957a4eed21",
+      "slug": "porsche-logo-door-projectors",
+      "fields": {
+        "name": {
+          "before": "Projecteurs Logo Porsche",
+          "after": "Éclairage de portière à projection — projet Porsche",
+          "reason": "Blason, lettrage et autres variantes ne sont pas identifiés ; le titre ne doit pas garantir le blason.",
+          "proof": [
+            "after.json#porsche-logo-door-projectors",
+            "director-cycle/fitment/product-fitment-audit.json"
+          ]
+        }
+      }
+    },
+    {
+      "id": "5d9d3feb-55ae-48eb-a158-1d9ac31ec33e",
+      "slug": "reverse-cam-hd",
+      "fields": {
+        "name": {
+          "before": "Kit caméra de recul",
+          "after": "Caméra de recul — contenu à confirmer",
+          "reason": "L'identité exacte et la présence d'un écran, des câbles et supports ne sont pas établies ; « Kit » seul peut promettre un ensemble complet.",
+          "proof": [
+            "after.json#reverse-cam-hd",
+            "director-cycle/fitment/product-fitment-audit.json"
+          ]
+        }
+      }
+    },
+    {
+      "id": "e48d64c8-79fc-4cd6-a55d-a862fdf39f32",
+      "slug": "toyota-logo-door-projectors",
+      "fields": {
+        "name": {
+          "before": "Projecteurs Logo Toyota",
+          "after": "Éclairage de portière à projection — projet Toyota",
+          "reason": "La photo d'un vendeur ne relie pas le motif et la quantité au kit réellement vendu.",
+          "proof": [
+            "after.json#toyota-logo-door-projectors",
+            "director-cycle/fitment/product-fitment-audit.json"
+          ]
+        }
+      }
+    },
+    {
+      "id": "e4999d08-f105-4c60-8dab-75436958bed2",
+      "slug": "vw-logo-door-projectors",
+      "fields": {
+        "name": {
+          "before": "Projecteurs Logo Volkswagen",
+          "after": "Éclairage de portière à projection — projet Volkswagen",
+          "reason": "VW, GTI et R sont des variantes distinctes ; motif exact et fournisseur retenu non confirmés.",
+          "proof": [
+            "after.json#vw-logo-door-projectors",
+            "director-cycle/fitment/product-fitment-audit.json"
+          ]
+        }
+      }
+    }
+  ]
+}
