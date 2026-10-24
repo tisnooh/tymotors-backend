@@ -1,5 +1,7 @@
 # Préparation durable des paiements de test
 
+Extension locale suivante : voir `COMMERCE_TEST_PIPELINE.md` pour le service SDK test, le webhook dédié et l'allocation/suivi simulés ajoutés depuis ce checkpoint. Aucun paiement Stripe sandbox réel ni checkout public de variantes n'est validé.
+
 Périmètre local uniquement. Aucun appel Stripe, paiement, débit du stock réel, commande fournisseur ou modification visuelle. La migration et ses limites sont détaillées dans `COMMERCE_ATTEMPTS_SCHEMA.md`.
 
 ## Routes administrateur

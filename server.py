@@ -32,6 +32,8 @@ from app.admin import create_admin_router, search_filter, product_input_data
 from app.commerce_api import create_commerce_router
 from app.commerce_quote_api import create_cart_quote_router
 from app.commerce_attempt_api import create_checkout_attempt_router
+from app.commerce_payment_service import CommerceTestPayments
+from app.commerce_fulfillment_api import create_test_fulfillment_router
 from app.cart_service import CartService
 from app.config import Settings, get_settings
 from app.schemas import (
@@ -919,11 +921,13 @@ async def _complete_checkout_payment(obj: Any) -> str | None:
     if not order_id:
         return None
     order_rows = await db.select("orders", params={
-        "select": "id,total_cents,currency,stripe_session_id,customer_email,is_test", "id": f"eq.{order_id}", "limit": 1,
+        "select": "id,total_cents,currency,stripe_session_id,customer_email,is_test,commerce_quote_id", "id": f"eq.{order_id}", "limit": 1,
     })
     if not order_rows:
         raise RuntimeError("Stripe event references an unknown order")
     expected = order_rows[0]
+    if expected.get('commerce_quote_id'):
+        raise RuntimeError('Quoted orders require their dedicated signed-event transaction')
     if expected.get('is_test') and not settings.stripe_test_mode:
         raise RuntimeError('A test order cannot be completed by a live payment')
     if obj.get("payment_status") == "no_payment_required" and expected["total_cents"] != 0:
@@ -964,6 +968,19 @@ async def stripe_webhook(request: Request, stripe_signature: str | None = Header
     except (ValueError, stripe.SignatureVerificationError): raise HTTPException(status_code=400, detail="Invalid webhook signature")
     if event.get("livemode") is not (not settings.stripe_test_mode):
         raise HTTPException(status_code=400, detail="Stripe event mode does not match checkout configuration")
+    metadata = (event.get('data', {}).get('object', {}).get('metadata') or {})
+    if metadata.get('attempt_id') or metadata.get('quote_id'):
+        # Dedicated immutable variant path. Never use legacy stock/cost/cart logic.
+        if not settings.stripe_test_mode:
+            raise HTTPException(status_code=409, detail='Quoted checkout is test-only')
+        try:
+            return await CommerceTestPayments(db, stripe_client).accept_signed_event(event)
+        except Exception as error:
+            await db.insert('admin_audit', {'action':'commerce.test.event_rejected',
+                'resource':str(event.get('id','unknown')),
+                'metadata':{'is_test':True,'event_type':event.get('type'),'error_type':type(error).__name__}})
+            logger.error('Quoted test event refused (%s)', type(error).__name__)
+            raise HTTPException(status_code=500, detail='Quoted test event requires inspection') from None
     event_id = event["id"]; existing = await db.select("stripe_events", params={"select": "status", "event_id": f"eq.{event_id}", "limit": 1})
     if existing and existing[0]["status"] == "completed": return {"received": True, "duplicate": True}
     if not existing:
@@ -994,7 +1011,9 @@ async def stripe_webhook(request: Request, stripe_signature: str | None = Header
 async def _sync_refunds(payment_intent: str) -> None:
     if stripe_client is None:
         raise RuntimeError("Stripe client required to confirm refunds")
-    before = await db.select("orders", params={"select": "id,refunded_amount_cents", "stripe_payment_intent_id": f"eq.{payment_intent}", "limit": 1})
+    before = await db.select("orders", params={"select": "id,refunded_amount_cents,commerce_quote_id", "stripe_payment_intent_id": f"eq.{payment_intent}", "limit": 1})
+    if before and before[0].get('commerce_quote_id'):
+        raise RuntimeError('Quoted refunds require a dedicated reviewed financial transaction')
     refunds = await stripe_client.v1.refunds.list_async(params={"payment_intent": payment_intent, "limit": 100})
     succeeded = 0
     async for refund in refunds.auto_paging_iter():
@@ -1021,6 +1040,7 @@ app.include_router(create_cart_quote_router(
 app.include_router(create_checkout_attempt_router(
     db, require_admin, lambda: settings, _rate_limit, checkout_attempts,
 ))
+app.include_router(create_test_fulfillment_router(db, require_admin, lambda: settings))
 
 
 @app.exception_handler(SupabaseError)

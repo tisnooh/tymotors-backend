@@ -127,9 +127,28 @@ async def test_lifespan(_):
 server.app.router.lifespan_context=test_lifespan
 
 from fastapi.responses import FileResponse
+from fastapi import Depends
+from app.commerce_payment_service import CommerceTestPayments, TestStripeGateway
 from fastapi.staticfiles import StaticFiles
 fixture_site=Path(__file__).resolve().parents[2]/'frontend'/'.browser-test-build'
 server.app.mount('/qa-assets', StaticFiles(directory=fixture_site,check_dir=False),name='qa-assets')
+
+@server.app.post('/qa-payment-attempt/{attempt_id}')
+async def simulated_provider_create(attempt_id: str, actor=Depends(server.require_admin)):
+    """TEST PROCESS ONLY. Exercises real service with a fake SDK transport."""
+    gateway = TestStripeGateway('sk_test_synthetic_fixture_not_a_credential')
+    async def create(params, key):
+        amount = sum(x['quantity']*x['price_data']['unit_amount'] for x in params['line_items'])
+        shipping = params['shipping_options'][0]['shipping_rate_data']['fixed_amount']['amount']
+        return {'object':'checkout.session','id':'cs_test_'+params['metadata']['attempt_id'].replace('-',''),
+            'mode':'payment','livemode':False,'currency':'eur','status':'open','payment_status':'unpaid',
+            'payment_intent':None,'client_reference_id':params['client_reference_id'],
+            'metadata':params['metadata'],'expires_at':params['expires_at'],
+            'amount_subtotal':amount,'amount_total':amount+shipping,
+            'total_details':{'amount_discount':0,'amount_tax':0,'amount_shipping':shipping},
+            'automatic_tax':{'enabled':False}}
+    gateway.create = create
+    return await CommerceTestPayments(server.db,gateway).create_session(actor['id'],attempt_id)
 @server.app.middleware('http')
 async def fixture_html_policy(request, call_next):
     response = await call_next(request)
