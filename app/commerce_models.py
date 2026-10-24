@@ -105,6 +105,9 @@ class ShippingRateInput(StrictInput):
     country: str = Field(pattern=r'^[A-Z]{2}$')
     postal_prefix: str = Field(default='', max_length=20, pattern=r'^[A-Za-z0-9 -]*$')
     mode: str = Field(min_length=1, max_length=100)
+    # Several variants from one supplier may not silently share or duplicate
+    # transport terms. Independent parcels require explicit supplier evidence.
+    multi_variant_policy: Literal['unknown', 'independent_parcels'] = 'unknown'
     min_quantity: int = Field(default=1, strict=True, ge=1, le=1000000)
     max_quantity: int = Field(strict=True, ge=1, le=1000000)
     currency: Literal['EUR'] = 'EUR'
@@ -158,6 +161,35 @@ class QuoteInput(StrictInput):
         if not any(character.isalnum() for character in value):
             raise ValueError('A nonempty postal destination is required')
         return value
+
+
+class QuoteDestinationInput(StrictInput):
+    name: str = Field(min_length=2, max_length=160)
+    line1: str = Field(min_length=3, max_length=200)
+    line2: str = Field(default='', max_length=200)
+    city: str = Field(min_length=2, max_length=100)
+    state: str = Field(default='', max_length=100)
+    postal_code: str = Field(min_length=1, max_length=20, pattern=r'^[A-Za-z0-9 -]+$')
+    country: str = Field(pattern=r'^[A-Z]{2}$')
+    phone: str = Field(default='', max_length=40)
+
+    @field_validator('*')
+    @classmethod
+    def no_control_characters(cls, value):
+        if any(ord(character) < 32 or ord(character) == 127 for character in value):
+            raise ValueError('Control characters are not allowed in a destination')
+        return value
+
+    @field_validator('postal_code')
+    @classmethod
+    def meaningful_postcode(cls, value):
+        return QuoteInput.meaningful_postcode(value)
+
+
+class CartQuoteInput(StrictInput):
+    request_key: UUID
+    destination: QuoteDestinationInput
+    mode: str = Field(min_length=1, max_length=100, pattern=r'^[A-Za-z0-9_-]+$')
 
 
 MODELS = {'agent': AgentInput, 'variant': VariantInput, 'offer': OfferInput, 'shipping_rate': ShippingRateInput}

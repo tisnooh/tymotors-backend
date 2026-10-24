@@ -88,3 +88,22 @@ Lacunes initiales examinées : panier indexé seulement par produit ; tarifs glo
 - Connexion d'un prestataire logistique/agent réel et devis acceptables ; aucune dépense autorisée.
 
 Ne pas conclure que TYMotors est opérationnel tant que les tests et ces dépendances critiques ne sont pas vérifiés.
+
+## Deuxième checkpoint local — devis persistants et commande figée
+
+- API propriétaire `POST/GET /api/cart/quote` : destination structurée, montants serveur seulement, restauration idempotente du même instantané, aucune exposition des coûts/références fournisseur. `checkout_available=false` et `requires_revalidation=true` explicites.
+- Moteur regroupé par variante (jusqu'à 100 lignes/2 000 unités) : chaque véhicule vérifié, stock/MOQ/port cumulés sans doubler le transport. Plusieurs variantes du même fournisseur exigent `independent_parcels` confirmé sur les tarifs ; inconnue = refus. EUR explicite panier/produit/variante, bornes monétaires et expirations avec fuseau.
+- Contexte SQL cohérent recapturé avant sauvegarde. Changement de prix, conditions, panier ou insertion d'une restriction régionale = refus. Les calculs d'acquisition, fiscalité incluse, port, marge contributive et total sont recomputés indépendamment en base.
+- Barrière conservatrice `EXCLUSIVE NOWAIT` courte sur les sources, profils compris. Les cycles identifiés avec les modifications produit et les FK sont traités par un refus immédiat, pas par une attente de ligne sous un verrou de table incompatible. La contention/performance multiconnexion reste à vérifier.
+- Devis et instantanés privés immuables. Une seule commande administrative **test/pending/unpaid** par devis, lignes publiques sans coûts nouveaux, références fournisseur/variante/tarif/agent figées dans `commerce_order_lines`. Montants, devise et mode test de la commande protégés. Aucun stock réservé ou débité, aucun Stripe, aucun achat/envoi fournisseur.
+- 602 tests Python backend réussis avant le lot suivant. 83 contrôles SQL devis réussis, plus régression 197/42/26 et 66 historiques chargés avec la nouvelle migration. 53 assertions HTTP devis et les 49 précédentes rejouées avec la migration finale. Suites partiellement recoupées, ne pas les additionner en cas uniques.
+- Revue indépendante : corrections devise, verrouillage et conservation historique demandées puis approuvées pour ce checkpoint uniquement. Le frontend reste au commit `c3f06c1`, propre et inchangé dans ce lot ; aucune photographie modifiée.
+- Documentation détaillée : `COMMERCE_QUOTE_API.md` et `COMMERCE_QUOTES_SCHEMA.md`. Nouveau test SQL ajouté au job CI, mais aucun run GitHub ni publication revendiqué.
+
+### Reprise exacte après ce lot
+
+1. Préparer les paramètres Stripe déterministes depuis l'ordre figé, puis persister les tentatives/idempotence/paramètres avant tout appel externe. Ce premier constructeur peut être testé sans réseau ; il ne représente pas un paiement de test.
+2. Ajouter les réservations par variante et les transactions de paiement dédiées. **Ne pas utiliser l'ancien `complete_paid_order` tel quel** : il reprend le coût courant, débite le produit de base et efface tout le panier. Les devis exigent leurs propres snapshots, stock par variante et nettoyage ciblé.
+3. Vérifier mode/session/tentative/montant/devise/destination par webhooks signés, traiter timeout ambigu, expiration et paiement différé avec reprise durable. Aucun nouveau paiement après résultat inconnu sans réconciliation.
+4. Raccorder allocation fournisseur/agent, tâches, envois préparés soumis à autorisation, expédition/suivi/retours et journal de reprise. Le gate variantes reste fermé jusqu'à la preuve complète.
+5. Confirmer frais de paiement et politique de marge minimale avant activation : le devis actuel affiche une marge **avant frais de paiement/exploitation**, pas un bénéfice net garanti. Finaliser preuves fournisseurs/légales, concurrence PostgreSQL multiconnexion, GoTrue/PostgREST, sandbox Stripe réelle et recette visuelle complète avant lancement.
