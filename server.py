@@ -31,6 +31,7 @@ from app.catalog_availability import purchase_availability, purchasable
 from app.admin import create_admin_router, search_filter, product_input_data
 from app.commerce_api import create_commerce_router
 from app.commerce_quote_api import create_cart_quote_router
+from app.commerce_attempt_api import create_checkout_attempt_router
 from app.cart_service import CartService
 from app.config import Settings, get_settings
 from app.schemas import (
@@ -1016,6 +1017,9 @@ app.include_router(api)
 app.include_router(create_commerce_router(db, catalog, require_admin, settings.shipping_countries))
 app.include_router(create_cart_quote_router(
     db, _cart_for, optional_user, require_admin, lambda: settings, _rate_limit, quote_attempts,
+))
+app.include_router(create_checkout_attempt_router(
+    db, require_admin, lambda: settings, _rate_limit, checkout_attempts,
 ))
 
 

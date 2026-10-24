@@ -57,6 +57,7 @@ jobs:
       - run: node tests/commerce_cart_database.mjs
       - run: node tests/stable_fitment_database.mjs
       - run: node tests/commerce_quote_database.mjs
+      - run: node tests/commerce_attempt_database.mjs
       - run: node tests/admin_database.mjs
 
   dependencies:

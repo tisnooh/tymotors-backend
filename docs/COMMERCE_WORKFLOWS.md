@@ -117,3 +117,11 @@ Ne pas conclure que TYMotors est opérationnel tant que les tests et ces dépend
 - URL photo figée transmise exactement lorsqu'elle est admissible, sinon refus explicite ; aucun remplacement, traitement d'image ou changement frontend. Pas de preuve DNS ou de licence nouvelle.
 - 156 tests ciblés réussis et rejoués indépendamment ; **suite backend complète finale : 758 réussis**, seule dépréciation préexistante Starlette/httpx. Aucun appel Stripe ou paiement sandbox réel.
 - Prochaine étape : persistance des tentatives, paramètres/options/idempotence et résultat inconnu, réservations concurrentes puis complétion dédiée aux variantes. Garder la protection checkout actuelle jusqu'à leur recette complète. La suite des tâches fournisseur/agent/expéditions reste nécessaire.
+
+## Quatrième checkpoint local — tentatives et réservations de test
+
+- Tentative unique par commande, paramètres/clé/expiration immuables, réservations cumulées par variante ET offre dans un espace de test sans débit réel. Les états incertains conservent leurs réservations ; aucun délai local ne les libère automatiquement.
+- API administrateur de préparation/lecture/annulation sûre : `COMMERCE_ATTEMPT_API.md`. SQL et règles de verrouillage : `COMMERCE_ATTEMPTS_SCHEMA.md`. Le constructeur de paramètres est désormais raccordé à la préparation privée, mais aucun SDK de paiement n'est appelé.
+- Validateur pur de session ajouté : identité, mode, devise, montants et destination. Ce n'est ni une authentification webhook, ni une transaction de paiement.
+- Suite backend complète : 941 tests réussis. Revue indépendante : 174 tests ciblés et 109 contrôles SQL réussis. HTTP préparation : 39 assertions, puis 7 assertions après redémarrage de FastAPI avec SQL conservé. Réservations fictives et état inconnu restaurés ; aucune preuve de durabilité disque du moteur jetable ou de concurrence multiconnexion déduite.
+- Prochaine action : transactions dédiées d'enregistrement/réconciliation de session puis webhook signé et dédupliqué, sans dépendre du panier ou du catalogue courant pour enregistrer un paiement déjà reçu. Le checkout reste fermé. Allocation fournisseur/agent, expéditions et retours restent ensuite à raccorder.
