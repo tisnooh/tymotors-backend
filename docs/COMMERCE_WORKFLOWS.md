@@ -107,3 +107,13 @@ Ne pas conclure que TYMotors est opérationnel tant que les tests et ces dépend
 3. Vérifier mode/session/tentative/montant/devise/destination par webhooks signés, traiter timeout ambigu, expiration et paiement différé avec reprise durable. Aucun nouveau paiement après résultat inconnu sans réconciliation.
 4. Raccorder allocation fournisseur/agent, tâches, envois préparés soumis à autorisation, expédition/suivi/retours et journal de reprise. Le gate variantes reste fermé jusqu'à la preuve complète.
 5. Confirmer frais de paiement et politique de marge minimale avant activation : le devis actuel affiche une marge **avant frais de paiement/exploitation**, pas un bénéfice net garanti. Finaliser preuves fournisseurs/légales, concurrence PostgreSQL multiconnexion, GoTrue/PostgREST, sandbox Stripe réelle et recette visuelle complète avant lancement.
+
+## Troisième checkpoint local — paramètres de paiement purs
+
+- `app/commerce_checkout_params.py` construit uniquement les paramètres Checkout depuis une commande et ses lignes figées, plus une tentative qui devra être persistée par un futur service. Il n'est raccordé à aucune route ni SDK, ne réserve pas le stock et n'appelle pas Stripe.
+- Montants EUR entiers et sommes exactes, taxes déjà incluses, transport fixe sans 101e ligne lorsque le panier possède 100 articles. Promotions, taxes automatiques et conversion adaptative refusées/désactivées pour ne pas changer le devis. Sandbox obligatoire.
+- Origine issue de la configuration serveur, identifiants commande/devis/tentative cohérents, expiration absolue figée et fenêtre de création contrôlée. Aucun hasard ni horloge dans les paramètres ; une nouvelle tentative admissible donne le même payload. Cela ne constitue pas une preuve d'idempotence auprès de Stripe.
+- `order.quote_expires_at` est un **contrat d'enrichissement futur par jointure avec le devis**, pas une nouvelle colonne existante ni une valeur à reprendre du navigateur. La tentative doit déclarer la même expiration et ne pas la dépasser.
+- URL photo figée transmise exactement lorsqu'elle est admissible, sinon refus explicite ; aucun remplacement, traitement d'image ou changement frontend. Pas de preuve DNS ou de licence nouvelle.
+- 156 tests ciblés réussis et rejoués indépendamment ; **suite backend complète finale : 758 réussis**, seule dépréciation préexistante Starlette/httpx. Aucun appel Stripe ou paiement sandbox réel.
+- Prochaine étape : persistance des tentatives, paramètres/options/idempotence et résultat inconnu, réservations concurrentes puis complétion dédiée aux variantes. Garder la protection checkout actuelle jusqu'à leur recette complète. La suite des tâches fournisseur/agent/expéditions reste nécessaire.
