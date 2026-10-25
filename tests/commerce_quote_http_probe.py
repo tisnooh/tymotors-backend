@@ -12,6 +12,7 @@ import tests.commerce_http_probe as probe
 def main():
     marker = uuid4().hex[:10]
     product = sql("select id from products where sku='TEST-001' and status='active'")[0]['id']
+    sql("insert into commerce_image_permissions(product_id,image_url,state,evidence_ref,commercial_use,derivatives_use,product_match_confirmed,marks_clearance,countries,valid_until,verified_by,verified_at) select product_id,url,'verified','SYNTHETIC GRANT ONLY',true,true,true,'not_present',array['FR'],now()+interval '1 year',$2,now() from product_images where product_id=$1 on conflict(product_id,image_url) do nothing",[product,ADMIN])
     supplier = sql("select id from suppliers where name='Fixture supplier' order by id limit 1")[0]['id']
     before_orders = int(sql('select count(*) n from orders')[0]['n'])
     actor = save('agent', {'profile_id': ADMIN, 'name': 'Quote fixture operator', 'role': 'orders', 'is_active': True})

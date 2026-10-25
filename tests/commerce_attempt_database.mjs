@@ -22,7 +22,7 @@ try {
     '20261011222034_supplier_fulfillment_indexes.sql','20261012042643_supplier_link_refresh.sql','20261012115851_checkout_customer_phone.sql',
     '20261012120138_supplier_directory.sql','20261012163951_withdrawal_receipts.sql','20261012184823_enforce_active_auth_session.sql',
     '20261013063630_sandbox_catalog_orders.sql','20261023132803_commerce_foundation.sql','20261023232733_commerce_cart_identity.sql',
-    '20261023233030_commerce_stable_fitment_save.sql','20261024012206_commerce_quote_snapshots.sql','20261024073311_commerce_checkout_attempts.sql'])
+    '20261023233030_commerce_stable_fitment_save.sql','20261024012206_commerce_quote_snapshots.sql','20261024073311_commerce_checkout_attempts.sql','20261024144103_commerce_positive_image_rights.sql'])
     await db.exec((await readFile(new URL('../supabase/migrations/'+name,import.meta.url),'utf8')).replace('create extension if not exists pgcrypto;','-- built-in gen_random_uuid'));
   const admin='10000000-0000-4000-8000-000000000001',user='10000000-0000-4000-8000-000000000002';
   await db.query("insert into auth.users(id,email) values($1,'admin@example.test'),($2,'client@example.test')",[admin,user]);
@@ -32,6 +32,8 @@ try {
   const base={slug:'attempt-product',sku:'ATTEMPT',name:'Fixture product',subtitle:'',description:'Disposable attempt product, not a real verified item',category_id:category,subcategory:'',price_cents:10000,currency:'EUR',stock:10,status:'active',is_verified:true,featured:false,badges:[],review_count:0,specs:{},package_contents:['Part'],installation_difficulty:'easy',delivery_estimate:'Fixture only',tools_required:[],legacy_compatible_brands:[],tags:[]};
   const rule={brand_id:brand,chassis:'W205',year_from:2015,year_to:2018,body_types:['sedan'],facelift:'pre-lci',required_trims:[],excluded_trims:[],verification_state:'verified'};
   const product=(await one('select admin_save_product($1,null,null,$2,$3,$4,$5) id',[admin,base,[{url:'https://example.test/item.webp',display_order:0,image_type:'main'}],[rule],{supplier_verified:true,cost_price_cents:1000}])).id;
+  await db.query(`insert into commerce_image_permissions(product_id,image_url,state,evidence_ref,commercial_use,derivatives_use,product_match_confirmed,marks_clearance,countries,valid_until,verified_by,verified_at)
+    values($1,'https://example.test/item.webp','verified','SYNTHETIC GRANT',true,true,true,'not_present',array['FR'],now()+interval '1 year',$2,now())`,[product,admin]);
   const save=async(kind,data,id=null,expected=null)=>(await one('select admin_save_commerce_record($1,$2,$3,$4,$5) data',[admin,kind,id,data,expected])).data;
   const agent=await save('agent',{profile_id:admin,name:'Test order agent',role:'orders',is_active:true});
   const variant=await save('variant',{product_id:product,sku:'ATTEMPT-V',name:'Gloss black',price_cents:10000,stock:10,status:'active',is_verified:true,evidence_ref:'Fixture',requires_vehicle:false,attributes:{finish:'black'}});
@@ -108,6 +110,7 @@ try {
   await fail('update commerce_variant_reservations set state=$2 where attempt_id=$1',[a.id,'released'],/immutable/);
   // Current price/region/restriction changes are checked AGAIN at claim time.
   for(const [sql,args] of [
+    ["update commerce_image_permissions set state='revoked' where product_id=$1",[product]],
     ['update product_variants set price_cents=price_cents+1 where id=$1',[variant.id]],
     ["update shipping_rates set valid_until=clock_timestamp()+interval '10 minutes' where id=$1",[rate.id]],
     ["insert into shipping_rates(offer_id,country,mode,max_quantity,postal_prefix) values($1,'FR','tracked',20,'75')",[offer.id]],

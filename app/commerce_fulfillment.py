@@ -5,6 +5,7 @@ Only sandbox planning is enabled; current catalogue rows are never consulted.
 """
 from copy import deepcopy
 from uuid import UUID
+import re
 
 
 class FulfillmentPlanError(ValueError):
@@ -101,3 +102,51 @@ def plan_test_fulfillment(order, lines):
         task['supplier_total_cost_minor'] = task['supplier_unit_cost_minor'] * task['quantity']
         task['order_item_ids'].sort()
     return sorted(tasks.values(), key=lambda task: (task['supplier_id'], task['agent_id'], task['offer_id']))
+
+
+def summarize_test_fulfillment(order, tasks, group_keys):
+    """Customer-safe projection of SIM tasks, never a real shipment status.
+
+    Expected groups come from immutable private order lines. Missing/duplicate
+    tasks cannot masquerade as a complete delivery. One simulated parcel per
+    group is a test contract, NOT a real HyperSKU packing guarantee.
+    """
+    if order.get('is_test') is not True:
+        raise FulfillmentPlanError('test_fulfillment_only')
+    oid = _identity(order.get('id'))
+    if (not isinstance(tasks, list) or len(tasks) > 100 or not isinstance(group_keys, set)
+            or not 1 <= len(group_keys) <= 100 or any(not isinstance(k, str) or not k for k in group_keys)):
+        raise FulfillmentPlanError('invalid_simulation_projection')
+    parcels, seen_ids, seen_groups = [], set(), set()
+    valid_states = {'prepared','received_by_agent','quality_checked','shipped','delivered'}
+    for task in tasks:
+        if not isinstance(task, dict): raise FulfillmentPlanError('inconsistent_simulation_tasks')
+        identity = _identity(task.get('id'))
+        group = task.get('group_key')
+        state, tracking = task.get('state'), task.get('tracking_number')
+        if (not isinstance(group,str) or not isinstance(state,str)
+                or task.get('is_test') is not True or _identity(task.get('order_id')) != oid
+                or identity in seen_ids or group in seen_groups or group not in group_keys
+                or state not in valid_states):
+            raise FulfillmentPlanError('inconsistent_simulation_tasks')
+        shipped = state in {'shipped','delivered'}
+        if ((shipped and (not isinstance(tracking, str) or not re.fullmatch(r'SIM-[A-Za-z0-9_-]{1,100}', tracking)))
+                or (not shipped and tracking is not None)):
+            raise FulfillmentPlanError('invalid_simulation_tracking')
+        seen_ids.add(identity); seen_groups.add(group)
+        parcels.append({'reference':'SIM-'+identity,'state':state,'tracking_number':tracking})
+    if tasks and seen_groups != group_keys:
+        raise FulfillmentPlanError('incomplete_simulation_tasks')
+    held = (order.get('status') in {'cancelled','refunded'} or order.get('refunded_amount_cents', 0) != 0)
+    states = [p['state'] for p in parcels]
+    if held: aggregate = 'held'
+    elif order.get('payment_status') != 'paid': aggregate = 'awaiting_payment'
+    elif not states: aggregate = 'requires_review'
+    elif all(s == 'delivered' for s in states): aggregate = 'delivered'
+    elif 'delivered' in states: aggregate = 'partially_delivered'
+    elif all(s == 'shipped' for s in states): aggregate = 'shipped'
+    elif 'shipped' in states: aggregate = 'partially_shipped'
+    elif all(s == 'prepared' for s in states): aggregate = 'prepared'
+    else: aggregate = 'in_progress'
+    return {'is_test':True,'scope':'simulation_only_not_real_shipment','aggregate_state':aggregate,
+            'simulated_parcel_count':len(parcels),'parcels':sorted(parcels,key=lambda p:p['reference'])}

@@ -102,14 +102,35 @@ def _rules(context: dict, product_id: str, variant_id: str, indexes: dict) -> li
     return result
 
 
-def _image(context: dict, product_id: str) -> str | None:
+def _image(context: dict, product_id: str, now: datetime) -> str:
     images = [row for row in _rows(context, 'product_images') if _id(row.get('product_id')) == product_id]
+    if not images:
+        raise CartQuoteError('authorized_product_image_required')
+    permissions = _rows(context, 'image_permissions')
     images.sort(key=lambda row: (row.get('display_order') or 0, str(row.get('id') or '')))
     for image in images:
         source = image.get('url')
-        if isinstance(source, str) and source and permitted_image(source):
-            return source
-    return None
+        if not isinstance(source, str) or not source or permitted_image(source) is None:
+            raise CartQuoteError('image_commercial_rights_unconfirmed')
+        matching = [row for row in permissions if _id(row.get('product_id')) == product_id and row.get('image_url') == source]
+        if len(matching) != 1:
+            raise CartQuoteError('image_commercial_rights_unconfirmed')
+        grant = matching[0]
+        try:
+            expiry = datetime.fromisoformat(grant['valid_until'])
+            verified = datetime.fromisoformat(grant['verified_at'])
+            _id(grant['verified_by'])
+            valid = (grant.get('state') == 'verified' and grant.get('commercial_use') is True
+                and grant.get('derivatives_use') is True and grant.get('product_match_confirmed') is True
+                and grant.get('marks_clearance') in {'not_present','verified'}
+                and isinstance(grant.get('evidence_ref'), str) and bool(grant['evidence_ref'].strip())
+                and isinstance(grant.get('countries'), list) and context.get('country') in grant['countries']
+                and expiry.tzinfo is not None and expiry > now and verified.tzinfo is not None and verified <= now)
+        except (ValueError, KeyError, TypeError):
+            valid = False
+        if not valid:
+            raise CartQuoteError('image_commercial_rights_unconfirmed')
+    return images[0]['url']
 
 
 def build_cart_quote(context: dict, now: datetime | None = None) -> dict[str, Any]:
@@ -207,7 +228,7 @@ def build_cart_quote(context: dict, now: datetime | None = None) -> dict[str, An
         if any(type(value) is not int or not 0 <= value <= 2_000_000_000
                for key, value in evaluation.items() if key.endswith('_cents')):
             raise CartQuoteError('quote_amount_out_of_range')
-        image_url = _image(context, product_id)
+        image_url = _image(context, product_id, now)
         snapshots = []
         for line, request, checked in zip(lines, requests, evaluations):
             snapshots.append({

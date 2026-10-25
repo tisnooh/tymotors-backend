@@ -13,14 +13,14 @@ import server
 from tests.test_email_system import settings
 
 
-@pytest.mark.parametrize("prefix", ["sk_test_", "rk_test_"])
+@pytest.mark.parametrize("prefix", ["sk_test_", "rk_test_", "rkcs_test_"])
 def test_test_secret_and_restricted_keys_are_accepted(prefix):
     config = settings(email_enabled=False, stripe_secret_key=prefix + "synthetic_fixture")
     config.validate()
     assert config.stripe_test_mode is True
 
 
-@pytest.mark.parametrize("prefix", ["sk_live_", "rk_live_", "invalid_"])
+@pytest.mark.parametrize("prefix", ["sk_live_", "rk_live_", "rkcs_live_", "invalid_"])
 def test_non_test_keys_cannot_start_staging(prefix):
     config = settings(email_enabled=False, stripe_secret_key=prefix + "synthetic_fixture")
     with pytest.raises(RuntimeError, match="live Stripe key"):

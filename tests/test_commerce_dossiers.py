@@ -35,6 +35,9 @@ def test_forty_unique_dossiers_keep_missing_money_and_candidates_unconfirmed(evi
         assert row['landed_cost_cents'] is None and row['gross_margin_cents'] is None
         assert row['commercial_image_permission_confirmed'] is False
         assert row['images_changed'] is False and row['sale_price_changed'] is False
+        assert row['publication_status']=='draft'
+        assert set(row['verification_statuses'].values())=={'PENDING_SUPPLIER','PENDING_HYPERSKU',
+            'PENDING_COMPATIBILITY','PENDING_PRICING','PENDING_SHIPPING','PENDING_RIGHTS','BLOCKED'}
 
 
 def test_blank_proposal_row_is_not_a_supplier_or_free_cost(evidence):

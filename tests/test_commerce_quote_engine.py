@@ -24,6 +24,10 @@ def context():
                                              'facelift': 'lci', 'body_type': 'Berline', 'trim': 'M Sport', 'has_camera': False}}],
         'products': [{'id': PRODUCT, 'name': 'Synthetic fixture', 'slug': 'synthetic-fixture', 'status': 'active', 'is_verified': True, 'currency': 'EUR'}],
         'product_images': [{'id': uid(14), 'product_id': PRODUCT, 'url': 'https://images.example.test/fixture.jpg', 'display_order': 0}],
+        'image_permissions': [{'product_id': PRODUCT,'image_url':'https://images.example.test/fixture.jpg',
+            'state':'verified','commercial_use':True,'derivatives_use':True,'product_match_confirmed':True,
+            'marks_clearance':'not_present','countries':['FR'],'valid_until':FUTURE,
+            'evidence_ref':'SYNTHETIC IMAGE GRANT ONLY','verified_by':PROFILE,'verified_at':NOW.isoformat()}],
         'variants': [{'id': VARIANT, 'product_id': PRODUCT, 'sku': 'FIXTURE-BLACK', 'name': 'Fixture gloss black',
                       'attributes': {'finish': 'gloss black'}, 'currency': 'EUR', 'price_cents': 12000, 'stock': 100,
                       'status': 'active', 'is_verified': True, 'requires_vehicle': True, 'evidence_ref': 'fixture:variant'}],
@@ -199,10 +203,28 @@ def test_missing_terms_and_false_verification_remain_blocked(context, table, fie
 def test_declined_image_is_not_returned_or_replaced_with_an_invented_picture(context):
     denied = 'https://scpautomotive.co.uk/cdn/shop/files/example.jpg'
     context['product_images'].insert(0, {'id': uid(40), 'product_id': PRODUCT, 'url': denied, 'display_order': -1})
-    assert build_cart_quote(context, NOW)['groups'][0]['lines'][0]['image_url'] == 'https://images.example.test/fixture.jpg'
+    rejected(context, 'image_commercial_rights_unconfirmed')
     context['product_images'] = context['product_images'][:1]
-    assert build_cart_quote(context, NOW)['groups'][0]['lines'][0]['image_url'] is None
+    rejected(context, 'image_commercial_rights_unconfirmed')
     assert context['product_images'][0]['url'] == denied
+
+
+@pytest.mark.parametrize('field,value',[
+    ('state','pending'),('state','refused'),('state','revoked'),('commercial_use',False),
+    ('derivatives_use',False),('product_match_confirmed',False),('marks_clearance','unknown'),
+    ('countries',['DE']),('evidence_ref',''),('verified_by',None),('verified_at',FUTURE),
+    ('valid_until',NOW.isoformat()),('valid_until','bad-date'),
+])
+def test_image_grant_scope_and_time_never_inferred(context,field,value):
+    context['image_permissions'][0][field]=value
+    rejected(context,'image_commercial_rights_unconfirmed')
+
+
+def test_missing_image_or_permission_and_unlicensed_gallery_block(context):
+    context['image_permissions']=[]
+    rejected(context,'image_commercial_rights_unconfirmed')
+    context['product_images']=[]
+    rejected(context,'authorized_product_image_required')
 
 
 def test_non_vehicle_variant_does_not_fabricate_a_positive_vehicle_fitment(context):

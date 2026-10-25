@@ -32,6 +32,7 @@ def main():
     supplier = sql("select id from suppliers where name='Fixture supplier' order by id limit 1")[0]['id']
     # Only a disposable fixture URL; no asset request, file edit or real product.
     sql("update product_images set url='https://cdn.example.com/isolated-fixture.webp' where product_id=$1", [product])
+    sql("insert into commerce_image_permissions(product_id,image_url,state,evidence_ref,commercial_use,derivatives_use,product_match_confirmed,marks_clearance,countries,valid_until,verified_by,verified_at) values($1,'https://cdn.example.com/isolated-fixture.webp','verified','SYNTHETIC GRANT ONLY',true,true,true,'not_present',array['FR'],now()+interval '1 year',$2,now()) on conflict(product_id,image_url) do nothing",[product,ADMIN])
     actor = save('agent', {'profile_id': ADMIN, 'name': 'Attempt fixture operator', 'role': 'orders', 'is_active': True})
     variant = save('variant', {'product_id': product, 'sku': 'ATTEMPT-HTTP-' + marker,
         'name': 'Synthetic scarce variant', 'price_cents': 3000, 'stock': 3, 'status': 'active',

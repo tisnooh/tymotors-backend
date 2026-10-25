@@ -16,13 +16,23 @@ class CommercePaymentError(ValueError):
 
 class TestStripeGateway:
     """Cannot be constructed from a live/unknown key. Never logs credentials."""
-    def __init__(self, api_key):
-        if not isinstance(api_key, str) or not re.fullmatch(r'(sk|rk)_test_[A-Za-z0-9_]+', api_key):
+    def __init__(self, api_key, *, http_client=None):
+        # rkcs_test_ is the test-only key returned by the official CLI's
+        # anonymous claimable sandbox. Its Checkout read capability was checked
+        # with the real SDK; accepting it does not enable any live-mode prefix.
+        if not isinstance(api_key, str) or not re.fullmatch(r'(sk|rk|rkcs)_test_[A-Za-z0-9_]+', api_key):
             raise CommercePaymentError('test_credentials_required')
-        self.client = stripe.StripeClient(api_key)
+        self.client = (stripe.StripeClient(api_key) if http_client is None
+                       else stripe.StripeClient(api_key, http_client=http_client))
 
     async def create(self, params, key):
         return await self.client.v1.checkout.sessions.create_async(params, options={'idempotency_key': key})
+
+    async def retrieve(self, session_id):
+        """Read one already-bound test session; never create/retry a payment."""
+        if not isinstance(session_id, str) or not re.fullmatch(r'cs_test_[A-Za-z0-9_]{1,240}', session_id):
+            raise CommercePaymentError('test_session_required')
+        return await self.client.v1.checkout.sessions.retrieve_async(session_id)
 
 
 class CommerceTestPayments:
@@ -59,7 +69,10 @@ class CommerceTestPayments:
         claimed = await self.db.rpc('commerce_claim_checkout_attempt', {'p_actor': actor_id, 'p_attempt_id': attempt['id']})
         try:
             session = await self.client.create(claimed['params'], claimed['idempotency_key'])
-            session = session.to_dict_recursive() if hasattr(session, 'to_dict_recursive') else session
+            # Current Stripe SDK16 resources are not Mapping/dict. to_dict()
+            # recurses by default; older SDK responses used to_dict_recursive().
+            session = (session.to_dict() if hasattr(session, 'to_dict') else
+                       session.to_dict_recursive() if hasattr(session, 'to_dict_recursive') else session)
             validate_checkout_session(session, claimed, order)
             await self.db.rpc('commerce_bind_test_session', {'p_attempt_id': attempt['id'], 'p_session_id': session['id']})
             # URL is never persisted as a trusted redirect or returned to a customer here.

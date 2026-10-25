@@ -33,7 +33,10 @@ from app.commerce_api import create_commerce_router
 from app.commerce_quote_api import create_cart_quote_router
 from app.commerce_attempt_api import create_checkout_attempt_router
 from app.commerce_payment_service import CommerceTestPayments
-from app.commerce_fulfillment_api import create_test_fulfillment_router
+from app.commerce_fulfillment_api import create_test_fulfillment_router, load_test_fulfillment_summary
+from app.commerce_fulfillment import FulfillmentPlanError
+from app.commerce_operations_api import create_operations_router
+from app.commerce_payment_observation_api import create_payment_observation_router
 from app.cart_service import CartService
 from app.config import Settings, get_settings
 from app.schemas import (
@@ -694,7 +697,7 @@ async def _orders_with_items(orders: list[dict[str, Any]]) -> list[dict[str, Any
 async def order_tracking(payload: OrderTrackingLookupInput, request: Request):
     _rate_limit(tracking_attempts, _client_key(request), 10, 300)
     rows = await db.select("orders", params={
-        "select": "id,order_number,customer_email,payment_status,fulfillment_status,carrier,tracking_number,tracking_url,created_at,paid_at,shipped_at,delivered_at",
+        "select": "id,order_number,customer_email,payment_status,fulfillment_status,carrier,tracking_number,tracking_url,created_at,paid_at,shipped_at,delivered_at,is_test,commerce_quote_id,status,refunded_amount_cents",
         "order_number": f"eq.{payload.order_number.upper()}",
         "limit": 1,
     })
@@ -705,8 +708,15 @@ async def order_tracking(payload: OrderTrackingLookupInput, request: Request):
     events = await db.select("order_tracking_events", params={"select": "*", "order_id": f"eq.{order['id']}", "order": "occurred_at.asc,id.asc"})
     public_events = [{key: event.get(key) for key in ("id", "title", "description", "occurred_at")}
                      for event in events if event.get("is_customer_visible")]
+    simulation = None
+    if order.get('is_test') is True and order.get('commerce_quote_id'):
+        try: simulation = await load_test_fulfillment_summary(db,order)
+        except FulfillmentPlanError:
+            raise HTTPException(409,'Simulation tracking requires review') from None
+    for key in ('commerce_quote_id','status','refunded_amount_cents','is_test'):
+        order.pop(key,None)
     order.pop("id", None)
-    return {**order, "tracking_events": public_events}
+    return {**order, "tracking_events": public_events, **({'simulation':simulation} if simulation is not None else {})}
 
 
 @api.get("/admin/orders")
@@ -831,6 +841,12 @@ async def create_checkout_session(request: Request, promotion_code: str | None =
     if stripe_client is None: raise HTTPException(status_code=503, detail="Stripe test checkout is not configured")
     if not settings.stripe_test_mode and not legal_ready():
         raise HTTPException(503, 'Legal identity must be completed before live checkout')
+    # The legacy path has no verified supplier/rights/landed-cost snapshots.
+    # Manually toggling a product active/verified must never open real payments.
+    # Keep the existing sandbox demo; live activation needs a reviewed workflow,
+    # not an environment flag or an administrator's optimistic product label.
+    if not settings.stripe_test_mode:
+        raise HTTPException(409, 'Live checkout is disabled pending verified operations approval')
     _rate_limit(checkout_attempts, 'ip:'+_client_key(request), 8, 60)
     actor = user["id"] if user else _session_id(x_session_id); _rate_limit(checkout_attempts, 'actor:'+actor, 8, 60)
     cart = await _cart_for(user, x_session_id, create=False); cart_view = await _cart_response(cart)
@@ -1041,6 +1057,9 @@ app.include_router(create_checkout_attempt_router(
     db, require_admin, lambda: settings, _rate_limit, checkout_attempts,
 ))
 app.include_router(create_test_fulfillment_router(db, require_admin, lambda: settings))
+app.include_router(create_operations_router(db, require_admin, lambda: settings))
+app.include_router(create_payment_observation_router(
+    db, require_admin, lambda: settings, _rate_limit, checkout_attempts))
 
 
 @app.exception_handler(SupabaseError)

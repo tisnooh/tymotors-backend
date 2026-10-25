@@ -40,10 +40,19 @@ def wired(event_context):
     return context, db, gateway, CommerceTestPayments(db,gateway)
 
 
-@pytest.mark.parametrize('key',[None,'','sk_live_never','rk_live_never','random','sk_test_'])
+@pytest.mark.parametrize('key',[None,'','sk_live_never','rk_live_never','rkcs_live_never','random','sk_test_','rkcs_test_','unknown_test_never'])
 def test_non_test_key_rejected_before_any_sdk(key):
     with pytest.raises(CommercePaymentError,match='test_credentials_required'):
         Gateway(key)
+
+
+@pytest.mark.parametrize('prefix',['sk_test_','rk_test_','rkcs_test_'])
+def test_explicit_test_credentials_construct_sdk_without_network(prefix, monkeypatch):
+    from unittest.mock import Mock
+    sdk = Mock()
+    monkeypatch.setattr('app.commerce_payment_service.stripe.StripeClient', sdk)
+    Gateway(prefix+'synthetic_not_a_credential')
+    sdk.assert_called_once_with(prefix+'synthetic_not_a_credential')
 
 
 @pytest.mark.anyio
@@ -56,6 +65,18 @@ async def test_create_claims_once_and_keeps_exact_key_params(wired):
     with pytest.raises(CommercePaymentError,match='inspection'):
         await service.create_session('admin',c['attempt']['id'])
     assert gateway.create.await_count==1
+
+
+@pytest.mark.anyio
+async def test_real_current_sdk_resource_converted_before_validation(wired):
+    import stripe
+    c, db, gateway, service = wired
+    # Actual installed SDK16 class, not a mock or an obsolete dict-like facade.
+    gateway.create.return_value = stripe.checkout.Session.construct_from(deepcopy(c['session']), None)
+    assert not hasattr(gateway.create.return_value, 'to_dict_recursive')
+    result = await service.create_session('admin', c['attempt']['id'])
+    assert result['session_id'] == c['session']['id']
+    assert db.rpc.await_args_list[-1].args[0] == 'commerce_bind_test_session'
 
 
 @pytest.mark.anyio

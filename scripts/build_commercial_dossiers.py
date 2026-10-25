@@ -54,6 +54,7 @@ def main():
                f"Prix observé : {item['sale_price_cents_observed']} centimes {item['sale_currency_observed']} ; coût et marge : non calculables.", '',
                'Fournisseurs candidats (aucun retenu confirmé) : ' + item['supplier_candidates_evidence'], '',
                'Droits : ' + item['image_rights_status'] + ' ; images conservées, aucune nouvelle utilisation autorisée.', '',
+               'Publication séparée : ' + item['publication_status'] + ' ; blocages simultanés : ' + ', '.join(item['verification_statuses'].values()), '',
                'Source : ' + item['sources']['tracker'], '']
         md += [f"- {b['owner']} — {b['code']} : {b['action']}" for b in item['blockers']]
     (args.output / 'DOSSIERS.md').write_text('\n'.join(md) + '\n', encoding='utf-8')

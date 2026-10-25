@@ -34,13 +34,17 @@ def webhook(event, *, valid=True, expected=200):
 
 
 def main():
-    for table in ('commerce_test_sessions','commerce_test_payment_events','commerce_test_tasks','commerce_test_task_events'):
+    for table in ('commerce_test_sessions','commerce_test_payment_events','commerce_test_tasks','commerce_test_task_events',
+                  'commerce_image_permissions','commerce_hypersku_mappings','commerce_hypersku_preparations'):
         eq(sql('select relrowsecurity rls from pg_class where oid=$1::regclass',['public.'+table])[0]['rls'],True)
         for role in ('anon','authenticated'):
             for permission in ('SELECT','INSERT','UPDATE','DELETE','TRUNCATE'):
                 eq(sql('select has_table_privilege($1,$2,$3) allowed',[role,'public.'+table,permission])[0]['allowed'],False)
     for fn in ('commerce_bind_test_session(uuid,text)','commerce_settle_test_checkout(text,text,jsonb,boolean)',
-               'commerce_advance_test_task(uuid,uuid,text,text,text)'):
+               'commerce_advance_test_task(uuid,uuid,text,text,text)',
+               'commerce_save_image_permission(uuid,jsonb,timestamptz)',
+               'commerce_save_hypersku_mapping(uuid,jsonb,timestamptz)',
+               'commerce_prepare_hypersku_task(uuid,uuid,uuid)'):
         for role in ('anon','authenticated'):
             eq(sql('select has_function_privilege($1,$2,$3) allowed',[role,'public.'+fn,'EXECUTE'])[0]['allowed'],False)
     marker = uuid4().hex[:8]
@@ -48,11 +52,13 @@ def main():
     supplier = sql("select id from suppliers where name='Fixture supplier' order by id limit 1")[0]['id']
     rule = sql("select * from product_compatibilities where product_id=$1 and verification_state='verified' order by id", [product])[0]
     sql("update product_images set url='https://cdn.example.com/isolated-fixture.webp' where product_id=$1", [product])
+    sql("insert into commerce_image_permissions(product_id,image_url,state,evidence_ref,commercial_use,derivatives_use,product_match_confirmed,marks_clearance,countries,valid_until,verified_by,verified_at) values($1,'https://cdn.example.com/isolated-fixture.webp','verified','SYNTHETIC GRANT ONLY',true,true,true,'not_present',array['FR'],now()+interval '1 year',$2,now()) on conflict(product_id,image_url) do nothing",[product,ADMIN])
     actor = save('agent', {'profile_id': ADMIN,'name': 'Synthetic pipeline agent','role': 'orders','is_active': True})
     vehicle = {'brand_slug': 'bmw', 'model': rule['model_name'], 'chassis': rule['chassis'],
                'year': rule['year_from'], 'facelift': 'pre-lci', 'body_type': 'sedan'}
     used_intent = None
-    for number in range(8):
+    mapping_ids = []
+    for number in range(9):
         label = f'PIPELINE-{marker}-{number}'
         variant = save('variant', {'product_id': product,'sku': label,'name': 'Synthetic pilot '+str(number),
             'price_cents': 3000,'stock': 3,'status': 'active','is_verified': True,'requires_vehicle': True,
@@ -69,6 +75,14 @@ def main():
             'nonrecoverable_tax_cents': 0,'other_cost_cents': 0,'verification_state': 'verified',
             'evidence_ref': 'SYNTHETIC ONLY','valid_until': '2099-01-01T00:00:00Z',
             'delivery_days_min': 3,'delivery_days_max': 5})
+        mapping = None
+        if number < 5:
+            mapping = request('/admin/commerce/hypersku/mappings','POST',{'data':{
+                'offer_id':offer['id'],'shipping_rate_id':rate['id'],'is_test':True,'state':'verified',
+                'hypersku_product_ref':'SYNTHETIC-PRODUCT-'+label,'hypersku_variant_ref':'SYNTHETIC-VARIANT-'+label,
+                'equivalence_evidence_ref':'SYNTHETIC-EQUIVALENCE-NOT-A-REAL-PRODUCT',
+                'provider_quote_ref':'SYNTHETIC-NOT-A-REAL-HYPERSKU-QUOTE','valid_until':'2098-01-01T00:00:00Z'}},HEADERS)
+            mapping_ids.append(mapping['id'])
         guest = {'X-Session-Id': 'pipeline_'+label}
         request('/cart','POST',{'product_id':product,'variant_id':variant['id'],'quantity':1,
                               'selected_vehicle': vehicle},guest)
@@ -111,10 +125,9 @@ def main():
             session['shipping_details']['address']={**order['shipping_address'],'line1':'Unexpected address'}
         event.update(id='evt_'+uuid4().hex,type='checkout.session.async_payment_succeeded')
         # Catalogue may change AFTER remote claim: paid truth uses frozen data.
-        sql('update supplier_offers set unit_cost_cents=1500 where id=$1',[offer['id']])
-        if number==0:
+        if number==8:
+            sql('update supplier_offers set unit_cost_cents=1500 where id=$1',[offer['id']])
             sql('delete from shipping_rates where id=$1',[rate['id']])
-        if number==2:
             sql('delete from carts where id=$1',[order['cart_id']])
         if number==7:
             webhook(event,expected=500)
@@ -140,6 +153,12 @@ def main():
         eq(task['supplier_id'],supplier)
         eq(task['agent_id'],actor['id'])
         eq(task['supplier_sku'],'SOURCE-'+label)
+        if number==8:
+            eq(sql('select payment_status from orders where id=$1',[oid])[0]['payment_status'],'paid')
+            eq(task['snapshot']['offer']['unit_cost_cents'],1000)
+            request('/admin/commerce/hypersku/tasks/'+task['id']+'/prepare','POST',
+                {'mapping_id':str(uuid4())},HEADERS,status=409)
+            continue
         if number==6:
             sql("update orders set status='cancelled' where id=$1",[oid])
             request('/admin/commerce/test-tasks/'+task['id']+'/simulate','POST',
@@ -155,6 +174,58 @@ def main():
                 {'expected':'prepared','next':'received_by_agent'},HEADERS,status=409)
             eq(sql('select state from commerce_test_tasks where id=$1',[task['id']])[0]['state'],'prepared')
             continue
+        # Adversarial mutations affect ONLY this disposable synthetic database.
+        # Every refused preparation must leave no packet/authorization behind;
+        # restore the fixture before the normal successful path below.
+        prepare_path = '/admin/commerce/hypersku/tasks/'+task['id']+'/prepare'
+        prepare_body = {'mapping_id':mapping['id']}
+        def rejected_preparation():
+            request(prepare_path,'POST',prepare_body,HEADERS,status=409)
+            eq(sql('select count(*) n from commerce_hypersku_preparations where task_id=$1',[task['id']])[0]['n'],0)
+        if number == 0:
+            sql("update commerce_agents set role='pricing' where id=$1",[actor['id']])
+            rejected_preparation()
+            sql("update commerce_agents set role='orders',is_active=false where id=$1",[actor['id']])
+            rejected_preparation()
+            sql('update commerce_agents set is_active=true where id=$1',[actor['id']])
+            other_profile = sql('select id from profiles where id<>$1 order by id limit 1',[actor['profile_id']])[0]['id']
+            sql('update commerce_agents set profile_id=$2 where id=$1',[actor['id'],other_profile])
+            rejected_preparation()
+            sql('update commerce_agents set profile_id=$2 where id=$1',[actor['id'],actor['profile_id']])
+            sql("update commerce_image_permissions set state='revoked' where product_id=$1",[product])
+            rejected_preparation()
+            sql("update commerce_image_permissions set state='verified' where product_id=$1",[product])
+            sql("update commerce_hypersku_mappings set state='pending' where id=$1",[mapping['id']])
+            rejected_preparation()
+            sql("update commerce_hypersku_mappings set state='verified',valid_until=now()-interval '1 hour' where id=$1",[mapping['id']])
+            rejected_preparation()
+            sql('update commerce_hypersku_mappings set valid_until=$2,is_test=false where id=$1',[mapping['id'],mapping['valid_until']])
+            rejected_preparation()
+            sql('update commerce_hypersku_mappings set is_test=true where id=$1',[mapping['id']])
+        if number == 1:
+            # Another individually verified mapping cannot supply this variant.
+            request(prepare_path,'POST',{'mapping_id':mapping_ids[0]},HEADERS,status=409)
+            eq(sql('select count(*) n from commerce_hypersku_preparations where task_id=$1',[task['id']])[0]['n'],0)
+        try:
+            internal = request('/admin/commerce/hypersku/tasks/'+task['id']+'/prepare','POST',{'mapping_id':mapping['id']},HEADERS)
+        except AssertionError:
+            # Diagnostics only against the explicitly disposable loopback DB.
+            from urllib.error import HTTPError
+            print(sql("select array(select key from jsonb_each(m.offer_snapshot) where value is distinct from t.snapshot->'offer'->key) offer_different_fields,array(select key from jsonb_each(m.rate_snapshot) where value is distinct from t.snapshot->'rate'->key) rate_different_fields from commerce_hypersku_mappings m join commerce_test_tasks t on t.id=$1 where m.id=$2",[task['id'],mapping['id']]))
+            try:
+                sql('select commerce_prepare_hypersku_task($1,$2,$3)',[ADMIN,task['id'],mapping['id']])
+            except HTTPError as error:
+                raise AssertionError('Synthetic SQL preparation failed: '+error.read().decode()[:2000]) from None
+            raise
+        eq(internal['state'],'awaiting_human_review')
+        eq(internal['external_send_allowed'],False)
+        eq(internal['expenses_authorized'],False)
+        eq(request('/admin/commerce/hypersku/tasks/'+task['id']+'/prepare','POST',{'mapping_id':mapping['id']},HEADERS),internal)
+        packet = request('/admin/commerce/hypersku/preparations/'+internal['id'],headers=HEADERS)
+        eq(packet['packet']['certified_provider_import'],False)
+        eq(packet['packet']['origin_supplier_sku'],'SOURCE-'+label)
+        eq(packet['packet']['hypersku_variant_ref'],'SYNTHETIC-VARIANT-'+label)
+        eq(packet['packet']['responsible_agent_id'],actor['id'])
         request('/admin/commerce/test-tasks/'+task['id']+'/simulate','POST',
                 {'expected':'prepared','next':'shipped','tracking_number':'SIM-'+label},HEADERS,status=409)
         for previous, following in [('prepared','received_by_agent'),('received_by_agent','quality_checked'),
@@ -171,7 +242,7 @@ def main():
         eq(sql('select stock from product_variants where id=$1',[variant['id']])[0]['stock'],3)
         eq(sql('select available_quantity from supplier_offers where id=$1',[offer['id']])[0]['available_quantity'],3)
         eq(sql('select payment_status from orders where id=$1',[oid])[0]['payment_status'],'paid')
-        eq(sql('select count(*) n from cart_items where cart_id=$1',[order['cart_id']])[0]['n'],0 if number==2 else 1)
+        eq(sql('select count(*) n from cart_items where cart_id=$1',[order['cart_id']])[0]['n'],1)
     print(json.dumps({'checks':probe.checks,'synthetic_pilots':5,'redirected_payment_held':1,
                      'cancelled_task_blocked':1,'cross_order_payment_reuse_rejected':1,
                      'result':'passed','stripe_transport':'FAKE',

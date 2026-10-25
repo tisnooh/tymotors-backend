@@ -91,7 +91,7 @@ class Settings:
             re.compile(self.cors_origin_regex)
         if self.stripe_mode not in {"test", "live"}:
             raise RuntimeError("STRIPE_MODE must be test or live")
-        if self.stripe_secret_key and self.stripe_mode == "test" and not self.stripe_secret_key.startswith(("sk_test_", "rk_test_")):
+        if self.stripe_secret_key and self.stripe_mode == "test" and not self.stripe_secret_key.startswith(("sk_test_", "rk_test_", "rkcs_test_")):
             raise RuntimeError("A live Stripe key cannot be used in test mode")
         if self.stripe_mode == "live" and (self.environment != "production" or not self.stripe_secret_key.startswith(("sk_live_", "rk_live_"))):
             raise RuntimeError("A live Stripe key cannot be used outside production")

@@ -1,0 +1,17 @@
+# PHOENIX — blocages explicites
+
+| ID | Statut | Responsable | Preuve / impact | Action attendue |
+|---|---|---|---|---|
+| IMG_POSITIVE_GATE | APPROVED local | Codex / auditeur | Correction positive par fichier + SQL98, HTTP557 ; refus/révocation/territoire/expiration vérifiés ; aucune photo modifiée | Ne pas confondre contrôle technique avec obtention des permissions des 40 produits |
+| STRIPE_ACCESS | En test isolé, paiement BLOCKED jusqu'à preuve | Codex / administrateur | Connecteur sans link_id ; alternative officielle CLI a créé sandbox anonyme, auth et lecture réseau Checkout SDK réussies. Pas de clé live ; solde inaccessible selon permissions | Terminer vrai Checkout test/webhook. Profil temporaire hors dépôt ; revendication humaine pour persistance si nécessaire, aucune clé en conversation |
+| HYPERSKU_API | BLOCKED | HyperSKU / administrateur | OpenAPIannoncée mais contrat endpoints/auth/payload/notifications/sandbox/éligibilité absent ducode ; loginhistorique12/10 ne prouve pas accèsactuel | Obtenir documentation/accèsautorisés ; préparationmanuellelocaleenattendant, aucunenvoi |
+| COMMERCIAL_5 | BLOCKED | Fournisseurs |5propositionsSoyinnonretenues, 0devis/portFrance/droits/fitmentconfirmé | RéponsesdatéesSKUfinition/montage/photo/devise/MOQ/port/Incoterm/garantie ; pasnouvelenvoisansautorisation |
+| OWNER_TERMS | BLOCKED | Administrateur | Agent réel, fiscalité, marge minimale, légal/conditions nonconfirmés | Désigner/valider ; aucunprixpublicmodifié |
+| PAYMENT_RECONCILE | PARTIEL — lot financier restant | Codex | Inspection privée test APPROVED local après145 contre-tests indépendants ; aucun rapprochement financier automatique, remboursements quoted toujours refusés. Les réservations held sont une protection intentionnelle | Implémenter journal durable/transaction de rapprochement et remboursements quoted dans un lot séparé ; aucun retry aveugle, faux événement ou libération présumée |
+| HOSTED_CONCURRENCY | BLOCKED | Environnementisolé / Codex | PGlitesinglesession, pasPostgreSQLmulticonnexion/GoTrue/PostgRESTréel | Recetteisoléeautorisée, pasmigrationproduction |
+| SIM_AGGREGATE_MULTIPARCEL | APPROVED local SIM uniquement | Codex / auditeur | Chef et auditeur : 91 assertions HTTP chacun, deux fournisseurs/agents/colis synthétiques ; régression557 PASS ; statut réel requires_review conservé | Pas de preuve d'expédition réelle ni de condition commerciale déduite |
+| SANDBOX_BROWSER | BLOCKED | Accès navigateur | Checkout réel de test créé/bindé ; page test35EUR visible, puis trois opérations CUA sans réponse avant carte ; pas de paiement achevé | Rétablir navigateur intégré puis inspecter état existant/rapport privé avant reprise ; pas de nouvelle charge aveugle |
+| QA_RESUMPTION | RESOLVED pour ce lot | Auditeur | Reprise exécutée :35 tests ciblés et91 assertions HTTP indépendants PASS ; guard live45 tests et smoke1 PASS | Ne pas en déduire une disponibilité permanente du service ni une validation commerciale |
+| LIVE_LEGACY_GATE | APPROVED local | Codex / auditeur | Checkout legacy live interdit avant panier/RPC/provider ; aucune activation par un produit active/verified ni un simple flag légal. Testmode conservé, contre-audit45 tests et smoke FAKE1 PASS | Activer la vente réelle exigera un futur lot revu et les preuves commerciales, pas un contournement de ce verrou |
+
+Les blocages d'un article sont cumulatifs et distincts de sa publication. Aucun fournisseur ni compte ne doit être sollicité ou modifié pour les masquer.

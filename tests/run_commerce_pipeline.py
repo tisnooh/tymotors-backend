@@ -17,6 +17,8 @@ from urllib.request import Request, urlopen
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--node',required=True)
+    parser.add_argument('--probe-module',default='tests.commerce_pipeline_http_probe',
+                        choices=['tests.commerce_pipeline_http_probe','tests.commerce_multigroup_http_probe'])
     args=parser.parse_args()
     for port in (8765,8766):
         with socket.socket() as sock:
@@ -45,8 +47,8 @@ def main():
                     ready=True;break
                 except (OSError,TimeoutError): time.sleep(.25)
             if not ready: raise RuntimeError('Disposable fixture readiness timed out')
-            subprocess.run([sys.executable,'-m','tests.commerce_pipeline_http_probe'],cwd=cwd,env=env,
-                           check=True,timeout=180)
+            subprocess.run([sys.executable,'-m',args.probe_module],cwd=cwd,env=env,
+                           check=True,timeout=600)
         except Exception:
             log.seek(0)
             print(log.read().decode(errors='replace')[-6000:],file=sys.stderr)
