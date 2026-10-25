@@ -66,3 +66,62 @@ Dernière non-régression sur les sources finales : **557 assertions HTTP/SQL PA
 (cinq pilotes synthétiques, transport Stripe FAKE, signature SDK locale). Contrôle
 index : aucun secret sandbox connu, aucun long littéral de credential et aucun
 fichier visuel. Frontend toujours propre ; pas de publication.
+
+## Nouveau lot — pont client sandbox local
+
+Les verdicts ci-dessus restent historiques. Ce nouveau lot ajoute variantes
+publiques et démarrage du checkout propriétaire, sans modification du rendu.
+
+| Contrôle | Preuve actuelle | Décision / limite |
+|---|---|---|
+| Service/API propriétaire, variantes, SQL |148 pytest ciblés,137 SQL clients,66 SQL admin indépendants PASS | APPROVED dans ce périmètre local ; pas Auth/PostgREST hébergés ou concurrence multiconnexion |
+| Auth révoquée pendant retour fournisseur | Cas adversarial indépendant PASS |401 sans URL, liaison financière conservée, aucun settle/cancel |
+| Runner réel --customer |P1 SELECT ancienne colonne : REJECTED, JOIN corrigé,6 contre-tests indépendants PASS | Correctif accepté ; preuve binding SQL incluse dans probe, pas de paiement réseau |
+| Garde frontend | Deux faux positifs de confirmation corrigés puis revus statiquement ; chef91 tests/7 suites PASS | APPROVED contrôle de réponse ; pas une preuve de commit concurrent inter-onglets |
+| Recette publique intégrée |155 assertions chef PASS avant déduplication2contrôles ;153 finale en contre-recette | Stripe FAKE ; un seul create/commande/tâche, suivi SIM uniquement ; résultat final pas encore anticipé |
+| Suite frontend globale |Premier run agent interrompu après timeouts5s ; second échec résolution JSDOM avant tests | NON VALIDÉ globale ; ciblés finaux91 PASS ne masquent pas ces interruptions |
+| Interface client complète |Cart.jsx legacy, pas d'adresse/mode collectés, multi-variantes sans sélecteur autorisé | BLOCKED, autorisation du seul ajout minimal requise ; aucun formulaire ajouté |
+| Navigateur / paiement sandbox | DOM ponctuel, reload/focus/onglet neuf échouent ; aucune nouvelle session ni paiement | BLOCKED, pas de simulation présentée comme paiement réussi |
+
+Les nouveaux fichiers sont encore locaux. Aucun déploiement, achat, transmission
+fournisseur, modification de photos/styles/prix publics. Mise à jour de ce tableau
+requise après les sorties réelles des suites finales, sans sommer les tests qui
+se recouvrent.
+
+### Derniers résultats confirmés
+
+- Auditeur :153 HTTP public +557 historiques PASS, cleanup sockets vérifié.
+- Correctif ultérieur de confirmation pré-webhook :30 tests chef et30 contre-tests
+  indépendants PASS ; route read-only autorise le propriétaire avant projection,
+  ledger payé jamais déduit du retour navigateur, aucun appel SDK/RPC financier.
+- Suite Python complète sur la dernière correction : **1452 PASS**,31,62s,
+  un avertissement Starlette/httpx préexistant. Décision chef : APPROVED backend
+  local sous réserve de la dernière probe HTTP enrichie, pas vente réelle.
+- Frontend final ciblé91 PASS/7 suites ; lint final PASS après correction de
+  deux globals dans les tests. Suite globale finale et build encore à exécuter
+  ou terminer ; ne pas les déclarer réussis à partir des seuls ciblés.
+
+Suite frontend globale chef enfin terminée sur les dernières sources : **583 tests
+PASS/38 suites**,262,887s, exit0. Exécution séquentielle CI/watchAll=false,
+runInBand/testTimeout30000/no-cache/forceExit ; les erreurs du run agent précédent
+ne se reproduisent pas. Ne pas en déduire une fermeture naturelle des handles
+Jest, une recette navigateur ou un paiement réel. Compilation encore distincte.
+
+Compilation maintenant terminée :**Compiled successfully,exit0**,CI=true,
+GENERATE_SOURCEMAP=false,artefactlocal .browser-test-build configuré loopback.
+Probe HTTP enrichie chef :**173 PASS**,exit0. Contre-exécution173 finale en cours,
+le557 indépendant est explicitement antérieur au dernier helper receipt. Aucun
+déploiement déduit des messages « ready to be deployed » de l'outil de build.
+
+### Décision finale du chef pour ce lot
+
+Auditeur :**173 contrôles HTTP/SQL PASS**,exit0 après receipt ; un seul createFAKE,
+une commande/tâche, préparation HyperSKUinterne et suiviSIM, sockets8765/8766 fermés.
+**APPROVED technique locale simulée**. Suites finales chef1452backend/583frontend,
+buildCI et lintPASS. Aucun P1/P2 résiduel démontré dans ce périmètre audité.
+
+**BLOCKED** : parcours UI (accord minimal adresse/mode/choix de variante), vrai
+paiement sandbox navigateur, GoTrue/PostgREST/PostgreSQL multiconnexion isolés,
+HyperSKU externe et cinq produits commerciaux. Ni design, photos ni prix publics
+modifiés, aucune publication. Reprise exacte dans le dernier bloc PROGRESS ; ne
+pas prétendre qu'un agent ou runner continue après fermeture de ce lot.

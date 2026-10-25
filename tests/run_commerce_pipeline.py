@@ -18,17 +18,20 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--node',required=True)
     parser.add_argument('--probe-module',default='tests.commerce_pipeline_http_probe',
-                        choices=['tests.commerce_pipeline_http_probe','tests.commerce_multigroup_http_probe'])
+                        choices=['tests.commerce_pipeline_http_probe','tests.commerce_multigroup_http_probe',
+                                 'tests.commerce_customer_http_probe'])
     args=parser.parse_args()
     for port in (8765,8766):
         with socket.socket() as sock:
             if sock.connect_ex(('127.0.0.1',port))==0:
                 raise RuntimeError(f'Port {port} occupied; refusing unknown fixture')
     cwd=Path(__file__).resolve().parents[1]
-    env={**os.environ,'ENVIRONMENT':'test','SUPABASE_URL':'https://example.supabase.co',
-         'SUPABASE_PUBLISHABLE_KEY':'synthetic-publishable','SUPABASE_SERVICE_ROLE_KEY':'synthetic-service',
+    env={**os.environ,'PYTHON_DOTENV_DISABLED':'1','ENVIRONMENT':'test','SUPABASE_URL':'https://example.supabase.co',
+         'SUPABASE_PUBLISHABLE_KEY':'synthetic-publishable','SUPABASE_SECRET_KEY':'synthetic-service',
+         'SUPABASE_SERVICE_ROLE_KEY':'synthetic-service',
          'FRONTEND_URL':'http://127.0.0.1:8765','CORS_ORIGINS':'http://127.0.0.1:8765',
-         'STRIPE_MODE':'test','STRIPE_SECRET_KEY':'','EMAIL_ENABLED':'false'}
+         'STRIPE_MODE':'test','STRIPE_SECRET_KEY':'','EMAIL_ENABLED':'false',
+         'BREVO_API_KEY':'','SMTP_PASSWORD':'','CLOUDINARY_URL':'','CLOUDINARY_API_KEY':'','CLOUDINARY_API_SECRET':''}
     processes=[]
     with tempfile.TemporaryFile(mode='w+b') as log:
         try:

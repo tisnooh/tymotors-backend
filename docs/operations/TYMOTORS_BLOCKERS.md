@@ -15,3 +15,16 @@
 | LIVE_LEGACY_GATE | APPROVED local | Codex / auditeur | Checkout legacy live interdit avant panier/RPC/provider ; aucune activation par un produit active/verified ni un simple flag légal. Testmode conservé, contre-audit45 tests et smoke FAKE1 PASS | Activer la vente réelle exigera un futur lot revu et les preuves commerciales, pas un contournement de ce verrou |
 
 Les blocages d'un article sont cumulatifs et distincts de sa publication. Aucun fournisseur ni compte ne doit être sollicité ou modifié pour les masquer.
+
+### Complément reprise du25octobre
+
+| ID | Statut | Responsable | Preuve / impact | Action attendue |
+|---|---|---|---|---|
+| CUSTOMER_UI_DESTINATION | BLOCKED, accord requis | Administrateur / Codex | Le panier actuel ne collecte aucune adresse ; un devis exige l'adresse exacte avant paiement. Question pour formulaire minimal sans refonte posée, pas encore répondue | Autoriser ce seul ajout visuel ; avant accord ne modifier ni rendu ni styles. Le nouveau pont API continue indépendamment |
+| CUSTOMER_CHECKOUT_BRIDGE | APPROVED local simulé, UI BLOCKED | Codex / auditeur |1452 pytest et583 frontend chef PASS,buildCI/lintPASS ;173 HTTP/SQL finaux chef ET indépendants PASS ;137 SQL clients/66admin PASS. Pont propriétaire, verrou panier inter-devis et receipt pré-webhook | Collecte adresse/mode/choix de variante après accord ; Stripe réel/GoTrue/PostgREST/concurrence PostgreSQL restent non prouvés |
+| SANDBOX_BROWSER | PARTIEL, accès à reconfirmer avant paiement | Codex | Inventaire et DOM ancien Checkout répondent à la reprise ; les3 anciennes sessions sont expired/unpaid selon lecture fournisseur précédente | Ne pas payer une session expirée. Nouvelle recette uniquement sur SQL jetable/session test identifiée, après libération des ports |
+
+Dernier constat navigateur : DOM ponctuel puis reload/focus CDP/onglet neuf en
+échec. **BLOCKED pour interaction Checkout**, pas partiellement validé pour un
+paiement. Aucun nouveau Checkout ni carte soumis dans ce lot. Les recettes locales
+sont terminées et leurs processus/ports sont fermés, pas de surveillance en cours.

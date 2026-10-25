@@ -14,7 +14,7 @@ from app.product_image_policy import permitted_image
 from app.supabase_rest import SupabaseError
 
 
-def public_quote(row: dict, now: datetime | None = None) -> dict:
+def public_quote(row: dict, now: datetime | None = None, *, sandbox_checkout_available: bool = False) -> dict:
     """An explicit contract: never return source_context, evaluations or addresses."""
     now = now or datetime.now(timezone.utc)
     try:
@@ -41,7 +41,7 @@ def public_quote(row: dict, now: datetime | None = None) -> dict:
             'expires_at': expiry.isoformat(), 'currency': row['currency'],
             'subtotal_cents': row['subtotal_cents'], 'shipping_cents': row['shipping_cents'],
             'tax_cents': row['tax_cents'], 'total_cents': row['total_cents'],
-            'items': lines, 'checkout_available': False,
+            'items': lines, 'checkout_available': sandbox_checkout_available is True and status == 'ready',
             'requires_revalidation': True,
             'scope': 'persisted_quote_not_payment_or_reservation',
         }

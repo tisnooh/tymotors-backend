@@ -21,7 +21,7 @@ Réussite : cinq articles réellement validés commercialement et un parcours co
 
 Le chef attribue des périmètres disjoints ; l'auditeur ne développe pas le lot qu'il contrôle. Ressources réelles :4agents simultanés au total, chef compris ; dix fonctions métier réparties par lots. Aucun agent ne valide seul. Décisions par périmètre : APPROVED (tous critères prouvés), REJECTED (défaut corrigible), BLOCKED (dépendance externe documentée). Une approbation locale n'est pas une autorisation commerciale.
 
-Chaque lot : développer → tester → audit contradictoire → correction → nouveau test → décision du chef → suivi. Préserver les fichiers tiers et les sources historiques. Branche dédiée `codex/commerce-workflows`, backend dans `scp-release/backend`, frontend associé inchangé ; les checkouts originaux contiennent des travaux privés à préserver.
+Chaque lot : développer → tester → audit contradictoire → correction → nouveau test → décision du chef → suivi. Préserver les fichiers tiers et les sources historiques. Branche dédiée `codex/commerce-workflows`, backend dans `scp-release/backend`, frontend associé avec rendu inchangé (raccordement métier autorisé) ; les checkouts originaux contiennent des travaux privés à préserver.
 
 ## Acceptation requise
 

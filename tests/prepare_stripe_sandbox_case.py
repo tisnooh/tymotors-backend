@@ -50,7 +50,32 @@ def checkout(attempt_id):
     return result
 
 
-def prepare():
+def customer_checkout(quote_id, guest):
+    """Exercise the real PUBLIC owned route, never fake admin identity."""
+    quote_id = str(UUID(str(quote_id)))
+    req = Request(ORIGIN + '/api/cart/quote/' + quote_id + '/checkout', method='POST',
+        data=json.dumps({'request_key': str(uuid4())}).encode(),
+        headers={**guest, 'Content-Type': 'application/json'})
+    with urlopen(req, timeout=90) as response:
+        result = json.load(response)
+    eq(result['is_test'], True)
+    eq(result['status'], 'open')
+    # The historical attempts.session_id column is NOT the binding authority.
+    # commerce_bind_test_session writes commerce_test_sessions only.
+    attempts = sql('''select a.id,s.session_id from commerce_checkout_attempts a
+        join commerce_test_sessions s on s.attempt_id=a.id where a.order_id=$1''', [result['order_id']])
+    eq(len(attempts), 1)
+    attempt = attempts[0]
+    # Check the exact bound session, not just a loose Stripe-host prefix.
+    from app.commerce_customer_checkout import hosted_test_url
+    url = hosted_test_url(result['url'], attempt['session_id'])
+    return {'attempt_id': attempt['id'], 'order_id': result['order_id'],
+        'session_id': attempt['session_id'], 'is_test': True,
+        'provider_transport': 'real_stripe_sdk', 'payment_completed': False,
+        'checkout_url': url, 'entrypoint': 'public_owned_customer_checkout'}
+
+
+def prepare(*, customer=False):
     assert_fixture()
     marker = uuid4().hex[:10]
     label = 'SANDBOX-SYNTHETIC-' + marker
@@ -106,16 +131,20 @@ def prepare():
     quote = request('/cart/quote', 'POST', {'request_key': str(uuid4()), 'mode': 'tracked',
         'destination': {'name': 'Synthetic recipient', 'line1': '1 Synthetic street',
             'city': 'Paris', 'country': 'FR', 'postal_code': '75001'}}, guest)
-    order = request('/admin/commerce/quotes/' + quote['quote_id'] + '/prepare-test-order',
-        'POST', headers=HEADERS)
-    attempt = request('/admin/commerce/orders/' + order['order_id'] + '/checkout-attempt',
-        'POST', headers=HEADERS)
+    if customer:
+        result = customer_checkout(quote['quote_id'], guest)
+        order = {'order_id': result['order_id']}
+    else:
+        order = request('/admin/commerce/quotes/' + quote['quote_id'] + '/prepare-test-order',
+            'POST', headers=HEADERS)
+        attempt = request('/admin/commerce/orders/' + order['order_id'] + '/checkout-attempt',
+            'POST', headers=HEADERS)
+        result = checkout(attempt['attempt_id'])
     plan = request('/admin/commerce/orders/' + order['order_id'] + '/fulfillment-plan', headers=HEADERS)
     eq(len(plan['tasks']), 1)
     eq(plan['tasks'][0]['supplier_sku'], 'SOURCE-' + label)
     eq(plan['tasks'][0]['agent_id'], actor['id'])
     eq(plan['tasks'][0]['shipping_cost_cents'], 200)
-    result = checkout(attempt['attempt_id'])
     # Remote session creation is not a payment. There must still be no paid task.
     eq(sql('select payment_status from orders where id=$1', [order['order_id']])[0]['payment_status'], 'unpaid')
     eq(sql('select count(*)::integer n from commerce_test_tasks where order_id=$1', [order['order_id']])[0]['n'], 0)
@@ -132,13 +161,16 @@ def prepare():
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--attempt', type=UUID, help='Inspect/reuse one existing synthetic sandbox attempt')
+    parser.add_argument('--customer', action='store_true', help='Use public owned customer quote checkout, no admin order mutation')
     args = parser.parse_args()
+    if args.customer and args.attempt:
+        parser.error('--customer creates one new isolated case; --attempt only inspects an existing case')
     try:
         if args.attempt:
             assert_fixture()
             result = checkout(args.attempt)
         else:
-            result = prepare()
+            result = prepare(customer=args.customer)
         print(json.dumps(result, ensure_ascii=False, indent=2))
     except Exception as error:
         # Preserve ambiguous state and print no HTTP/SDK exception bodies.

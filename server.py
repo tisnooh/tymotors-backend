@@ -37,6 +37,9 @@ from app.commerce_fulfillment_api import create_test_fulfillment_router, load_te
 from app.commerce_fulfillment import FulfillmentPlanError
 from app.commerce_operations_api import create_operations_router
 from app.commerce_payment_observation_api import create_payment_observation_router
+from app.commerce_public_variants import create_public_variant_router
+from app.commerce_customer_checkout_api import create_customer_checkout_router
+from app.commerce_checkout_receipt import checkout_receipt_order
 from app.cart_service import CartService
 from app.config import Settings, get_settings
 from app.schemas import (
@@ -917,9 +920,9 @@ async def create_checkout_session(request: Request, promotion_code: str | None =
 
 @api.get("/checkout-session/{stripe_session_id}")
 async def checkout_session(stripe_session_id: str, x_session_id: str | None = Header(default=None), user: dict[str, Any] | None = Depends(optional_user)):
-    rows = await db.select("orders", params={"select": "*", "stripe_session_id": f"eq.{stripe_session_id}", "limit": 1})
-    if not rows: raise HTTPException(status_code=404, detail="Order not found")
-    order = rows[0]; allowed = bool(user and order.get("user_id") == user["id"]) or bool(not user and x_session_id and order.get("guest_session_id") == x_session_id)
+    order = await checkout_receipt_order(db, stripe_session_id)
+    if not order: raise HTTPException(status_code=404, detail="Order not found")
+    allowed = bool(user and order.get("user_id") == user["id"]) or bool(not user and x_session_id and order.get("guest_session_id") == x_session_id)
     if not allowed: raise HTTPException(status_code=404, detail="Order not found")
     # Read-only: signed webhooks alone authorize payment side effects.
     result = (await _orders_with_items([order]))[0]
@@ -1050,6 +1053,9 @@ api.include_router(create_admin_router(
 ))
 app.include_router(api)
 app.include_router(create_commerce_router(db, catalog, require_admin, settings.shipping_countries))
+app.include_router(create_public_variant_router(db, catalog, lambda: settings))
+app.include_router(create_customer_checkout_router(
+    db, _cart_for, optional_user, lambda: settings, _rate_limit, checkout_attempts, _client_key))
 app.include_router(create_cart_quote_router(
     db, _cart_for, optional_user, require_admin, lambda: settings, _rate_limit, quote_attempts,
 ))
@@ -1116,7 +1122,7 @@ async def security_headers(request: Request, call_next):
         "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"})
     if request.url.scheme == "https": response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     private = request.url.path.startswith(('/api/admin', '/api/auth', '/api/me', '/api/cart', '/api/wishlist', '/api/order-tracking', '/api/withdrawals')) or 'checkout' in request.url.path or request.headers.get('authorization')
-    response.headers["Cache-Control"] = "no-store" if private else "no-cache"
+    response.headers["Cache-Control"] = "no-store" if private or response.headers.get('Cache-Control') == 'no-store' else "no-cache"
     return response
 
 

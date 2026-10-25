@@ -77,3 +77,26 @@ Après ces dépendances : vrai paiement sandbox → webhook signé → commande 
 → attribution agent → préparation HyperSKU interne contrôlée, puis validation
 des cinq pilotes. Toute dépense, transmission fournisseur et publication reste
 soumise à autorisation humaine distincte.
+
+## Dernier jalon — pont client,25octobre2026
+
+| Indicateur | Résultat vérifié |
+|---|---|
+| Articles / candidats pilotes |40 /5 dans le snapshot privé daté05:41+01 relu ; pas une nouvelle réponse fournisseur |
+| Articles / pilotes validés commercialement |0/40 et0/5 |
+| Offre sélectionnée, fitment, prix, portFrance, marge ou mappingHyperSKU confirmés |0 par dimension pour les références à commercialiser |
+| Backend complet |1452 pytest PASS,1 warning préexistant |
+| Frontend complet |583 tests/38 suites PASS,exit0 (forceExit explicite) |
+| Build / lint |CompilationCI et lintPASS,artefact local seulement |
+| Dernier parcours public isolé |173 HTTP/SQL chef puis173 indépendants PASS,StripeFAKE,1create/commande/tâche |
+| SQL propriétaire / admin indépendants |137 /66 PASS,PGlite sérialisé |
+| Paiements sandbox achevés / transmissionsHyperSKU réelles |0 /0 |
+| Modifications de rendu/photo/prix public / publication |0 pour chacun |
+
+Le pont propriétaire sandbox et la confirmation pré-webhook sont APPROVED
+localement, pas le parcours commercial. Cart.jsx reste legacy, collecte adresse/
+mode et sélection multivariantes attendent autorisation UI minimale. Navigateur
+ne permet pas actuellement de terminer le Checkout ; aucune nouvelle session créée.
+La suite173 n'est pas ajoutée aux anciennes153/557 qui se recouvrent. Rapport
+détaillé : CUSTOMER_CHECKOUT_QA_2026-10-25. PréparationsHyperSKU et colisSIM ne
+prouvent ni connexionAPI, ni tarif, ni expédition. Aucun nouveau message externe.

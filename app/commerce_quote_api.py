@@ -1,9 +1,12 @@
-"""Quote-only customer API plus admin-only, test-only order preparation.
+"""Owned customer quotes plus admin-only, test-only order preparation.
 
-Checkout stays blocked until reservation/payment/destination verification exists.
-These endpoints make no external calls and do not send supplier orders or email.
+Quotes advertise sandbox request eligibility only when a test gateway is
+configured. The separate customer checkout route must revalidate and reserve;
+this is not financial approval. These quote endpoints make no external calls
+and do not send supplier orders or email. Live checkout remains closed.
 """
 from uuid import UUID
+import re
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 
@@ -19,6 +22,11 @@ def create_cart_quote_router(db, cart_for, optional_user, require_admin, get_set
 
     def service():
         return CartQuoteService(db, get_settings().shipping_countries)
+
+    def sandbox_checkout_available():
+        settings = get_settings()
+        return settings.stripe_test_mode and bool(re.fullmatch(
+            r'(sk|rk|rkcs)_test_[A-Za-z0-9_]+', settings.stripe_secret_key or ''))
 
     def refuse(error):
         # reasons may expose supplier operational details; only a safe engine code.
@@ -38,7 +46,8 @@ def create_cart_quote_router(db, cart_for, optional_user, require_admin, get_set
         # spoofable user-supplied request key. No address or IP in the key.
         rate_limit(attempts, 'quote:' + cart['id'], 20, 3600)
         try:
-            return public_quote(await service().create(payload, cart, user, x_session_id))
+            return public_quote(await service().create(payload, cart, user, x_session_id),
+                sandbox_checkout_available=sandbox_checkout_available())
         except CartQuoteError as error:
             refuse(error)
 
@@ -50,7 +59,7 @@ def create_cart_quote_router(db, cart_for, optional_user, require_admin, get_set
             row = await service().read(quote_id, cart, user, x_session_id)
             if row is None:
                 raise HTTPException(404, 'Quote not found')
-            return public_quote(row)
+            return public_quote(row, sandbox_checkout_available=sandbox_checkout_available())
         except CartQuoteError as error:
             refuse(error)
 

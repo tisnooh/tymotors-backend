@@ -43,6 +43,7 @@ def main():
     parser.add_argument('--report-directory', required=True)
     parser.add_argument('--accept-sandbox-test-only', action='store_true', required=True)
     parser.add_argument('--wait-seconds', type=int, default=1200)
+    parser.add_argument('--customer', action='store_true', help='Exercise public owned checkout instead of admin preparation')
     args = parser.parse_args()
     if not 60 <= args.wait_seconds <= 1800:
         raise ValueError('Bounded 60..1800 second execution required')
@@ -152,7 +153,8 @@ def main():
             stage = 'real_session_creation'
             if stop_file.exists():
                 raise RuntimeError('Emergency STOP before remote session creation')
-            preparation = subprocess.run([sys.executable, '-m', 'tests.prepare_stripe_sandbox_case'],
+            preparation = subprocess.run([sys.executable, '-m', 'tests.prepare_stripe_sandbox_case'] +
+                (['--customer'] if args.customer else []),
                 cwd=cwd, env=env, capture_output=True, text=True, timeout=180)
             if preparation.returncode:
                 # Child diagnostics may include provider details: no raw dump.
