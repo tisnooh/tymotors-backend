@@ -133,7 +133,7 @@ class CustomerTestCheckout:
         if (order.get('status')=='paid' and order.get('payment_status')=='paid'
                 and type(order.get('refunded_amount_cents')) is int and order['refunded_amount_cents']==0):
             return {'order_id':order['id'],'order_number':order['order_number'],
-                    'status':'paid','is_test':True,'url':None}
+                    'quote_id':order['commerce_quote_id'],'status':'paid','is_test':True,'url':None}
         if order.get('status')!='pending' or order.get('payment_status')!='unpaid':
             raise CustomerCheckoutError('checkout_requires_review')
         if order.get('refunded_amount_cents') != 0 or type(order.get('refunded_amount_cents')) is not int:
@@ -184,10 +184,12 @@ class CustomerTestCheckout:
                 raise CustomerCheckoutError('checkout_requires_review')
             if observed['financial_valid']:
                 return {'order_id':order['id'],'order_number':order['order_number'],
+                        'quote_id':quote_id,'session_id':context['session_id'],
                         'status':'awaiting_webhook','is_test':True,'url':None}
             if session['status']!='open' or session['expires_at']<=datetime.now(timezone.utc).timestamp():
                 raise CustomerCheckoutError('checkout_requires_inspection')
             return {'order_id':order['id'],'order_number':order['order_number'],
+                    'quote_id':quote_id,'session_id':context['session_id'],
                     'status':'open','is_test':True,
                     'url':hosted_test_url(session.get('url'),context['session_id'])}
         except CustomerCheckoutError:

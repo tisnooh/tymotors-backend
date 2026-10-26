@@ -185,11 +185,33 @@ class QuoteDestinationInput(StrictInput):
     def meaningful_postcode(cls, value):
         return QuoteInput.meaningful_postcode(value)
 
+    @model_validator(mode='after')
+    def french_postcode_format(self):
+        # Format only, not a claim that the address exists or is serviceable.
+        if self.country == 'FR' and (len(self.postal_code) != 5
+                or any(character not in '0123456789' for character in self.postal_code)):
+            raise ValueError('A French destination requires a five-digit postal code')
+        return self
+
+
+DELIVERY_DISCOVERY_MODE = '__delivery_options_discovery__'
+
+
+class CartDeliveryOptionsInput(StrictInput):
+    destination: QuoteDestinationInput
+
 
 class CartQuoteInput(StrictInput):
     request_key: UUID
     destination: QuoteDestinationInput
     mode: str = Field(min_length=1, max_length=100, pattern=r'^[A-Za-z0-9_-]+$')
+
+    @field_validator('mode')
+    @classmethod
+    def commercial_mode_only(cls, value):
+        if value == DELIVERY_DISCOVERY_MODE:
+            raise ValueError('Internal discovery mode cannot be quoted')
+        return value
 
 
 MODELS = {'agent': AgentInput, 'variant': VariantInput, 'offer': OfferInput, 'shipping_rate': ShippingRateInput}

@@ -212,6 +212,16 @@ async def customer_payment_counters(_actor=Depends(server.require_admin)):
         'retrieve_calls':FixtureCustomerGateway.retrieve_calls,'sessions':len(FixtureCustomerGateway.sessions)}
 @server.app.get('/{path:path}', include_in_schema=False)
 async def fixture_spa(path: str):
+    if path in {'qa-delivery','qa-delivery-bootstrap.js'}:
+        from fastapi import HTTPException
+        from fastapi.responses import HTMLResponse, Response
+        if not getattr(server.app.state,'fake_customer_gateway_enabled',False):
+            raise HTTPException(404,'Synthetic customer fixture is not enabled')
+        if path == 'qa-delivery':
+            return HTMLResponse('<!doctype html><title>Synthetic delivery QA</title>'
+                '<h1>Synthetic local cart only</h1><script src="/qa-delivery-bootstrap.js"></script>')
+        return Response("localStorage.setItem('ty_session_id','delivery_browser_synthetic_guest');"
+            "location.replace('/cart');",media_type='application/javascript')
     return FileResponse(fixture_site/'index.html')
 if __name__=="__main__":
     enable_fake_customer_checkout()

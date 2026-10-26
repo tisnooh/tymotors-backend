@@ -141,6 +141,7 @@ async def test_owned_quote_reuses_durable_services_without_admin_actor(wired):
     c,db,gateway,_=wired
     result=await start(wired)
     assert result=={'order_id':c['order']['id'],'order_number':'TY-SYNTHETIC','status':'open',
+                    'quote_id':c['order']['commerce_quote_id'],'session_id':c['session']['id'],
                     'is_test':True,'url':c['session']['url']}
     gateway.create.assert_awaited_once_with(c['attempt']['params'],c['attempt']['idempotency_key'])
     names=[call.args[0] for call in db.rpc.await_args_list]

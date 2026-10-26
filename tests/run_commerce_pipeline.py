@@ -17,6 +17,8 @@ from urllib.request import Request, urlopen
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--node',required=True)
+    parser.add_argument('--wait-for-browser',action='store_true',
+                        help='Keep owned loopback fixtures until Enter after a successful probe')
     parser.add_argument('--probe-module',default='tests.commerce_pipeline_http_probe',
                         choices=['tests.commerce_pipeline_http_probe','tests.commerce_multigroup_http_probe',
                                  'tests.commerce_customer_http_probe'])
@@ -52,6 +54,17 @@ def main():
             if not ready: raise RuntimeError('Disposable fixture readiness timed out')
             subprocess.run([sys.executable,'-m',args.probe_module],cwd=cwd,env=env,
                            check=True,timeout=600)
+            if args.wait_for_browser:
+                if args.probe_module != 'tests.commerce_customer_http_probe':
+                    raise RuntimeError('Browser cart preparation requires the customer probe')
+                from tests.commerce_http_probe import request, sql
+                line=sql("""select ci.product_id,ci.variant_id,ci.selected_vehicle from cart_items ci
+                    join product_variants v on v.id=ci.variant_id
+                    where v.sku like 'CUSTOMER-HTTP-SYNTHETIC-%' limit 1""")[0]
+                request('/cart','POST',{**line,'quantity':1},
+                        {'X-Session-Id':'delivery_browser_synthetic_guest'})
+                print('Open http://127.0.0.1:8765/qa-delivery to load a synthetic guest cart (no real personal data).')
+                input('Disposable FAKE fixtures ready on loopback. Press Enter to close owned processes.\n')
         except Exception:
             log.seek(0)
             print(log.read().decode(errors='replace')[-6000:],file=sys.stderr)

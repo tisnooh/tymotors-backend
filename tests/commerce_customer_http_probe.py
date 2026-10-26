@@ -62,7 +62,7 @@ def main():
         'preparation_days_max': 2, 'responsible_agent_id': agent['id']})
     rate = save('shipping_rate', {'offer_id': offer['id'], 'country': 'FR', 'mode': 'tracked',
         'max_quantity': 10, 'shipping_cost_cents': 200, 'shipping_recoverable_tax_cents': 0,
-        'customer_shipping_cents': 500, 'goods_tax_bps': 0, 'shipping_tax_bps': 0,
+        'customer_shipping_cents': 500, 'goods_tax_bps': 2000, 'shipping_tax_bps': 2000,
         'agent_fee_cents': 0, 'import_duty_cents': 0, 'nonrecoverable_tax_cents': 0,
         'other_cost_cents': 0, 'verification_state': 'verified', 'evidence_ref': 'SYNTHETIC ONLY',
         'multi_variant_policy': 'independent_parcels', 'valid_until': '2099-01-01T00:00:00Z',
@@ -92,10 +92,32 @@ def main():
     cart_id = sql('select cart_id from cart_items where id=$1', [cart['items'][0]['cart_item_id']])[0]['cart_id']
     destination = {'name': 'Synthetic recipient', 'line1': '1 Synthetic street',
         'city': 'Paris', 'country': 'FR', 'postal_code': '75001'}
+    options=request('/cart/delivery-options','POST',{'destination':destination},guest)
+    eq(options['country'],'FR'); eq(options['requires_quote'],True)
+    eq(len(options['options']),1)
+    eq(options['options'][0]['mode'],'tracked')
+    eq(options['options'][0]['shipping_cents'],500)
+    eq(options['options'][0]['total_cents'],3500)
+    eq(options['options'][0]['tax_cents'],583)  # Included in TTC, never added again.
+    no_private_projection(options)
+    eq(sql('select count(*)::int n from commerce_quotes where cart_id=$1',[cart_id])[0]['n'],0)
+    eq(sql('select count(*)::int n from orders where cart_id=$1',[cart_id])[0]['n'],0)
+    request('/cart/delivery-options','POST',{'destination':{**destination,'country':'BE'}},guest,status=409)
+    request('/cart/delivery-options','POST',{'destination':destination,'shipping_cents':1},guest,status=422)
+    request('/cart/delivery-options','POST',{'destination':destination},
+        {**guest,'Authorization':'Bearer invalid-synthetic-token'},status=401)
+    for authorization in ('Basic invalid','Bearer'):
+        request('/cart/delivery-options','POST',{'destination':destination},
+            {**guest,'Authorization':authorization},status=401)
+    for postal_code in ('ABC','1234','123456'):
+        request('/cart/delivery-options','POST',
+            {'destination':{**destination,'postal_code':postal_code}},guest,status=422)
     quote_input = {'request_key': str(uuid4()), 'mode': 'tracked', 'destination': destination}
     quote = request('/cart/quote', 'POST', quote_input, guest)
     eq(quote['checkout_available'], True)
     eq(quote['total_cents'], 3500)
+    eq(quote['tax_cents'],583)
+    eq(quote['mode'],'tracked'); eq(quote['country'],'FR')
     eq(request('/cart/quote', 'POST', quote_input, guest)['quote_id'], quote['quote_id'])
     checkout_path = '/cart/quote/' + quote['quote_id'] + '/checkout'
     checkout_input = {'request_key': str(uuid4())}
@@ -109,7 +131,8 @@ def main():
     eq(counters()['create_calls'], 0)
     # This request has NO admin Authorization header. All six owner RPCs run.
     opened = request(checkout_path, 'POST', checkout_input, guest)
-    eq(set(opened), {'order_id','order_number','status','is_test','url'})
+    eq(set(opened), {'order_id','order_number','quote_id','session_id','status','is_test','url'})
+    eq(opened['quote_id'],quote['quote_id'])
     eq(opened['status'], 'open')
     eq(opened['is_test'], True)
     order_id = opened['order_id']
@@ -127,6 +150,7 @@ def main():
     eq(parsed.scheme, 'https'); eq(parsed.hostname, 'checkout.stripe.com')
     eq(parsed.path, '/c/pay/' + binding['session_id'])
     eq(binding['session_id'].startswith('cs_test_customer_fixture_'), True)
+    eq(opened['session_id'],binding['session_id'])
     eq(attempt['state'], 'creating')
     eq(request(checkout_path, 'POST', checkout_input, guest), opened)
     eq(request(checkout_path, 'POST', {'request_key': str(uuid4())}, guest), opened)

@@ -27,7 +27,8 @@ client et la vente réelle restent bloqués. Aucun changement de design/photo/pr
    Une reprise liée relit la même session ; création en cours/issue inconnue impose
    inspection et garde les holds. Aucune rotation de clé, annulation aveugle ou
    nouveau paiement pour contourner un timeout.
-7. Réponse publique : `order_id`, `order_number`, `status`, `is_test`, `url`.
+7. Réponse publique : `order_id`, `order_number`, `quote_id`, `status`, `is_test`, `url` ;
+   `session_id` est également présent pour open/awaiting_webhook.
    `open` peut retourner uniquement l'URL HTTPS Stripe de la session test liée.
    `awaiting_webhook` ne fournit pas d'URL : lecture fournisseur payée mais règlement
    local absent. `paid` retourne un reçu sans URL seulement après règlement local.
@@ -41,9 +42,12 @@ client et la vente réelle restent bloqués. Aucun changement de design/photo/pr
 
 ## Limites connues
 
-- Le panier actuel ne contient pas de formulaire adresse/mode et appelle encore
-  le checkout historique. Un ajout minimal a été soumis à autorisation ; il n'est
-  pas implémenté. Les API seules ne constituent pas un parcours UI terminé.
+- Accord reçu pour le formulaire livraison uniquement. Cart collecte désormais
+  l'adresse France en mémoire, sans envoi sur frappe. Le calcul explicite appelle
+  `/api/cart/delivery-options` en lecture seule ; seuls les modes passant tous les
+  contrôles du moteur existant sont proposés. La confirmation persiste le devis
+  exact avant le checkout propriétaire. Aucun tarif ni coût manquant par défaut.
+  Recette navigateur et paiement Stripe réseau restent des preuves distinctes.
 - Les produits à plusieurs variantes attendent également un choix explicite ;
   aucun sélecteur nouveau n'est ajouté sans accord.
 - L'ajout frontend contrôle la variante, les faits véhicule normalisés et une

@@ -39,6 +39,7 @@ def public_quote(row: dict, now: datetime | None = None, *, sandbox_checkout_ava
         return {
             'quote_id': str(UUID(row['id'])), 'status': status,
             'expires_at': expiry.isoformat(), 'currency': row['currency'],
+            'country': row['country'], 'mode': row['mode'],
             'subtotal_cents': row['subtotal_cents'], 'shipping_cents': row['shipping_cents'],
             'tax_cents': row['tax_cents'], 'total_cents': row['total_cents'],
             'items': lines, 'checkout_available': sandbox_checkout_available is True and status == 'ready',

@@ -20,7 +20,7 @@ Les blocages d'un article sont cumulatifs et distincts de sa publication. Aucun 
 
 | ID | Statut | Responsable | Preuve / impact | Action attendue |
 |---|---|---|---|---|
-| CUSTOMER_UI_DESTINATION | BLOCKED, accord requis | Administrateur / Codex | Le panier actuel ne collecte aucune adresse ; un devis exige l'adresse exacte avant paiement. Question pour formulaire minimal sans refonte posée, pas encore répondue | Autoriser ce seul ajout visuel ; avant accord ne modifier ni rendu ni styles. Le nouveau pont API continue indépendamment |
+| CUSTOMER_UI_DESTINATION | Implémenté/testé local, revue finale en attente | Codex / auditeur | Formulaire France et devis propriétaire ;103 ciblés,669 frontend globaux,1493 backend,209 HTTP/SQL FAKE,build et navigateur final PASS. A→B→A/quantité invalident bien le devis | Dernière correction A→B→A à contre-auditer après disponibilité du service ; aucun sélecteur de variante ou déploiement autorisé par cet accord |
 | CUSTOMER_CHECKOUT_BRIDGE | APPROVED local simulé, UI BLOCKED | Codex / auditeur |1452 pytest et583 frontend chef PASS,buildCI/lintPASS ;173 HTTP/SQL finaux chef ET indépendants PASS ;137 SQL clients/66admin PASS. Pont propriétaire, verrou panier inter-devis et receipt pré-webhook | Collecte adresse/mode/choix de variante après accord ; Stripe réel/GoTrue/PostgREST/concurrence PostgreSQL restent non prouvés |
 | SANDBOX_BROWSER | PARTIEL, accès à reconfirmer avant paiement | Codex | Inventaire et DOM ancien Checkout répondent à la reprise ; les3 anciennes sessions sont expired/unpaid selon lecture fournisseur précédente | Ne pas payer une session expirée. Nouvelle recette uniquement sur SQL jetable/session test identifiée, après libération des ports |
 
@@ -28,3 +28,14 @@ Dernier constat navigateur : DOM ponctuel puis reload/focus CDP/onglet neuf en
 échec. **BLOCKED pour interaction Checkout**, pas partiellement validé pour un
 paiement. Aucun nouveau Checkout ni carte soumis dans ce lot. Les recettes locales
 sont terminées et leurs processus/ports sont fermés, pas de surveillance en cours.
+
+### Actualisation du26octobre
+
+Le navigateur intégré fonctionne pour le nouveau panier local : calcul, devis,
+invalidation et captures contrôlés sur build final. L'ancien blocage navigateur
+est donc historique, pas une preuve d'échec actuel. Aucun nouveau Checkout Stripe
+réseau n'a encore été créé/payé : la recette réelle reste à reprendre séparément
+avec son profil sandbox et son listener signés, sans confondre la probeFAKE avec
+un paiement. Dernière contre-revue du correctif A→B→A non effectuée : le sous-agent
+auditeur a atteint sa limite de service ; aucun contournement ni automatisation.
+Voir TYMOTORS_DELIVERY_FORM_QA_2026-10-26.md pour l'état final et la reprise.

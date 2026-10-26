@@ -12,7 +12,7 @@ from app.commerce_quote_service import public_quote
 def test_only_explicit_boolean_and_ready_unexpired_quotes_can_request_test_checkout(state,expired,enabled):
     now=datetime.now(timezone.utc)
     row={'id':str(uuid4()),'state':state,'expires_at':(now+timedelta(minutes=-1 if expired else 30)).isoformat(),
-         'currency':'EUR','subtotal_cents':1000,'shipping_cents':100,'tax_cents':0,'total_cents':1100,
+         'currency':'EUR','country':'FR','mode':'tracked','subtotal_cents':1000,'shipping_cents':100,'tax_cents':0,'total_cents':1100,
          'payload':{'groups':[{'lines':[]}]}}
     before=deepcopy(row)
     result=public_quote(row,now,sandbox_checkout_available=enabled)

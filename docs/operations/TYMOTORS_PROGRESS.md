@@ -106,3 +106,110 @@ Prochaine action de reprise : journal durable des observations/rapprochement et 
 - **Paiement sandbox toujours BLOCKED navigateur** : trois sessions anciennes expired/unpaid ; zéro nouvelle session dans ce lot. Nouvelle recette autorisée seulement après interaction navigateur fiable, rapports et secrets hors Git, vrais Checkout test et webhook. Ne jamais fabriquer un succès de règlement pour clôturer.
 - **Commerce toujours BLOCKED0/40 et0/5** selon les dossiers disponibles : preuves fournisseurs/fitments/droits/prix/portFrance/HyperSKU à obtenir ; agent humain/fiscalité/légal à valider. Journal/rapprochement financier et remboursements quoted restent un lot transactionnel distinct. Aucun engagement financier, communication externe ou publication sans accord spécifique.
 - Rapport autonome : `TYMOTORS_CUSTOMER_CHECKOUT_QA_2026-10-25.md`. Les fichiers privés originaux et les rapports Stripe sont hors de ce worktree/Git et restent préservés.
+
+## Lot suivant — formulaire livraison autorisé, en cours
+
+- Accord humain explicite reçu : « Oui, ajouter les champs de livraison avec les styles actuels ». Portée limitée au formulaire livraison ; aucun accord pour sélecteur de variante, refonte, photos, prix publics, production ou achats.
+- Bases propres revérifiées : backend `a17ba1e9bc01e193bd28dcbe2b24f6a822d9ee72`,frontend `cbf30b3bc7d25f67b972ca8de606c5441901b5b5`, branche dédiée codex/commerce-workflows. Changements de ce nouveau lot encore non commités/non poussés.
+- Chef : nouveau POST `/api/cart/delivery-options`, strictement propriétaire et lecture seule, adresse complète validée, France uniquement. Contexte existant privé, offres exactes du panier ; tarifs vérifiés lus par paquets40IDs (pages complètes,1000max),10modesmax. Moteur de devis existant pour chaque mode : droits/compatibilité/coûts/stock/montage/agent/port requis. Aucun tarif par défaut ni persistence d'adresse, devis ou commande à ce stade.
+- Marqueur interne de découverte exclu des options et refusé par CartQuoteInput. Projection publique : mode opaque exact, montants clients centimes, expiration ; aucun coût fournisseur, preuve privée ou adresse renvoyé.
+- Contrat complété sans modifier Stripe : devis public expose mode/pays ; réponse open/awaiting_checkout expose quote_id/session_id issus du contexte lié, paid expose quote_id. Les variables et secrets externes restent inchangés. La commande n'est payée que via webhook signé.
+-32 tests livraison PASS ;108 tests ciblés de contrats/services PASS avant les11 derniers cas livraison ajoutés. Premier passage25 échecs attendus des anciens mocks/assertions après extension de contrat ; fixtures country/mode et champs d'identité mis à jour pour correspondre au vrai schéma, puis ciblés PASS. Ne pas compter ce passage échoué comme une validation.
+- Agent frontend : Cart.jsx/hook/helper/formulaire/API/tests seulement ; champs mémoire, aucun stockage d'adresse sur disque, aucun envoi sur frappe. Invalidation devis sur adresse/mode/panier/propriétaire/expiration, réponse tardive refusée, clécheckoutstable/pasretryautomatique. Travail en cours, pas de résultat anticipé.
+- Auditeur : revue backend/32tests demandée ; aucun port autorisé à ce point. Pas de build ou gros runner parallèle sur le poste contraint en mémoire. Les583/1452/173 du lot précédent sont historiques, pas des résultats du nouveau formulaire.
+- Navigateur : inventaire répond ; contrôle du formulaire réel pas encore effectué. Aucun nouveau paiement Stripe ou échange externe. Les40 dossiers et5 pilotes restent commercialement bloqués jusqu'aux preuves réelles.
+
+### Contrôle contradictoire du formulaire, avant validation finale
+
+- Premier global backend :1484 PASS. Auditeur a ensuite reproduit deux P2 :
+  Authorization Basic ignorée par HTTPBearer et code postal FR alphanumérique.
+  Corrigés avant lookup sur les trois routes de devis/découverte, et validation
+  FR cinq chiffres ASCII commune aux deux entrées client.109 ciblés chef PASS,
+  41 contre-tests indépendants PASS. Recette globale finale en cours.
+- Auditeur a rejeté le premier frontend : validateur additionnait la TVA aux
+  montants déjà TTC et refusait les underscores de session pourtant permis par
+  le backend. Corrigés ; tests TVA non nulle incluse, rejet double addition et
+  session synthétique avec underscores.99 tests/5 suites ciblées PASS, lint et
+  diff --check PASS. Les premiers tests tax0 ne suffisaient pas à la validation.
+- Probe publique chef enrichie :202 assertions HTTP/SQL PASS, transport Stripe
+  FAKE explicite. Découverte sans devis/commande persistés, quote exact puis
+  commande unique, signature réelle SDK sur HMAC synthétique, paiement simulé,
+  attribution agent et préparation HyperSKU interne/suivi SIM. Aucun Stripe
+  réseau, envoi HyperSKU ou expédition réelle déduit de ce résultat.
+- Frontend gelé pour revue : champs, hook, helpers et API/tests seulement ; aucun
+  changement AppContext/cartVariant, photos, CSS global ou prix publics. Suite
+  frontend globale puis build et navigateur à contrôler séparément. Onglet
+  about:blank de recette répond désormais ; cela ne prouve pas encore le rendu.
+
+- Global Python après les neuf nouveaux cas :1493 PASS,483,96s sous charge,
+  avertissement Starlette/httpx préexistant. Premier global frontend interrompu
+  après deux timeouts SearchOverlay30s ; aucun résultat positif global déduit.
+  Relance seule en cours. Diagnostic mémoire lecture seule : environ68Mo libres
+  sur3,55Go physiques ; aucun processus utilisateur arrêté pour libérer la RAM.
+- Runner local possède ses enfants/ports et ajoute une attente navigateur opt-in
+  après probe réussie (Entrée ferme via finally). Ce mode prépare un autre panier
+  invité synthétique via l'API existante, puis bootstrap same-origin /qa-delivery.
+  Aucun secret réel, adresse personnelle, accès production ou droit authentique
+  ajouté. Le bridge serveur de test n'est jamais importé en production.
+- Probe enrichie avec TVA20%incluse583dans3500 et authentification/code postal
+  négatifs, à réexécuter ;202 reste le résultat du passage précédent tax0.
+
+## Reprise du26octobre — recette navigateur du formulaire
+
+- BuildCI local Compiled successfully, PUBLIC_URL=/qa-assets et APIloopback,
+  aucun déploiement. Probe enrichie **209 HTTP/SQL PASS** avec TVA incluse583/3500,
+  authentificationBasic et postcodesFR invalides refusés. TransportFAKE toujours.
+  Bootstrap crée un nouveau panier indépendant du panier payé par la probe.
+- Navigateur local réel : champs saisis, calcul tracked5EUR, confirmation du
+  devis, total35EUR et boutoncommande actif. Modification postcode69001 donne
+  immédiatement À calculer/À confirmer et paiement désactivé.
+- Ce test a trouvé un défaut supplémentaire A→B→A : revenir aux anciennes valeurs
+  pouvait réafficher l'ancien devis conservé en mémoire. Chef REJECTED, puis
+  générations monotones de contexte et propriétaire ; plus de résurrection du
+  devis ni de l'ancienne adresse après aller-retour compte. Un nouveau calcul
+  retire immédiatement toute approbation et le bouton est bloqué durant requête.
+  Quatre nouveaux tests de régression ; **103 ciblés/5 suites PASS**,18,49s.
+  Rebuild/nouvelle vérification navigateur et global frontend encore distincts.
+- Formulaire à390px : colonnes empilées et largeur contenu sans débordement
+  (380px client/scrollWidth). Ceci n'émule PAS un iPhone : le bandeau existant
+  utilise l'user-agent pour forcer la navigation bureau même à largeur étroite.
+  Aucun fichier Navbar/CSS modifié ; pas de déclaration de recette appareil réel.
+- Auditeur : corrections TTC/underscores et outils de fixture acceptés en lecture
+  statique, puis limite de service atteinte avant nouvelle contre-exécution209.
+  Aucun autre agent sollicité pour contourner cette limite. Le dernier correctif
+  A→B→A attend donc encore sa revue indépendante ; pas de validation finale globale.
+
+## Point de reprise final —26octobre2026, formulaire livraison
+
+- Dernière suite frontend globale **669 PASS/41suites**,63,567s, mêmes timeouts30s.
+  Les deux runs interrompus précédents ne sont pas des validations. Lint chef a
+  trouvé quatre globals non déclarés dans deux tests ; remplacés par globalThis,
+  lint final PASS et31tests/2suites PASS après cette substitution équivalente.
+  Le dernier ciblé complet fonctionnel reste103PASS/5suites. ForceExit conservé.
+- Rebuild final **Compiled successfully**,exit0. Deuxième probe **209PASS**,
+  TVA incluse et transportFAKE, aucune création Stripe réseau. Bootstrap puis
+  vrai navigateur sur ce build : options5EUR, devis35EUR, retour postcode
+  75001→69001→75001 conserve checkout bloqué et notice absente. Recalcul explicite
+  requis. Quantité2 affiche sous-total60EUR, livraison/total à confirmer et
+  commande bloquée. Le correctif trouvé par le navigateur est donc reproduit
+  puis contrôlé après reconstruction, pas seulement annoncé sur tests unitaires.
+- Largeur390 : formulaire346px/scrollWidth346px, champs298px. Ce n'est pas une
+  simulation d'user-agent mobile ; Navbar existante force bureau sur ordinateur,
+  sans changement de ce fichier. Photos, CSS global et prix publics inchangés.
+  Captures finales dans dossiervisualizations du chat, hors Git. Viewport reset,
+  onglet10 créé pour recette fermé, runners sortis0 surEntrée, ports8765/8766
+  sanslistener. Aucun travail permanent/automatisation lancé.
+- Statut du lot : **préparé/testé localement, EN ATTENTE DE REVUE INDEPENDANTE
+  FINALE**, car auditeur limité avant dernier correctif A→B→A. Ni push ni déploiement.
+  Ne pas contourner cette limite avec un nouvel agent. Lire le rapport autonome
+  TYMOTORS_DELIVERY_FORM_QA_2026-10-26.md puis git log/status avant reprise.
+- Prochaine étape : contre-auditer générations de contexte/propriétaire et
+  rejouer209 indépendamment lorsque le service est disponible. Puis reprendre
+  vraie sandboxStripe existante, le navigateur local étant revenu fonctionnel ;
+  ne pas réutiliser un ancien Checkout expiré ou déduire un paiement d'une
+  simple URL. Les confirmations commerciales fournisseurs/HyperSKU/fitments/
+  coûts/port/droits, comptes et obligations administrateur restent distincts.
+
+- Frontend enregistré localement `6772ba6` sur codex/commerce-workflows, aucun
+  push. Commit de préparation pour revue, pas décision APPROVED. Backend de ce
+  même lot enregistré séparément ; retrouver son identifiant avec git log.

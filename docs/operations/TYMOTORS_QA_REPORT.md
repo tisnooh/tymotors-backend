@@ -125,3 +125,21 @@ paiement sandbox navigateur, GoTrue/PostgREST/PostgreSQL multiconnexion isolés,
 HyperSKU externe et cinq produits commerciaux. Ni design, photos ni prix publics
 modifiés, aucune publication. Reprise exacte dans le dernier bloc PROGRESS ; ne
 pas prétendre qu'un agent ou runner continue après fermeture de ce lot.
+
+## Lot livraison autorisé —26octobre2026
+
+Le blocage accord UI du lot précédent est levé pour le formulaire livraison
+seulement. France, collecte mémoire, modes réellement admissibles, devis exact,
+montantsTTC et checkout propriétaire raccordés sans refonte/photos/prix.
+
+Chef :1493pytest PASS,669frontend/41suites PASS,103ciblés PASS puis31 après
+remplacement globalThis dans deux tests, lint et build final PASS. Deux passages
+209HTTP/SQL FAKE PASS. Navigateur final :35EUR après devis, A→B→A ne restaure rien,
+quantité2 invalide le devis, formulaire empilé sans débordement à390px.
+
+Auditeur :41backend PASS et revues statiques correctifs TTC/underscore/harness
+acceptées. Limite de service atteinte avant contre-recette209 et dernier correctif
+A→B→A découvert par le chef. **EN ATTENTE DE VALIDATION INDEPENDANTE FINALE**.
+Ne pas fusionner/publier sous prétexte que le build est bon. Ni vrai paiement
+Stripe, intégration HyperSKU externe, ni produit commercial validé par ce lot.
+Rapport autonome : TYMOTORS_DELIVERY_FORM_QA_2026-10-26.md. Aucun runner restant.

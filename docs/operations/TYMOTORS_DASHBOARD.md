@@ -3,6 +3,16 @@
 Dernier contrôle : 25 octobre 2026. Branche locale `codex/commerce-workflows`.
 Ce rapport ne vaut ni publication ni autorisation de vendre.
 
+Actualisation technique26octobre : formulaire livraison autorisé désormais
+implémenté.1493tests backend,669frontend/41suites,209HTTP/SQL FAKE,lint/build et
+recette navigateur finale du devis/invalidation réussis. Revue indépendante de
+la dernière correction A→B→A encore en attente (service auditeur limité).
+Le formulaire seul change ; photos/prix/design ailleurs inchangés. Aucun push
+ou déploiement ; aucun paiement Stripe réseau ou fulfillment externe dans ce lot.
+Les mesures commerciales ci-dessous sont celles du dossier25octobre, pas une
+nouvelle interrogation distante du catalogue le26. Rapport du lot :
+TYMOTORS_DELIVERY_FORM_QA_2026-10-26.md.
+
 ## Catalogue réel
 
 Source : génération privée `backend/data/phoenix-2026-10-25/dossiers-40.json`

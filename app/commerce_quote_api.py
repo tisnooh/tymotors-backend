@@ -10,7 +10,8 @@ import re
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 
-from app.commerce_models import CartQuoteInput
+from app.commerce_models import CartQuoteInput, CartDeliveryOptionsInput
+from app.commerce_delivery_options import CartDeliveryOptions
 from app.commerce_quote_engine import CartQuoteError
 from app.commerce_quote_service import CartQuoteService, public_quote
 from app.supabase_rest import SupabaseError
@@ -32,16 +33,35 @@ def create_cart_quote_router(db, cart_for, optional_user, require_admin, get_set
         # reasons may expose supplier operational details; only a safe engine code.
         raise HTTPException(409, {'code': error.code}) from None
 
-    async def cart_and_owner(user, session_id):
+    async def cart_and_owner(user, session_id, authorization):
+        # HTTPBearer(auto_error=False) treats a wrong/empty scheme as absent.
+        # An explicit invalid auth header must never downgrade to guest access.
+        if authorization is not None and user is None:
+            raise HTTPException(401, 'Invalid authentication')
         cart = await cart_for(user, session_id, create=False)
         if not cart:
             raise HTTPException(404, 'Cart not found')
         return cart
 
+    @router.post('/cart/delivery-options')
+    async def delivery_options(payload: CartDeliveryOptionsInput,
+                               authorization: str | None = Header(default=None),
+                               x_session_id: str | None = Header(default=None), user=Depends(optional_user)):
+        cart = await cart_and_owner(user, x_session_id, authorization)
+        rate_limit(attempts, 'delivery-options:' + cart['id'], 20, 3600)
+        try:
+            return await CartDeliveryOptions(db,get_settings().shipping_countries).discover(
+                payload,cart,user,x_session_id)
+        except CartQuoteError as error:
+            refuse(error)
+        except SupabaseError:
+            raise HTTPException(409, {'code':'delivery_options_unavailable'}) from None
+
     @router.post('/cart/quote')
     async def create(payload: CartQuoteInput,
+                     authorization: str | None = Header(default=None),
                      x_session_id: str | None = Header(default=None), user=Depends(optional_user)):
-        cart = await cart_and_owner(user, x_session_id)
+        cart = await cart_and_owner(user, x_session_id, authorization)
         # Bound stored snapshots and expensive evaluation per owner, not by a
         # spoofable user-supplied request key. No address or IP in the key.
         rate_limit(attempts, 'quote:' + cart['id'], 20, 3600)
@@ -53,8 +73,9 @@ def create_cart_quote_router(db, cart_for, optional_user, require_admin, get_set
 
     @router.get('/cart/quote/{quote_id}')
     async def read(quote_id: UUID, x_session_id: str | None = Header(default=None),
+                   authorization: str | None = Header(default=None),
                    user=Depends(optional_user)):
-        cart = await cart_and_owner(user, x_session_id)
+        cart = await cart_and_owner(user, x_session_id, authorization)
         try:
             row = await service().read(quote_id, cart, user, x_session_id)
             if row is None:
