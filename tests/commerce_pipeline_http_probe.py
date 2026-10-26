@@ -220,8 +220,51 @@ def main():
         eq(internal['state'],'awaiting_human_review')
         eq(internal['external_send_allowed'],False)
         eq(internal['expenses_authorized'],False)
+        eq(sql('select requires_compatibility_review from orders where id=$1', [oid])[0]['requires_compatibility_review'], True)
         eq(request('/admin/commerce/hypersku/tasks/'+task['id']+'/prepare','POST',{'mapping_id':mapping['id']},HEADERS),internal)
         packet = request('/admin/commerce/hypersku/preparations/'+internal['id'],headers=HEADERS)
+        if number == 0:
+            # Replay must revalidate current evidence, not just return an old
+            # packet. Rollback each isolated mutation including updated_at.
+            # No real source, provider call, spend or hosted database exists.
+            mutations = [
+                ("update commerce_image_permissions set state='revoked' where product_id=$1", [product]),
+                ("update commerce_agents set is_active=false where id=$1", [actor['id']]),
+                ("update commerce_agents set role='pricing' where id=$1", [actor['id']]),
+                ("update commerce_hypersku_mappings set state='pending' where id=$1", [mapping['id']]),
+                ("update commerce_hypersku_mappings set valid_until=now()-interval '1 hour' where id=$1", [mapping['id']]),
+                ("update commerce_hypersku_mappings set hypersku_variant_ref='DIFFERENT-SYNTHETIC' where id=$1", [mapping['id']]),
+                ("update supplier_offers set availability='unavailable' where id=$1", [offer['id']]),
+                ("update supplier_offers set available_quantity=0 where id=$1", [offer['id']]),
+                ("update supplier_offers set unit_cost_cents=unit_cost_cents+1 where id=$1", [offer['id']]),
+                ("update shipping_rates set shipping_cost_cents=shipping_cost_cents+1 where id=$1", [rate['id']]),
+                ("update product_variants set is_verified=false,status='draft' where id=$1", [variant['id']]),
+                ("update product_variants set attributes='{\"unverified_option\":true}'::jsonb where id=$1", [variant['id']]),
+                ("update product_compatibilities set year_to=year_to-1 where id=$1", [rule['id']]),
+                ("delete from variant_compatibilities where variant_id=$1", [variant['id']]),
+                ("update brands set slug=slug||'-changed' where id=$1", [rule['brand_id']]),
+                ("update vehicle_models set name=name||' changed' where id=$1", [rule['vehicle_model_id']]),
+                ("update vehicle_generations set chassis_codes=array['DIFFERENT'] where id=$1", [rule['generation_id']]),
+                ("update orders set refunded_amount_cents=1 where id=$1", [oid]),
+            ]
+            for statement, values in mutations:
+                sql('begin')
+                try:
+                    sql(statement, values)
+                    request(prepare_path, 'POST', prepare_body, HEADERS, status=409)
+                finally:
+                    sql('rollback')
+                eq(request(prepare_path, 'POST', prepare_body, HEADERS), internal)
+                eq(request('/admin/commerce/hypersku/preparations/'+internal['id'], headers=HEADERS), packet)
+            # A later public price is not the price paid. Never rewrite either
+            # the financial history or the immutable packet on revalidation.
+            sql('begin')
+            try:
+                sql('update product_variants set price_cents=price_cents+1 where id=$1', [variant['id']])
+                eq(request(prepare_path, 'POST', prepare_body, HEADERS), internal)
+                eq(sql('select total_cents from orders where id=$1', [oid])[0]['total_cents'], order['total_cents'])
+            finally:
+                sql('rollback')
         eq(packet['packet']['certified_provider_import'],False)
         eq(packet['packet']['origin_supplier_sku'],'SOURCE-'+label)
         eq(packet['packet']['hypersku_variant_ref'],'SYNTHETIC-VARIANT-'+label)

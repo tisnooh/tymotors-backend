@@ -47,6 +47,7 @@ await db.exec(await readFile(new URL('../supabase/migrations/20261024144103_comm
 await db.exec(await readFile(new URL('../supabase/migrations/20261025043553_commerce_simulated_tracking_retention.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../supabase/migrations/20261025121320_commerce_customer_test_checkout.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../supabase/migrations/20261026081655_atomic_manual_order_dispatch.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../supabase/migrations/20261026130757_hypersku_preparation_revalidation.sql',import.meta.url),'utf8'));
 const sessionUser='10000000-0000-4000-8000-000000000098', sessionId='10000000-0000-4000-8000-000000000099';
 await db.query('insert into auth.sessions values($1,$2,null)',[sessionId,sessionUser]);
 assert.equal((await db.query('select is_auth_session_active($1,$2) active',[sessionId,sessionUser])).rows[0].active,true);checks++;

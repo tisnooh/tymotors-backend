@@ -1,5 +1,26 @@
 # PHOENIX — journal de progression
 
+## Configuration HyperSKU —26octobre,13h UTC
+
+- Compte et chat relus ; boutique liée/StoreID/API/SKU/devisFrance toujours non
+  établis. Recherche officielle actuelle confirme OpenAPI, pas son contrat
+  d'authentification pour TYMotors. Aucun faux adaptateur ou accès inventé.
+- Revalidation à chaque préparation, y compris replay d'un ancien dossier :
+  mapping/offre/tarif/droits/agent, disponibilité, variante, règles et taxonomie
+  véhicule. Le contrôle du prix payé reste historique, non recalculé.
+- Contre-audit a rejeté l'absence de comparaison marque/modèle/génération :
+  corrigée. Premier runner final a révélé une garde de revue trop restrictive :
+  retirée sans lever la revue humaine obligatoire ni les verrous de transmission.
+- Chef :635assertions initiales, puis655HTTP/SQL finales PASS. Auditeur :655
+  finales PASS,hashes figés/ports nettoyés, APPROVED LOCAL interne uniquement.
+- Premier global1505PASS/18erreurs de fixture calendaire (permission synthétique
+  expirée à midi). Fixture service corrigée et contre-test expiration409 ajouté,
+  sans modifier le moteur.20ciblés PASS puis **1524 globaux PASS**,58,76s.
+- Pas de changement frontend/design/photos/prix, migration distante, nouvel
+  email/chat, upload/import fournisseur ou achat. Les deux documents du lot mail
+  précédent restent conservés. Rapport :
+  `TYMOTORS_HYPERSKU_CONFIGURATION_2026-10-26.md`.
+
 ## Préparation du push autorisé —26octobre
 
 - Demande « Push tout » : sauvegarder les deux branches codex/commerce-workflows,

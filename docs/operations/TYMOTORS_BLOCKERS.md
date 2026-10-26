@@ -1,5 +1,21 @@
 # PHOENIX — blocages explicites
 
+## Configuration HyperSKU —26octobre, demande du propriétaire
+
+La connexion réelle reste BLOCKED externe : compte web accessible mais aucune
+boutique liée visible, My Products « No data », contrat/API/StoreID/SKU d'import et
+devis France non obtenus. Chat existant relu (support général, pas de contrat) ;
+recherche Gmail récente des domaines officiels vide. Ne pas créer de fausse
+boutique WooCommerce/Shopify ni inventer l'authentification de l'Open API.
+
+Défaut local de revalidation des préparations existantes corrigé sur la branche
+de travail : migration `20261026130757_hypersku_preparation_revalidation.sql`.
+Chef et auditeur indépendant :655assertionsHTTP/SQL PASS sur la version finale ;
+1524pytest globaux finaux PASS après correction de fixture temporelle et nouveau
+contre-test d'expiration. Pas de déploiement. Dossiers internes en attente humaine ;
+aucun envoi, achat, transfert client ou autorisation de dépense.
+Rapport : `TYMOTORS_HYPERSKU_CONFIGURATION_2026-10-26.md`.
+
 ## Actualisation26octobre — lot expédition et HyperSKU
 
 - MANUAL_SHIPMENT_ATOMICITY : APPROVED LOCAL,115contrôlesSQL/25HTTP et22API

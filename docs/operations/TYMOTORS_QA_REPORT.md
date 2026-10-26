@@ -1,5 +1,23 @@
 # PHOENIX — qualité et preuves
 
+## Revalidation HyperSKU interne —26octobre
+
+APPROVED LOCAL étroit :655assertionsHTTP/SQL exécutées par le Chef puis655 par
+l'auditeur indépendant sur les mêmes fichiers figés. Replay réévalué après
+révocation droits/changement mapping/agent/offre/tarif/variante/fitment/taxonomie,
+retour immuable sans doublon si valide. Revue humaine conservée, aucune
+transmission/dépense autorisée. Premier rejet taxonomy corrigé ; garde ajoutée
+sur revue de compatibilité retirée après échec car elle empêchait la création
+du dossier de revue lui-même, sans lever aucun verrou de dispatch.
+
+Pytest global initial1505PASS/18erreurs de fixture photo expirée à midi ; dates
+synthétiques service rendues relatives, nouveau refus expiration409 sans écriture.
+20ciblésPASS puis1524globauxPASS en58,76s. AvertissementStarlette/httpxpréexistant.
+Diffcheck/compilationPASS ; frontend/photos inchangés ; pas de migration distante.
+HyperSKU réel reste BLOCKED (contrat/API/StoreID/SKU/France), pas de recette
+fournisseur ni de concurrence PostgreSQL hébergée. Rapport :
+`TYMOTORS_HYPERSKU_CONFIGURATION_2026-10-26.md`.
+
 ## Lot expédition manuelle —26octobre
 
 APPROVED LOCAL par auditeur indépendant :22 tests API exécutés PASS et relecture

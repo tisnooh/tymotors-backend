@@ -34,9 +34,15 @@ def quote_fixture(context, request_data):
     context['cart'].update(user_id=None, guest_session_id=GUEST, currency='EUR')
     for row in context['products']:
         row['currency'] = 'EUR'
-    for key in ('offers', 'rates'):
+    # Service tests intentionally use the current clock. The engine fixture
+    # has its own fixed NOW, so do not let its synthetic photo grant expire at
+    # a calendar cutoff while only refreshing the supplier/rate terms.
+    now = datetime.now(timezone.utc)
+    for key in ('offers', 'rates', 'image_permissions'):
         for row in context[key]:
-            row['valid_until'] = '2099-01-01T00:00:00+00:00'
+            row['valid_until'] = (now + timedelta(days=2)).isoformat()
+    for row in context['image_permissions']:
+        row['verified_at'] = (now - timedelta(days=1)).isoformat()
     payload = build_cart_quote(context)
     return {
         'id': QUOTE, 'cart_id': CART, 'owner_user_id': None, 'owner_guest_session': GUEST,
@@ -116,6 +122,18 @@ def test_quote_api_persists_coherent_private_sources_projects_public_only_and_re
     assert repeated.json() == result and len(stored) == 1
     server.db.rpc.assert_not_awaited()
     assert client.get('/api/cart/quote/' + QUOTE, headers=headers).json() == result
+
+
+def test_expired_photo_rights_still_block_service_quote(wired, context, request_data):
+    client, stored = wired
+    context['image_permissions'][0]['valid_until'] = (
+        datetime.now(timezone.utc) - timedelta(seconds=1)).isoformat()
+    response = client.post('/api/cart/quote', json=request_data,
+                           headers={'X-Session-Id': GUEST})
+    assert response.status_code == 409
+    assert 'image_commercial_rights_unconfirmed' in response.text
+    assert stored == []
+    assert [call.args[0] for call in server.db.rpc.call_args_list] == ['commerce_cart_context']
 
 
 def test_request_key_cannot_change_destination_or_mode(wired, request_data):
