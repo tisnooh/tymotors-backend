@@ -1,0 +1,3 @@
+# Exact false positive: synthetic idempotency key in a mocked checkout fixture.
+# This is not a Stripe/API credential. Keep every other commit/file/rule scanned.
+a17ba1e9bc01e193bd28dcbe2b24f6a822d9ee72:tests/test_commerce_customer_checkout.py:generic-api-key:81

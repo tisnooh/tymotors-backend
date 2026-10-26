@@ -1,5 +1,19 @@
 # PHOENIX — journal de progression
 
+## Préparation du push autorisé —26octobre
+
+- Demande « Push tout » : sauvegarder les deux branches codex/commerce-workflows,
+  sans fusion main, migration distante ou activation commerciale.
+- Contrôle Gitleaks des4commits backend non publiés : une alerte sur la clé
+  d’idempotence synthétique de tests/test_commerce_customer_checkout.py:81,
+  commit a17ba1e. Pas une clé API/Stripe ; exception limitée à l’empreinte exacte
+  dans .gitleaksignore, aucune règle/fichier/répertoire désactivé globalement.
+- Frontend : contrôle des3commits en attente sans fuite détectée. Les secrets,
+  rapports privés Stripe, captures et fichiers fournisseur restent hors Git.
+- Vercel projet tymotors relu par CLI authentifiée après404duconnecteur :
+  productionBranch=main, productionSHA=b5847e5, dépôt tymotors-frontend.
+  Push demandé sur branche de travail uniquement ; éventuelle preview distincte.
+
 ## Reprise du 26 octobre — expédition atomique et relance HyperSKU
 
 - Correctif local de l’endpoint admin existant : une transaction statut/suivi/
