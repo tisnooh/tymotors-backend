@@ -38,10 +38,11 @@ for _name, _value in {
 del _name, _value
 
 from fastapi import Depends, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 import uvicorn
 
 from tests.serve_admin_fixture import Database, server
+from tests.stripe_sandbox_browser_scope import BOOTSTRAP_HTML, BOOTSTRAP_JS, sandbox_scope
 from app.commerce_payment_service import CommercePaymentError, CommerceTestPayments, TestStripeGateway
 from app.commerce_checkout_events import validate_checkout_session
 
@@ -114,20 +115,19 @@ server._send_order_email = _no_email
 
 @server.app.middleware('http')
 async def sandbox_only_boundary(request: Request, call_next):
-    if request.client is None or request.client.host not in ('127.0.0.1', '::1'):
-        return JSONResponse({'detail': 'Loopback QA process only'}, status_code=403)
     path = request.url.path
-    if path == '/qa-stripe-sandbox-status' and request.method == 'GET':
+    scope=sandbox_scope(request.client.host if request.client else None,path,request.method,
+        os.environ.get('PHOENIX_STRIPE_BROWSER_CART')=='explicit-test-only')
+    if scope=='forbidden':
+        return JSONResponse({'detail': 'Loopback QA process only'}, status_code=403)
+    if scope=='identity':
         return JSONResponse({'fixture': FIXTURE_NAME, 'is_test': True,
             'database': 'disposable_loopback', 'provider_transport': 'real_stripe_sdk',
             'payment_completed': False, 'emails_enabled': False})
-    allowed = (path == '/api/cart' or path.startswith('/api/cart/')
-        or path.startswith('/api/admin/commerce/')
-        or path.startswith('/qa-stripe-payment/')
-        or path == '/api/stripe/webhook' or path == '/api/order-tracking'
-        or path in ('/order-success', '/cart'))
-    if not allowed:
-        return JSONResponse({'detail': 'Route outside isolated sandbox scope'}, status_code=403)
+    if scope=='disabled':
+        return JSONResponse({'detail':'Browser cart fixture not enabled'},status_code=404)
+    if scope=='bootstrap_html':return HTMLResponse(BOOTSTRAP_HTML)
+    if scope=='bootstrap_js':return Response(BOOTSTRAP_JS,media_type='application/javascript')
     if path == '/api/stripe/webhook':
         # Never let a real sandbox event enter legacy order/email processing.
         # Stripe SDK still verifies the untouched raw body in the actual route.

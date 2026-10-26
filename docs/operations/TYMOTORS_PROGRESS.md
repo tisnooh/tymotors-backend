@@ -213,3 +213,80 @@ Prochaine action de reprise : journal durable des observations/rapprochement et 
 - Frontend enregistré localement `6772ba6` sur codex/commerce-workflows, aucun
   push. Commit de préparation pour revue, pas décision APPROVED. Backend de ce
   même lot enregistré séparément ; retrouver son identifiant avec git log.
+
+## Test complet demandé —26octobre, client sandbox et fournisseur factice
+
+- Demande utilisateur : test complet et achat fournisseur factice/étapes de
+  déclenchement, sans dépense ou commande réelle. Aucun changement design/photos/
+  prix ni déploiement. Tests/harness seulement, frontend6772ba6 inchangé.
+- Profil CLI dédié retrouvé dans .codex/stripe-phoenix-private/config.toml,
+  compteacct_1UU8fq7oQBUfbTTb, testcléprésente/liveabsente, whoami authentifié.
+  Le config par défaut ne contenait pas ce profil ; ne pas demander de clé dans
+  le chat ou créer une nouvelle sandbox pour masquer un mauvais chemin.
+- Ajout test-only --customer --browser-cart : seed sans devis/adresse/paiement,
+  bootstrap local, vrai Cart collecte adresse et mode, puis crée session. Allowlist
+  fixture corrigée pour assets et receipt/tracking GET.75ciblés PASS,4nouveaux
+  guards testant zéro création pendant seed, absence de retry, doublons et périmètre
+  loopback. Aucune permission DB/production ajoutée.
+- **VRAI PAIEMENT STRIPE SANDBOX REUSSI** : session
+  cs_test_a1UcSUzodOkUs1taP6vCjbcCzl8CacaMR4umSL0QHLzl2m9pHE9dy8cAjE,
+  navigateur depuis Cart, carte4242,35EUR fictifs. Webhook authentique transmisCLI,
+  rapportactual_stripe_test_payment=true et signed_webhook_verified=true.
+  LectureSDK réseau distincte confirme complete/paid/livemodefalse/3500/EUR et
+  métadonnéesorder_id concordantes. Pas de fonds réels.
+- Commande TY-20261026-F670E21F/id d15baf2b-a8ff-46b4-9cb6-b3510e8da4d9,
+  1commande/1tâche, variante/offre/transport/agent exacts vérifiés. Retour navigateur
+  Paiement confirmé/Commande de test aucun débit réel ni expédition. Réessai après
+  paiement retourne mêmecommande/paid/urlnull, compteurs1/1/0supplier_orders.
+- Dossier HyperSKU110b0bfb-98f8-4140-a8e7-6157efc923a4 awaiting_human_review,
+  external_send_allowed=false/expenses_authorized=false/noncertifiépourimport.
+  Le runner simule l'action agent Préparer via APIadmin après le webhook ; ce
+  n'est pas un envoi automatique permanent à HyperSKU.
+- finish_supplier_dry_run exécuté : quatre transitions SIM doublées/idempotentes,
+  tracking SIM-SUPPLIER-DRY-d15baf2ba8, actualfulfillmentrequires_review. Page de
+  suivi affiche Paiement de test confirmé + Simulation pour chaque étape, pas une
+  vraie livraison. Aucun achat fournisseur transmis ou payé.
+- Compte HyperSKU observé en lecture seule : OrderList/Pendingpayment0dansles
+  filtresactuels, boutons More→ImportFile/SyncOrders/PayTogether identifiés.
+  Aucun fichier téléversé, synchro, paiement ou message envoyé. Doc officielle :
+  le paiement fournisseur après vérification déclenche leur traitement, pas le
+  seul paiement client Stripe. Aucun endpoint/API ou SKU HyperSKU réel inventé.
+- Preuves privées conservées dossierrecette-2026-10-26-panier-fournisseur,
+  snapshotSQL/rapportStripe/fournisseur-dry-run.json, captures horsGit. REVIEW_DONE
+  créé après revue UI et SIM ; runner sorti0 et ports8765/8766 sans listener.
+- Revue indépendante reste en attente (limite service), pas contournée. Résultats
+  commerciaux inchangés0/40/0pilote selon dossiers disponibles. Rapport autonome
+  TYMOTORS_CLIENT_SUPPLIER_TEST_2026-10-26.md ; suitebackendglobale finale en cours.
+
+- Snapshot final durable relu :1commande paid/requires_review,1tâche SIMdelivered,
+  1événement financier signé,1préparation awaiting_human_review sansenvoi/dépense.
+  Le premier global a donné1496PASS/1échec : timeout30s du test qui importait un
+  deuxième serveur dans un sous-processus. Politique du harness extraite en
+  fonction pure, mêmes routes autorisées/loopback/bootstrap explicite ; pas
+  d'augmentation du timeout ni changement du code Stripe/commande. Nouveau global
+  en cours, pas anticipé. Cette extraction après recette est test-only ; preuve
+  réseau conservée comme telle, distincte de l'audit de la dernière version.
+
+### Checkpoint final de cette recette
+
+- **1497pytest PASS**,180,33s, exit0 après extractionpure du scope ; py_compile
+  scripts et gitdiff--check PASS. Pas de changement app/server/migration/frontend,
+  aucune photo/CSS/prix ou publication. Le frontend reste6772ba6 ; backend de
+  cette recette enregistré localement sur codex/commerce-workflows, sans push.
+- La preuve du vrai paiement est désormais acquise pour UN cas positif synthétique
+  depuis le Cart local. Ne plus déclarer « aucun paiement sandbox terminé » à
+  partir des anciens rapports. Ne pas déclarer pour autant HyperSKU connecté,
+  commande fournisseur reçue, produit commercial validé ou site live opérationnel.
+- Réception HyperSKU et achat réels NON TESTÉS :0envoi/0paiement fournisseur.
+  Guide exact dans TYMOTORS_CLIENT_SUPPLIER_TEST_2026-10-26.md ; pendant le test le
+  dossier interne est restéawaiting_human_review, le suiviSIMn'a pas remplacé le
+  statut réelrequires_review. TableauHyperSKUréelvide dans la vue actuelle.
+- Secrets/config/rapports/snapshot/fournisseur-dry-run conservés horsGit dans le
+  dossierprivé recette-2026-10-26-panier-fournisseur. Runner sorti0, snapshotfinal
+  contrôlé, ports8765/8766 sanslistener, onglet Stripe de recette fermé. Aucun
+  processus de test restant ou action permanente/scheduled lancé.
+- Prochaines actions : contre-audit indépendant des deux lots quand disponible ;
+  qualification des offres/SKU/variantes/droits/prix/portFrance ; correspondances
+  HyperSKU réelles et canal/API/import officiellement confirmé. Toute transmission
+  de commande ou paiement réel reste soumis à autorisation humaine explicite.
+  Aucun achat pour forcer la clôture ; les40dossiers restent commercialementbloqués.

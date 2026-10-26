@@ -143,3 +143,30 @@ A→B→A découvert par le chef. **EN ATTENTE DE VALIDATION INDEPENDANTE FINALE
 Ne pas fusionner/publier sous prétexte que le build est bon. Ni vrai paiement
 Stripe, intégration HyperSKU externe, ni produit commercial validé par ce lot.
 Rapport autonome : TYMOTORS_DELIVERY_FORM_QA_2026-10-26.md. Aucun runner restant.
+
+## Recette réseau Stripe et achat fournisseur factice —26octobre
+
+Demande explicite : test complet puis étapes d'achat factice, sans dépense réelle.
+75tests ciblés PASS sur les guards et le pont client, dont4nouveaux du harness.
+Serveur/database/listener possédés, profils et secrets hors dépôt.
+
+Exécution navigateur : adresse dans Cart→mode5EUR→devis35EUR→session Stripe test
+créée par le vrai bouton→carte officielle4242→webhook authentique→commande unique
+et agent→préparation interne. Retour UI Paiement confirmé ; lecture SDK séparée
+complete/paid/livemodefalse/3500EURcentimes et métadonnées concordantes.
+Réessai endpoint payé : même commande sansURL,1commande/1tâche/0supplier_orders.
+Simulation fournisseur/logistique4états, chaque transition doublée sans doublon,
+suivi client explicitement SIM et véritable statutrequires_review conservé.
+
+**PREUVE D'EXECUTION RESEAU OBTENUE**, pas une validation indépendante ou de
+production : revue finale indisponible après limite du sous-agent, code applicatif
+de production/design/photos/prix inchangés dans ce lot. HyperSKU externe n'a rien
+reçu et n'a pas été payé. Rapport détaillé :
+TYMOTORS_CLIENT_SUPPLIER_TEST_2026-10-26.md. Suite globale backend finale distincte.
+
+Dernière suite globale sur le lot final :**1497PASS**,180,33s, exit0 ; compilation
+des scripts et diff --check PASS. Le passage précédent1496PASS/1timeout du test
+qui importait un deuxième serveur reste enregistré. Politique extraite purement
+pour éviter ce deuxième import mutateur, sans augmenter le délai30s. Ce dernier
+refactor du harness est postérieur à la recette réseau ; pas de deuxième paiement
+créé pour le masquer. Aucun fichier applicatif/migration/frontend modifié.

@@ -13,6 +13,14 @@ Les mesures commerciales ci-dessous sont celles du dossier25octobre, pas une
 nouvelle interrogation distante du catalogue le26. Rapport du lot :
 TYMOTORS_DELIVERY_FORM_QA_2026-10-26.md.
 
+Nouvelle recette26octobre après demande explicite du propriétaire : **1paiement
+Stripe sandbox réellement terminé**, depuis le vrai Cart local, webhook signé,
+commande unique et tâche agent créés, retour navigateur Paiement confirmé35EUR.
+Préparation HyperSKU interne et4étapes SIM/suivi client vérifiés ; **0achat et
+0commande fournisseur transmis**. La ligne historique Stripe ci-dessous est
+actualisée ; les produits commerciaux restent0validé. Rapport de référence :
+TYMOTORS_CLIENT_SUPPLIER_TEST_2026-10-26.md. Aucune publication/activation live.
+
 ## Catalogue réel
 
 Source : génération privée `backend/data/phoenix-2026-10-25/dossiers-40.json`
@@ -51,7 +59,7 @@ sans nouvelle confirmation. Aucun contact extérieur autorisé dans ce lot.
 | Tarifs et finance | Calculs privés sur instantanés serveur, données manquantes jamais remplacées par zéro ; prix publics inchangés |
 | Commande et attribution | Transaction et idempotence testées avec transport Stripe FAKE |
 | Suivi multi-fournisseurs/multi-agents/multi-colis |91 assertions HTTP chef et91 indépendantes PASS, statut réel requires_review conservé |
-| Stripe : vrai réseau | Création/binding/lecture Checkout SDK prouvés ; trois sessions de test closes expired/unpaid ; zéro paiement réussi |
+| Stripe : vrai réseau |1nouvelle session sandbox complete/paid35EUR, webhook signé et retour client prouvés le26octobre ;3anciennes sessions closes expired/unpaid |
 | Inspection Stripe privée | Lecture seule d'une session liée côté serveur ; ne règle, rembourse, recrée ni libère rien. Recette réseau propre à cette route non faite |
 | HyperSKU | Connexion web observée ; API, devis, tarifs et variantes encore non confirmés. Paquets internes seulement, transmission interdite |
 | Paiement live | Verrouillé sans dérogation par un simple flag ou une activation produit |

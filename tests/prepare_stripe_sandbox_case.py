@@ -75,7 +75,7 @@ def customer_checkout(quote_id, guest):
         'checkout_url': url, 'entrypoint': 'public_owned_customer_checkout'}
 
 
-def prepare(*, customer=False):
+def prepare(*, customer=False, browser_cart=False):
     assert_fixture()
     marker = uuid4().hex[:10]
     label = 'SANDBOX-SYNTHETIC-' + marker
@@ -125,9 +125,22 @@ def prepare(*, customer=False):
         'valid_until': '2098-01-01T00:00:00Z'}}, HEADERS)
     vehicle = {'brand_slug': 'bmw', 'model': rule['model_name'], 'chassis': rule['chassis'],
         'year': rule['year_from'], 'facelift': 'pre-lci', 'body_type': 'sedan'}
-    guest = {'X-Session-Id': 'sandbox_' + label}
-    request('/cart', 'POST', {'product_id': product, 'variant_id': variant['id'],
+    guest = {'X-Session-Id': 'sandbox_browser_synthetic_guest' if browser_cart else 'sandbox_' + label}
+    cart = request('/cart', 'POST', {'product_id': product, 'variant_id': variant['id'],
         'quantity': 1, 'selected_vehicle': vehicle}, guest)
+    if browser_cart:
+        # Fixture setup only: the real Cart UI must create its quote and payment.
+        # No address is fabricated/persisted, and no provider session is created.
+        cart_id = sql('select cart_id from cart_items where id=$1', [cart['items'][0]['cart_item_id']])[0]['cart_id']
+        return {'scope':'synthetic_cart_real_browser_checkout_required','is_test':True,
+            'entrypoint':'browser_cart','payment_completed':False,'cart_id':cart_id,
+            'sku':label,'product_id':product,'variant_id':variant['id'],
+            'supplier_id':supplier,'supplier_offer_id':offer['id'],'shipping_rate_id':rate['id'],
+            'agent_id':actor['id'],'hypersku_mapping_id':mapping['id'],
+            'hypersku_mapping_scope':'SYNTHETIC_NOT_REAL_HYPERSKU_CONNECTION',
+            'vehicle':vehicle,'expected_total_cents':3500,'currency':'EUR',
+            'checkout_url':ORIGIN+'/qa-stripe-cart',
+            'next_required_proof':'browser_cart_quote_checkout_real_signed_webhook_and_internal_preparation'}
     quote = request('/cart/quote', 'POST', {'request_key': str(uuid4()), 'mode': 'tracked',
         'destination': {'name': 'Synthetic recipient', 'line1': '1 Synthetic street',
             'city': 'Paris', 'country': 'FR', 'postal_code': '75001'}}, guest)
@@ -162,15 +175,18 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--attempt', type=UUID, help='Inspect/reuse one existing synthetic sandbox attempt')
     parser.add_argument('--customer', action='store_true', help='Use public owned customer quote checkout, no admin order mutation')
+    parser.add_argument('--browser-cart', action='store_true', help='Seed a cart only; let the browser create quote and checkout')
     args = parser.parse_args()
     if args.customer and args.attempt:
         parser.error('--customer creates one new isolated case; --attempt only inspects an existing case')
+    if args.browser_cart and (not args.customer or args.attempt):
+        parser.error('--browser-cart requires --customer and no --attempt')
     try:
         if args.attempt:
             assert_fixture()
             result = checkout(args.attempt)
         else:
-            result = prepare(customer=args.customer)
+            result = prepare(customer=args.customer, browser_cart=args.browser_cart)
         print(json.dumps(result, ensure_ascii=False, indent=2))
     except Exception as error:
         # Preserve ambiguous state and print no HTTP/SDK exception bodies.

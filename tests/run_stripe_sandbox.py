@@ -28,6 +28,18 @@ def load_profile(config, name, expected_account):
     return key
 
 
+def browser_checkout_binding(sql, cart_id):
+    """Read one durable binding; never create/retry a provider operation here."""
+    rows=sql('''select o.id order_id,o.commerce_quote_id quote_id,a.id attempt_id,s.session_id
+        from orders o join commerce_checkout_attempts a on a.order_id=o.id
+        left join commerce_test_sessions s on s.attempt_id=a.id
+        where o.cart_id=$1 and o.is_test is true''',[cart_id])
+    if not rows: return None
+    if len(rows)!=1: raise RuntimeError('Duplicate browser sandbox orders or attempts')
+    if not rows[0].get('session_id'): return None
+    return rows[0]
+
+
 def main():
     # Support both `python -m tests.run_stripe_sandbox` and direct script entry.
     # Resolve local helpers BEFORE any remote operation, not after creation.
@@ -44,7 +56,10 @@ def main():
     parser.add_argument('--accept-sandbox-test-only', action='store_true', required=True)
     parser.add_argument('--wait-seconds', type=int, default=1200)
     parser.add_argument('--customer', action='store_true', help='Exercise public owned checkout instead of admin preparation')
+    parser.add_argument('--browser-cart', action='store_true', help='Create quote/checkout via real Cart UI; REVIEW_DONE ends post-payment review')
     args = parser.parse_args()
+    if args.browser_cart and not args.customer:
+        parser.error('--browser-cart requires --customer')
     if not 60 <= args.wait_seconds <= 1800:
         raise ValueError('Bounded 60..1800 second execution required')
     cwd = Path(__file__).resolve().parents[1]
@@ -111,7 +126,8 @@ def main():
             secrets = re.findall(r'whsec_[A-Za-z0-9_]+', secret_call.stdout)
             if secret_call.returncode or len(secrets) != 1:
                 raise RuntimeError('Official sandbox webhook secret unavailable; raw output withheld')
-            server_env = {**env, 'STRIPE_WEBHOOK_SECRET': secrets[0], 'STRIPE_SECRET_KEY': key}
+            server_env = {**env, 'STRIPE_WEBHOOK_SECRET': secrets[0], 'STRIPE_SECRET_KEY': key,
+                'PHOENIX_STRIPE_BROWSER_CART':'explicit-test-only' if args.browser_cart else ''}
             stage = 'fixture_startup'
             commands = [
                 [args.node, 'tests/admin_database.mjs', '--serve'],
@@ -154,7 +170,7 @@ def main():
             if stop_file.exists():
                 raise RuntimeError('Emergency STOP before remote session creation')
             preparation = subprocess.run([sys.executable, '-m', 'tests.prepare_stripe_sandbox_case'] +
-                (['--customer'] if args.customer else []),
+                (['--customer'] if args.customer else []) + (['--browser-cart'] if args.browser_cart else []),
                 cwd=cwd, env=env, capture_output=True, text=True, timeout=180)
             if preparation.returncode:
                 # Child diagnostics may include provider details: no raw dump.
@@ -165,7 +181,7 @@ def main():
                 except (ValueError, TypeError): pass
                 raise RuntimeError('Sandbox case preparation failed; inspect redacted fixture diagnostics')
             case = json.loads(preparation.stdout)
-            result.update(case, status='awaiting_test_checkout')
+            result.update(case, status='awaiting_browser_cart' if args.browser_cart else 'awaiting_test_checkout')
             save_disposable_snapshot()
             save()
             print(json.dumps(result), flush=True)
@@ -177,8 +193,22 @@ def main():
                     break
                 if any(p.poll() is not None for p in processes):
                     raise RuntimeError('Owned fixture/listener exited during checkout')
+                if args.browser_cart and 'order_id' not in case:
+                    binding=browser_checkout_binding(sql,case['cart_id'])
+                    if binding is None:
+                        time.sleep(2)
+                        continue
+                    case.update(binding)
+                    result.update(binding,status='awaiting_test_checkout')
+                    save_disposable_snapshot()
+                    save()
+                    print(json.dumps(result),flush=True)
                 rows = sql('select payment_status from orders where id=$1', [case['order_id']])
                 if rows[0]['payment_status'] == 'paid':
+                    order=sql('select is_test,currency,total_cents from orders where id=$1',[case['order_id']])[0]
+                    if (order['is_test'] is not True or order['currency']!=case['currency']
+                            or order['total_cents']!=case['expected_total_cents']):
+                        raise RuntimeError('Sandbox case amount or mode mismatch')
                     tasks = sql('select * from commerce_test_tasks where order_id=$1', [case['order_id']])
                     counts = sql('select count(*)::int n from orders where commerce_quote_id=$1', [case['quote_id']])
                     events = sql('select count(*)::int n from commerce_test_payment_events where attempt_id=$1', [case['attempt_id']])
@@ -188,6 +218,12 @@ def main():
                         payment_completed=True, paid_order_count=counts[0]['n'], task_count=len(tasks))
                     if len(tasks) != 1 or tasks[0]['agent_id'] != case['agent_id']:
                         raise RuntimeError('Paid sandbox task association mismatch')
+                    task=tasks[0]
+                    if (task['supplier_id']!=case['supplier_id']
+                            or task['snapshot']['offer']['id']!=case['supplier_offer_id']
+                            or task['snapshot']['offer']['variant_id']!=case['variant_id']
+                            or task['snapshot']['rate']['id']!=case['shipping_rate_id']):
+                        raise RuntimeError('Paid sandbox supplier variant or shipping association mismatch')
                     internal = request('/admin/commerce/hypersku/tasks/' + tasks[0]['id'] + '/prepare',
                         'POST', {'mapping_id': case['hypersku_mapping_id']}, HEADERS)
                     if internal['external_send_allowed'] or internal['expenses_authorized']:
@@ -202,12 +238,19 @@ def main():
             print(json.dumps(result), flush=True)
             if result['status'] != 'sandbox_signed_payment_and_internal_preparation_passed':
                 raise RuntimeError('Sandbox checkout not completed; not a passing test')
+            if args.browser_cart:
+                # Keep the return page/API available for inspection, bounded by
+                # the original deadline. No follow-up purchase or transmission.
+                stage='browser_receipt_review'
+                print('Signed sandbox payment passed; inspect receipt, then create REVIEW_DONE in the private run directory.',flush=True)
+                while time.monotonic()<deadline and not (private/'REVIEW_DONE').exists() and not stop_file.exists():
+                    time.sleep(1)
         except KeyboardInterrupt:
             result.update(status='interrupted', blocked_stage=stage)
             save()
             raise
         except Exception as error:
-            if result['status'] in ('starting','awaiting_test_checkout'):
+            if result['status'] in ('starting','awaiting_browser_cart','awaiting_test_checkout'):
                 result['status'] = 'blocked'
             result.update(blocked_stage=stage, error_type=type(error).__name__)
             save()

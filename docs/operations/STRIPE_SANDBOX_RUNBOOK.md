@@ -133,3 +133,27 @@ Un échec de fermeture produit une alerte fixe sans secrets ; la fermeture
 physique ne peut pas être garantie si elle échoue. Tests de cette route avec
 transports simulés uniquement : ne pas les confondre avec une nouvelle recette
 réseau authentifiée ou un rapprochement financier complet.
+
+## Recette navigateur réellement réussie —26octobre2026
+
+Nouvel opt-in `--customer --browser-cart` : prépare un panier synthétique sans
+adresse/devis/paiement, puis le vrai frontend local collecte l'adresse et crée
+son devis et sa session Stripe. Le serveur de test autorise les assets et la
+lecture propriétaire du reçu en GET, pas les routes legacy ni le live. Après
+paiement, le run reste disponible pour la revue navigateur jusqu'au fichier
+privé REVIEW_DONE ou au délai borné ; finally ferme ses enfants possédés.
+
+Exécution enregistrée hors dépôt dans recette-2026-10-26-panier-fournisseur :
+session cs_test_a1UcSUzodOkUs1taP6vCjbcCzl8CacaMR4umSL0QHLzl2m9pHE9dy8cAjE,
+statuscomplete/payment_statuspaid/livemodefalse/total3500EURcentimes relus par SDK.
+Vrai webhook Stripe signé reçu,1commande/1tâche, dossier interne HyperSKU,
+retour navigateur Paiement confirmé et avertissement aucun débit réel.
+Les anciens essais échoués restent conservés ; ce nouveau succès ne les efface pas.
+
+Après ce paiement, `python -m tests.finish_supplier_dry_run --order-id <UUID>
+--preparation-id <UUID>` vérifie le serveur réel sandbox local, les préconditions
+test/paid/SKU synthétique, puis ne joue que les transitions SIM existantes. Le
+suivi client affiche explicitement Simulation. Aucune API/import/commande ou
+transaction HyperSKU, aucun achat fournisseur ou colis réel. Le JSON d'intention
+fournisseur est NON ENVOYÉ et NON CERTIFIÉ pour import. Guide de déclenchement et
+preuves : TYMOTORS_CLIENT_SUPPLIER_TEST_2026-10-26.md.

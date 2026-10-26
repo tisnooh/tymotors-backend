@@ -3,7 +3,7 @@
 | ID | Statut | Responsable | Preuve / impact | Action attendue |
 |---|---|---|---|---|
 | IMG_POSITIVE_GATE | APPROVED local | Codex / auditeur | Correction positive par fichier + SQL98, HTTP557 ; refus/révocation/territoire/expiration vérifiés ; aucune photo modifiée | Ne pas confondre contrôle technique avec obtention des permissions des 40 produits |
-| STRIPE_ACCESS | En test isolé, paiement BLOCKED jusqu'à preuve | Codex / administrateur | Connecteur sans link_id ; alternative officielle CLI a créé sandbox anonyme, auth et lecture réseau Checkout SDK réussies. Pas de clé live ; solde inaccessible selon permissions | Terminer vrai Checkout test/webhook. Profil temporaire hors dépôt ; revendication humaine pour persistance si nécessaire, aucune clé en conversation |
+| STRIPE_ACCESS | Recette sandbox payée exécutée, production non autorisée | Codex / administrateur |26octobre : Cart navigateur→Checkout35EUR réellement complete/paid en sandbox, vrai webhook signé, commande unique/agent, page Paiement confirmé ; profil CLI privé sans clé live | Contre-audit final/conditions commerciales et intégration HyperSKU externe restent distincts ; aucune activation live déduite |
 | HYPERSKU_API | BLOCKED | HyperSKU / administrateur | OpenAPIannoncée mais contrat endpoints/auth/payload/notifications/sandbox/éligibilité absent ducode ; loginhistorique12/10 ne prouve pas accèsactuel | Obtenir documentation/accèsautorisés ; préparationmanuellelocaleenattendant, aucunenvoi |
 | COMMERCIAL_5 | BLOCKED | Fournisseurs |5propositionsSoyinnonretenues, 0devis/portFrance/droits/fitmentconfirmé | RéponsesdatéesSKUfinition/montage/photo/devise/MOQ/port/Incoterm/garantie ; pasnouvelenvoisansautorisation |
 | OWNER_TERMS | BLOCKED | Administrateur | Agent réel, fiscalité, marge minimale, légal/conditions nonconfirmés | Désigner/valider ; aucunprixpublicmodifié |
@@ -39,3 +39,16 @@ avec son profil sandbox et son listener signés, sans confondre la probeFAKE ave
 un paiement. Dernière contre-revue du correctif A→B→A non effectuée : le sous-agent
 auditeur a atteint sa limite de service ; aucun contournement ni automatisation.
 Voir TYMOTORS_DELIVERY_FORM_QA_2026-10-26.md pour l'état final et la reprise.
+
+### Paiement sandbox et fournisseur factice —26octobre
+
+La recette Stripe réelle a maintenant été terminée : session complete/paid,
+livemode=false,3500centimesEUR, webhook authentique et page de confirmation.
+Le blocage historique SANDBOX_BROWSER est levé pour cette exécution précise.
+Commande TY-20261026-F670E21F unique,1tâche ; HyperSKU reste interne,
+awaiting_human_review, external_send_allowed=false et expenses_authorized=false.
+Simulation réception agent/contrôle/expédition/livraison et page suivi vérifiées.
+Zéro import/Sync Orders/Pay Together/achat fournisseur. Réception et traitement
+HyperSKU réels restent BLOCKED faute mapping/canal/preuves/offre autorisés.
+Rapport : TYMOTORS_CLIENT_SUPPLIER_TEST_2026-10-26.md ; pas de nouvelle preuve
+commerciale sur les40articles ni autorisation de mise en production.
