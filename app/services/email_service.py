@@ -63,7 +63,7 @@ class EmailService:
         recipient = self.normalize_email(recipient)
         claimed = await self.db.update("email_logs", {
             "status": "queued", "error_message": None,
-        }, params={"id": f"eq.{log_id}", "status": "in.(failed,queued)"})
+        }, params={"id": f"eq.{log_id}", "status": "in.(failed,queued)", "event_snapshot": "is.null"})
         if not claimed:
             return {"status": "not_retryable", "sent": False, "log_id": log_id}
         return await self._deliver(log_id, recipient, content)

@@ -27,9 +27,13 @@ Rapport : `TYMOTORS_HYPERSKU_CONFIGURATION_2026-10-26.md`.
   boutique liée observée ; aucune connexion créée pour contourner ce blocage.
   Relance précise autorisée et envoyée08:31:28UTC, message1a1775604c6d3c4e,
   fil1a1624419984de5e, SENT vérifié. Attendre réponse, pas inventer de contrat.
-- ORDER_NOTIFICATION_OUTBOX : travail technique restant. Email best-effort
-  post-commit ; crash dans cette fenêtre peut empêcher notification et replay
-  ne la réémet pas. Ne pas annoncer une fiabilité d’envoi automatique démontrée.
+- ORDER_NOTIFICATION_OUTBOX : correctif local des quatre notifications manuelles
+  APPROVED LOCAL ;41HTTP/1553pytest globaux Chef PASS,41HTTP+65SQLoutbox+
+  63pytest ciblés indépendants PASS. Aucun serveur restant.
+  Intention atomique, destinataire figé, claim exclusif, aucune relance ambiguë.
+  Reprise explicite administrateur, pas de worker ni mail réel testé. Les emails
+  historiques de paiement/confirmation/refund restent hors périmètre du lot.
+  Voir `TYMOTORS_NOTIFICATION_OUTBOX_2026-10-26.md` ; aucun déploiement.
 - OFFRES/PILOTES : aucune nouvelle validation commerciale. Aucun achat,
   changement de prix/publication ni transmission de données client autorisés.
 

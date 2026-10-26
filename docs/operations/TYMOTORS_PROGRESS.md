@@ -1,5 +1,26 @@
 # PHOENIX — journal de progression
 
+## Notifications persistantes —26octobre, suite de « Finis tout »
+
+- Intention de notification manuelle enregistrée dans la transaction de commande,
+  réutilisant email_logs. Destinataire/événement gelés, claims exclusifs, résultat
+  ambigu non relancé. Aucun mail réel, worker, backfill ou action fournisseur.
+- Revue indépendante a rejeté la protection DELETE/TRUNCATE incomplète : corrigée
+  et testée. Contrôle du Chef ajouté sur remboursement/annulation avant claim,
+  sans bloquer un vrai message d'annulation après remboursement séparé.
+- Chef :63 ciblés PASS, puis41HTTP finaux PASS,655 régressionHTTP/SQL PASS avant
+  dernière garde financière ; **1553pytest globaux finaux PASS**,65,92s,exit0.
+  Premier HTTP a seulement échoué sur attente200 au lieu du202 existant du retry ;
+  harness corrigé. Ne pas compter cet échec initial comme recette finale.
+- Indépendant final :41HTTP PASS,66SQL historiques+115dispatch+65outbox PASS,
+  63pytest ciblés PASS (7,02s),sixhashes identiques,ports8765/8766libres.
+  Chef accepte **APPROVED LOCAL** uniquement pour ce lot. Rapport et reprise :
+  `TYMOTORS_NOTIFICATION_OUTBOX_2026-10-26.md`.
+- Aucun frontend/photo/prix public modifié, aucune publication/migration distante.
+  Deux documents de suivi mail précédents conservés hors du commit de ce lot.
+  HyperSKU réel et cinq produits commerciaux restent dépendants des preuves
+  externes ; rapprochement financier/refunds quoted reste un autre lot technique.
+
 ## Configuration HyperSKU —26octobre,13h UTC
 
 - Compte et chat relus ; boutique liée/StoreID/API/SKU/devisFrance toujours non

@@ -1,5 +1,38 @@
 # TYMotors — état de préparation au lancement
 
+## Actualisation locale —26 octobre2026
+
+**Ouverture aux commandes réelles toujours non validée.** Le tableau du12octobre
+ci-dessous est historique : ses hashes, nombres de tests et constats d'accès ne
+décrivent pas automatiquement la production actuelle.
+
+- Un vrai parcours positif Stripe sandbox a depuis été effectué depuis le panier
+  local :35EUR, événement signé, commande unique, attribution agent et préparation
+  interne HyperSKU. Expédition et livraison ensuite **simulées**, aucun achat ni
+  envoi fournisseur. Preuve : `operations/TYMOTORS_CLIENT_SUPPLIER_TEST_2026-10-26.md`.
+- Préparation HyperSKU revalidée à chaque replay, avec audit indépendant local.
+  La connexion fournisseur réelle reste absente : contrat/API, StoreID, références
+  des variantes et devis France ne sont pas établis. Preuve et conditions :
+  `operations/TYMOTORS_HYPERSKU_CONFIGURATION_2026-10-26.md`.
+- Les40 dossiers et cinq candidats ne sont pas commercialement approuvés sur les
+  preuves disponibles. Aucune nouvelle offre retenue, permission positive d'image
+  ou marge complète n'est déduite d'un test synthétique. Voir
+  `operations/TYMOTORS_SUPPLIER_STATUS.md` pour les réponses datées.
+- Dernier lot local : notifications administratives persistantes, claims exclusifs,
+  refus de renvoi ambigu et garde remboursement.1553pytest globaux et41HTTP PASS ;
+  audit indépendant APPROVED LOCAL (41HTTP/65SQLoutbox/63pytest),pas de publication. Rapport :
+  `operations/TYMOTORS_NOTIFICATION_OUTBOX_2026-10-26.md`.
+- Restent notamment : preuves commerciales des cinq pilotes, canal HyperSKU réel,
+  rapprochement financier/remboursements quoted dans un lot dédié, recette isolée
+  PostgreSQL multi-connexion/GoTrue/PostgREST, informations administrateur et accord
+  explicite de publication/activation commerciale. Aucun accès, coût ou droit
+  manquant ne sera inventé pour clôturer ces étapes.
+
+Design, photographies et prix publics inchangés dans ces lots. Les travaux locaux,
+leur publication et l'exploitation réelle restent trois validations distinctes.
+
+## Historique vérifié le12octobre2026
+
 Vérifié le 12 octobre 2026. Verdict : vitrine publiée, mais **ouverture aux commandes réelles non validée**. Stripe reste en test et aucun achat fournisseur n'a été effectué.
 
 ## Parcours attendu

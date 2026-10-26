@@ -1,5 +1,23 @@
 # PHOENIX — qualité et preuves
 
+## File persistante des notifications —26octobre
+
+APPROVED LOCAL : Chef41HTTP→SQL→suivi PASS et1553pytest
+globaux PASS (65,92s). Régression655HTTP/SQL PASS avant dernière garde financière.
+63pytest ciblés chef et indépendants PASS sur version précédant cette garde.
+Refus initial de l'auditeur : DELETE/TRUNCATE pouvaient effacer une intention et
+sa clé ; protection ajoutée et testée. Garde financière finale relue indépendamment,
+aucun nouveau bypass concret signalé, contre-test remboursement ajouté.
+Contre-recette finale indépendante :41HTTP PASS,66SQL historiques+115dispatch+
+65outbox PASS,63pytest ciblés PASS en7,02s. Sixhashes avant/aprèsidentiques,
+ports8765/8766libres,diffcheckPASS. Chef accepte uniquement ce périmètre local.
+
+Échecs/limites conservés : premier harness attendait200 au lieu du202 contractuel
+du retry, corrigé. Aucun transport mail réel, worker, production ni PostgreSQL
+multi-session. Claimed/unknown ne prouvent pas l'absence de livraison et ne sont
+pas automatiquement relancés. Anciennes notifications confirmation/paiement/refund
+hors lot. Rapport : `TYMOTORS_NOTIFICATION_OUTBOX_2026-10-26.md`.
+
 ## Revalidation HyperSKU interne —26octobre
 
 APPROVED LOCAL étroit :655assertionsHTTP/SQL exécutées par le Chef puis655 par

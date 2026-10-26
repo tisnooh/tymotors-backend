@@ -48,6 +48,7 @@ from app.schemas import (
     VehicleSelection, WelcomeEmailInput, WishlistInput, WithdrawalInput, LoginInput, WithdrawalStatusInput,
 )
 from app.services.email_service import EmailService
+from app.services.order_notification_outbox import OrderNotificationOutbox, KINDS as FULFILLMENT_EMAIL_KINDS
 from app.services.email_templates import newsletter_confirmation, order_event, welcome
 from app.services.email_tokens import hash_confirmation_token, new_confirmation_token, verify_token
 from app.store import CatalogStore
@@ -252,6 +253,10 @@ async def _send_order_email(kind: str, order_id: str, *, amount_cents: int | Non
     except Exception:
         logger.error("Order email queue unavailable: %s %s", kind, order_id)
         return None
+
+
+async def _deliver_order_notification(log_id: str, actor: str) -> dict[str, Any]:
+    return await OrderNotificationOutbox(email_service).deliver(log_id, actor)
 
 
 async def _start_newsletter_subscription(payload: NewsletterInput, user: dict[str, Any] | None) -> dict[str, bool]:
@@ -785,6 +790,13 @@ async def retry_email(log_id: str, admin: dict[str, Any] = Depends(require_admin
                "order_delivered", "order_cancelled", "refund_confirmed", "withdrawal_received"}
     if not rows or rows[0].get("status") not in {"failed", "queued"} or rows[0].get("email_type") not in allowed or not rows[0].get("order_id"):
         raise HTTPException(409, "Email is not retryable")
+    if rows[0].get('event_snapshot') is not None:
+        if rows[0].get('delivery_state') not in {'pending', 'blocked'}:
+            raise HTTPException(409, 'Delivery outcome requires manual provider review; automatic resend refused')
+        result = await _deliver_order_notification(log_id, admin['id'])
+        return {'accepted': result.get('sent', False), 'delivery': result['status']}
+    if rows[0]['email_type'] in FULFILLMENT_EMAIL_KINDS:
+        raise HTTPException(409, 'Legacy delivery outcome requires manual provider review; automatic resend refused')
     if rows[0]["status"] == "queued":
         created = datetime.fromisoformat(rows[0]["created_at"].replace("Z", "+00:00"))
         if created > datetime.now(timezone.utc) - timedelta(minutes=5):
@@ -827,10 +839,9 @@ async def update_order(order_id: str, payload: AdminOrderUpdateInput, admin: dic
         "p_carrier": payload.carrier, "p_tracking_url": payload.tracking_url,
         "p_expected": payload.expected_updated_at.isoformat()})
     # The locked SQL transition decides this, not a racy pre-read in Python.
-    if result.get('status_changed') is True and result.get('notification_kind') in {
-        'order_processing', 'order_shipped', 'order_delivered', 'order_cancelled'
-    }:
-        await _send_order_email(result['notification_kind'], order_id)
+    if (result.get('status_changed') is True and result.get('notification_kind') in FULFILLMENT_EMAIL_KINDS
+            and result.get('notification_log_id')):
+        await _deliver_order_notification(result['notification_log_id'], admin['id'])
     return result
 
 
