@@ -1,5 +1,49 @@
 # PHOENIX — fournisseurs, prestataire et cinq pilotes
 
+## Qualification ciblée avant ouverture —26 octobre2026,20:30 UTC
+
+Nouvelle demande explicite du propriétaire : traiter « fournisseurs » et « avant
+l'ouverture ». Fils relus et dédoublonnés ; quatre relances ciblées envoyées le
+26octobre20:25UTC, puis destinataires/SENT/fil/In-Reply-To/corps vérifiés :
+
+| Fournisseur | Pilotes couverts | ID envoyé |
+|---|---|---|
+| Soyin |Les cinq candidats|`1a179e352659c92b`|
+| GZTM / Leju |Trois BMW|`1a179e35f2dc1d2b`|
+| Redzini |Coques W205|`1a179e371859b9b6`|
+| JL Styling |Coques Golf7|`1a179e37bb11a899`|
+
+Devis hypothétique d'une unité de vente complète, zone75001, sans achat,
+commande, remplacement choisi ni engagement. Conditions SKU/montage/droits,
+coûts/port/garantie/retours demandées. Pas de deuxième relance HyperSKU ce jour,
+de sollicitation SCP après refus ou de relance VEVOR sur sa référence arrêtée.
+Quatre messages ne sont ni quatre réponses reçues, ni dix produits validés.
+
+Catalogue relu en lecture seule20:28:25UTC :40brouillons, cinq pilotes non vérifiés,
+prix129/69/149/79/69EUR. Aucun nouveau coût d'achat, portFrance, droit des images
+actuelles ou mappingHyperSKU confirmé. Décision commerciale des cinq :BLOCKED ;
+aucune marge calculable et aucune activation. Rapport :
+`TYMOTORS_PRELAUNCH_REVIEW_2026-10-26.md` ; dossier privé
+`backend/data/phoenix-2026-10-26-prelaunch/`. Les preuves historiques restent datées.
+
+## Réponses autorisées et vérifiées — 26 octobre 2026, 12:57 UTC
+
+À la demande explicite du propriétaire, nouvelle recherche incluant les spams
+et dédoublonnage des échanges : 14 messages fournisseurs depuis le 22 octobre,
+10 interlocuteurs (pas 14 articles). Quatre réponses envoyées puis relues SENT :
+Ikon `1a1784934d085572`, Noeifevo `1a17849379804d85`, Maxton
+`1a178493bff37229`, transmission AUTODOC/123bildelar `1a178493f0b77d55`.
+Noeifevo demandait quantité/pays dans les spams : scénario de devis d'un kit
+pour la France seulement, sans commande ni engagement. Soyin, GZTM et Refined
+avaient déjà reçu une réponse ; pas de doublon. Refus SCP respecté ; VEVOR
+confirme l'arrêt de la référence. Aucune seconde relance HyperSKU ce jour.
+L'autorisation de ce cycle ne vaut pas mandat permanent d'envoi.
+Rapport : `TYMOTORS_MAIL_RECONCILIATION_2026-10-26.md`.
+
+Ikon a confirmé explicitement GBK/ABS/surcoques/paire/BRZ-GR86 2022–2026 ;
+restrictions détaillées, droits et logistique France restent non confirmés.
+Aucun produit nouvellement approuvé et aucune modification catalogue/image/prix.
+
 ## Exception explicitement autorisée —26octobre2026
 
 Relance unique à support@etailerhub.com autorisée par le propriétaire puis

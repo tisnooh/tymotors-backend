@@ -1,5 +1,22 @@
 # PHOENIX — blocages explicites
 
+## Décision avant ouverture —26octobre2026,20:30UTC
+
+COMMERCIAL_5 reste BLOCKED après nouvelle vérification et4relances ciblées
+réellement envoyées/relues. Le catalogue actuel présente40brouillons ; les5pilotes
+ne sont pas vérifiés. Aucune variante retenue, droit des images actuelles,
+prix fournisseur/portFrance ou marge complète nouvellement confirmé.
+La permission du propriétaire de traiter le dossier n'est pas une preuve de coût
+ou de montage. Aucun prix, image ou état de publication n'est changé pour forcer
+l'approbation. Détails/SKU/critères par pilote :
+`TYMOTORS_PRELAUNCH_REVIEW_2026-10-26.md`.
+
+FOURNISSEURS : réponses SKU/devis/montage/droits/garanties attendues dans les
+quatre fils. ADMINISTRATEUR : régime fiscal, seuil de marge et responsable réel
+restent à confirmer avant décision complète. CODEX : rapprochement/remboursements
+quoted et recette hébergée restent distincts. HYPERSKU : pas de réponse technique
+dans le fil relu, aucune nouvelle relance doublée le même jour. Pas d'activation live.
+
 ## Configuration HyperSKU —26octobre, demande du propriétaire
 
 La connexion réelle reste BLOCKED externe : compte web accessible mais aucune

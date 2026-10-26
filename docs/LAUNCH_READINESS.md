@@ -2,6 +2,18 @@
 
 ## Actualisation locale —26 octobre2026
 
+### Fournisseurs et décision commerciale —20:30UTC
+
+Nouvelle vérification à la demande du propriétaire :40brouillons et cinq pilotes
+toujours non vérifiés selon le catalogue relu20:28:25UTC. Quatre relances ciblées
+Soyin/GZTM/Redzini/JLStyling envoyées et relues dans les fils existants, sans
+engagement ni achat. Les cinq dossiers ont reçu une décision BLOCKED, pas une
+approbation sans devis : prix d'achat/port/droits/identité de variante/montage et
+conditions encore insuffisamment prouvés ; marges non calculables.
+Rapport : `operations/TYMOTORS_PRELAUNCH_REVIEW_2026-10-26.md`.
+66tests dossiers/pricing PASS ; aucun nouveau test de paiement ou changement live
+dans ce cycle. L'ouverture et les paiements réels restent non activés par ce travail.
+
 **Ouverture aux commandes réelles toujours non validée.** Le tableau du12octobre
 ci-dessous est historique : ses hashes, nombres de tests et constats d'accès ne
 décrivent pas automatiquement la production actuelle.

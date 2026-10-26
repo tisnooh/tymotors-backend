@@ -1,5 +1,25 @@
 # PHOENIX — journal de progression
 
+## Fournisseurs et décision avant ouverture —26 octobre2026
+
+- Fils fournisseurs et derniers sortants relus. Nouvelle autorisation du
+  propriétaire exécutée :4relances ciblées Soyin/GZTM/Redzini/JLStyling, couvrant
+  les5pilotes ;4SENT relus avec destinataires/fils/corps vérifiés, sansengagement.
+- Pas de doublon HyperSKU aujourd'hui ; SCP/VEVOR non relancés. Aucune réponse
+  fournisseur nouvelle n'est déduite d'un envoi ou d'un rappel automatique.
+- Générateur existant lancé avec --live, un GET du catalogue20:28:25UTC et dossier
+  privé neuf phoenix-2026-10-26-prelaunch.40dossiers,40draft,5pilotes,0approbation,
+  0margecalculable. Prix boutique relus, inchangés ; coût/port inconnus restentnull.
+- Chaque pilote reçoit une décision BLOCKED motivée : identité/variante,
+  montage/droits, coût rendu, garantie/retours, agent/mapping et critères de marge.
+  La demande de faire la validation ne remplace pas ces preuves. Pas d'activation,
+  publication, migration, achat, prix public ou image modifiés.
+- Rapport et reprise : `TYMOTORS_PRELAUNCH_REVIEW_2026-10-26.md`. Analyse des5
+  variantes et4envois/manifeste contrôlés indépendamment, APPROVED examen/traçabilité.
+  66tests ciblés dossiers/pricing PASS en4,83s ; manifeste/hash/identités et champs
+  monétaires inconnus vérifiés. « coûts nuls » clarifié en « null/inconnus, jamais0 ».
+  La mission d'ouverture reste non accomplie : pas d'approbation commerciale.
+
 ## Notifications persistantes —26octobre, suite de « Finis tout »
 
 - Intention de notification manuelle enregistrée dans la transaction de commande,

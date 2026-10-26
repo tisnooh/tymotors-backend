@@ -1,5 +1,23 @@
 # PHOENIX — qualité et preuves
 
+## Qualification fournisseurs et ouverture —26octobre2026
+
+Actions effectuées :4relances ciblées non engageantes, toutes relues SENT et
+corps/destinataire/fil vérifiés ; catalogue public relu une fois,40dossiers privés
+régénérés sansécrasement. Analyse indépendante des5pilotes conclut0approbation,
+0coût rendu/marge calculables et divergences précises de modèles/années/construction.
+L'ouverture reste BLOCKED, pas artificiellement validée.
+
+Contrôle final indépendant APPROVED pour l'examen/traçabilité :40dossiers/cinq
+identités+prix/propositions conformes, coût/marges ànull,5BLOCKED ;4SENT relus et
+In-Reply-To comparés auxparents réels,4contacts/10couples,sourcehashconforme.
+66tests dossiers/pricing PASS en4,83s etcontrôle direct du manifeste PASS.
+Précision rédactionnelle « coûts nuls » corrigée en « null/inconnus, jamaiszéro » ;
+aucunJSON n'avait de coût zéro inventé. Aucun code,
+photo, prix, migration ou état de publication modifié. Les1553pytest du lot
+technique précédent ne sont pas présentés comme une nouvelle recette commerciale.
+Rapport : `TYMOTORS_PRELAUNCH_REVIEW_2026-10-26.md`.
+
 ## File persistante des notifications —26octobre
 
 APPROVED LOCAL : Chef41HTTP→SQL→suivi PASS et1553pytest
