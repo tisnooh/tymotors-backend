@@ -1,5 +1,18 @@
 # PHOENIX — fournisseurs, prestataire et cinq pilotes
 
+## Exception explicitement autorisée —26octobre2026
+
+Relance unique à support@etailerhub.com autorisée par le propriétaire puis
+envoyée08:31:28UTC dans le fil existant1a1624419984de5e. Message1a1775604c6d3c4e
+reluSENT avec destinataire/InReplyTo. DocumentationAPI,StoreID,SKU et devisFrance
+demandés sans engagement, achat, service payant, secret ni données client.
+Avant l’envoi : fil des22/23octobre relu, pas de réponse dans ce fil ; recherche
+entrante domainesofficiels retrouve l’onboarding16octobre uniquement dans son
+périmètre, sans exclure d’éventuelles réponseschat. Ces3messages sortants du même
+fil ne sont pas3produits distincts. Aucune référence/compatibilité/prix validé.
+Modèle import officiel obtenu, aucun upload/import fournisseur. Rapport :
+TYMOTORS_DISPATCH_AND_HYPERSKU_2026-10-26.md. Autres contacts non autorisés.
+
 ## Sources et fraîcheur
 
 40dossiersprivés existants : audit23/10 etcomplémentAUTODOC24/10, propositionsSoyindanspiècejointe29lignes reçue23/10 ;18référencesnommées, aucune retenuecommeoffrevisionvalidée. Aucun contactnouveauautoriséparPHOENIX ; préparer lesdemandes, nepasenvoyer.

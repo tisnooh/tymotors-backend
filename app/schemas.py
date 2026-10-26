@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
 
 class ProductCompatibility(BaseModel):
@@ -225,11 +225,18 @@ class ContactInput(BaseModel):
 
 class AdminOrderUpdateInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    expected_updated_at: str
+    expected_updated_at: AwareDatetime
     fulfillment_status: Literal["unfulfilled", "processing", "shipped", "delivered", "cancelled", "requires_review"]
     tracking_number: str | None = Field(default=None, max_length=200)
     carrier: str | None = Field(default=None, max_length=100)
     tracking_url: str | None = Field(default=None, max_length=1000, pattern=r"^https://")
+
+    @field_validator('tracking_number', 'carrier')
+    @classmethod
+    def clean_shipment_text(cls, value):
+        if value is not None and any(ord(c) < 32 or ord(c) == 127 for c in value):
+            raise ValueError('Shipment details must not contain control characters')
+        return value.strip() or None if value is not None else None
 
     @field_validator('tracking_url')
     @classmethod

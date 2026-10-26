@@ -1,5 +1,17 @@
 # PHOENIX — qualité et preuves
 
+## Lot expédition manuelle —26octobre
+
+APPROVED LOCAL par auditeur indépendant :22 tests API exécutés PASS et relecture
+RPC atomique/wrapper/grants/guards. Chef :1523 globaux finaux PASS (18,03s),
+26ciblés finaux PASS,66SQL historiques+115expédition PASS,25HTTP→SQL→suivi
+public PASS. Rollback forcé après UPDATE, refus sandbox/unpaid/refunded/review,
+devis, ancien RPC sans carrier, stale/replay/freeze et projection privée vérifiés.
+Pas de preuve multi-session hostedPostgres. Emails best-effort hors transaction,
+pas d’outbox ni garantie d’envoi. HyperSKU réel toujours BLOCKED. Aucun frontend,
+image, prix, dépense ou production modifiés. Rapport détaillé :
+TYMOTORS_DISPATCH_AND_HYPERSKU_2026-10-26.md.
+
 ## Baseline historique
 
 Lot `bf749a8` :984pytest PASS/410assertionsHTTP–SQL PASS, auditindépendant37tests/406assertions avant4contretestsremboursements. Aucune preuveStriperéseau ouHyperSKUAPI. Ces nombres ne sont pas les résultats du lot PHOENIX courant.

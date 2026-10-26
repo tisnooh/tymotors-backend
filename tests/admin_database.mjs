@@ -46,6 +46,7 @@ await db.exec(await readFile(new URL('../supabase/migrations/20261024143917_comm
 await db.exec(await readFile(new URL('../supabase/migrations/20261024144103_commerce_positive_image_rights.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../supabase/migrations/20261025043553_commerce_simulated_tracking_retention.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../supabase/migrations/20261025121320_commerce_customer_test_checkout.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../supabase/migrations/20261026081655_atomic_manual_order_dispatch.sql',import.meta.url),'utf8'));
 const sessionUser='10000000-0000-4000-8000-000000000098', sessionId='10000000-0000-4000-8000-000000000099';
 await db.query('insert into auth.sessions values($1,$2,null)',[sessionId,sessionUser]);
 assert.equal((await db.query('select is_auth_session_active($1,$2) active',[sessionId,sessionUser])).rows[0].active,true);checks++;
@@ -119,7 +120,7 @@ assert.equal((await one("select count(*) n from order_tracking_events where orde
 let dash=(await one('select admin_dashboard($1) as data',[admin])).data;
 assert.equal(dash.revenue.today.net,2000);assert.equal(dash.estimated_margin_cents,1400);checks++;
 let paidRow = await one('select updated_at from orders where id=$1',[paid.id]);
-await db.query("select admin_update_order($1,$2,'shipped','TRACK-TEST',$3)",[admin,paid.id,paidRow.updated_at]);
+await db.query("select admin_update_order_fulfillment($1,$2,'shipped','TRACK-TEST','Fixture carrier',null,$3)",[admin,paid.id,paidRow.updated_at]);
 paidRow = await one('select updated_at from orders where id=$1',[paid.id]);
 await rejects("select admin_update_order($1,$2,'processing','TRACK-TEST',$3)",[admin,paid.id,paidRow.updated_at],/Invalid transition/);
 await db.query("select admin_update_order($1,$2,'delivered','TRACK-TEST',$3)",[admin,paid.id,paidRow.updated_at]);checks++;
@@ -216,7 +217,9 @@ await db.query('select admin_save_supplier($1,$2,$3,$4)',[admin,directory.id,{..
 assert.equal((await one('select count(*) n from supplier_products where supplier_id=$1',[directory.id])).n,0);checks++;
 await db.exec('begin; set local role anon;');
 await rejects('select * from suppliers',[],/permission denied/);await db.exec('rollback');
-console.log(JSON.stringify({checks,engine:'PostgreSQL/PGlite',result:'passed'}));
+const {testOrderDispatch}=await import('./order_dispatch_database.mjs');
+const dispatchChecks=await testOrderDispatch(db,admin,customer,product);
+console.log(JSON.stringify({checks,dispatchChecks,engine:'PostgreSQL/PGlite',result:'passed'}));
 if (process.argv.includes('--serve')) {
   // Restore an obvious disposable product for browser journeys after RPC tests.
   await db.query("update products set status='active',stock=10 where id=$1",[product]);

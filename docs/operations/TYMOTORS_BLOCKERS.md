@@ -1,5 +1,24 @@
 # PHOENIX — blocages explicites
 
+## Actualisation26octobre — lot expédition et HyperSKU
+
+- MANUAL_SHIPMENT_ATOMICITY : APPROVED LOCAL,115contrôlesSQL/25HTTP et22API
+  indépendants PASS. Aucun passage de commande test en vrai suivi. Pas de preuve
+  de concurrence PostgreSQL multi-session ni de lien automatique HyperSKU.
+- HYPERSKU_TEMPLATE : modèle officiel téléchargé/hashé/inspecté ; ancien constat
+  « modèle non obtenu » désormais historique. Aucun import fournisseur testé.
+- HYPERSKU_API/STORE_ID/SKU/QUOTE : BLOCKED externe. Écran StoreSettings sans
+  boutique liée observée ; aucune connexion créée pour contourner ce blocage.
+  Relance précise autorisée et envoyée08:31:28UTC, message1a1775604c6d3c4e,
+  fil1a1624419984de5e, SENT vérifié. Attendre réponse, pas inventer de contrat.
+- ORDER_NOTIFICATION_OUTBOX : travail technique restant. Email best-effort
+  post-commit ; crash dans cette fenêtre peut empêcher notification et replay
+  ne la réémet pas. Ne pas annoncer une fiabilité d’envoi automatique démontrée.
+- OFFRES/PILOTES : aucune nouvelle validation commerciale. Aucun achat,
+  changement de prix/publication ni transmission de données client autorisés.
+
+Voir TYMOTORS_DISPATCH_AND_HYPERSKU_2026-10-26.md pour preuves et reprise.
+
 | ID | Statut | Responsable | Preuve / impact | Action attendue |
 |---|---|---|---|---|
 | IMG_POSITIVE_GATE | APPROVED local | Codex / auditeur | Correction positive par fichier + SQL98, HTTP557 ; refus/révocation/territoire/expiration vérifiés ; aucune photo modifiée | Ne pas confondre contrôle technique avec obtention des permissions des 40 produits |

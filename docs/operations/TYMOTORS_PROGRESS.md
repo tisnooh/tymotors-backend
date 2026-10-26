@@ -1,5 +1,22 @@
 # PHOENIX — journal de progression
 
+## Reprise du 26 octobre — expédition atomique et relance HyperSKU
+
+- Correctif local de l’endpoint admin existant : une transaction statut/suivi/
+  transporteur/audit/événement ; garde sandbox/paiement/compatibilité/devis,
+  suivi figé, rejouabilité sans double notification. Aucun changement visuel.
+- 1523 pytest globaux finaux PASS (18,03s) ; 26 ciblés
+  finaux PASS, 66 SQL historiques +115 nouveaux PASS, 25 HTTP/SQL/suivi public PASS.
+  Auditeur indépendant :22 tests API PASS et APPROVED LOCAL expédition manuelle.
+- Modèle XLSX HyperSKU officiel téléchargé et inspecté sans modification/import.
+  Store ID, API, véritables SKU et devis France toujours non confirmés.
+- Propriétaire a explicitement autorisé la relance ; envoyée puis relue SENT
+  le26octobre08:31:28UTC, message1a1775604c6d3c4e, fil1a1624419984de5e.
+  Aucun achat, dépense ou donnée client ; aucune activation/store/key/production.
+- Rapport de reprise : TYMOTORS_DISPATCH_AND_HYPERSKU_2026-10-26.md.
+  Suite : réponse HyperSKU et qualification pilotes, contrat puis adaptateur,
+  multi-colis réel et outbox notifications. Ne pas déclarer la boutique vendable.
+
 ## Point de départ vérifié le24octobre2026
 
 - Backend `bf749a8`, branche `codex/commerce-workflows`, propre avant PHOENIX. Frontend `c3f06c1`, aucun changement visuel.

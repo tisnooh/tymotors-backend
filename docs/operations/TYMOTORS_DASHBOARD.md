@@ -1,7 +1,18 @@
 # TYMotors — tableau de pilotage PHOENIX
 
-Dernier contrôle : 25 octobre 2026. Branche locale `codex/commerce-workflows`.
+Dernier contrôle technique : 26 octobre 2026. Branche locale `codex/commerce-workflows`.
 Ce rapport ne vaut ni publication ni autorisation de vendre.
+
+Lot expédition26octobre : transaction statut/transporteur/suivi/audit/événements,
+guards sandbox/paiement/compatibilité et rejouabilité.115SQL nouveaux+66anciens,
+25HTTP/SQL/suivipublic PASS ;1523pytest finaux PASS (18,03s),auditeur indépendant
+22API PASS,APPROVED LOCAL.
+ModèleHyperSKU officiel obtenu,aucunimport.1relanceautorisée réellement envoyée
+et relueSENT (1a1775604c6d3c4e),aucune réponse technique encore acquise dans ce lot.
+0achat/0transmissioncommande/0connexionAPI réelle. Emails post-commit encore
+best-effort,outbox à traiter. Mesures commerciales ci-dessous restent celles du
+25octobre ; ne pas les présenter comme une validation commerciale actualisée.
+Rapport : TYMOTORS_DISPATCH_AND_HYPERSKU_2026-10-26.md.
 
 Actualisation technique26octobre : formulaire livraison autorisé désormais
 implémenté.1493tests backend,669frontend/41suites,209HTTP/SQL FAKE,lint/build et

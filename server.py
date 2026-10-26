@@ -822,19 +822,15 @@ async def update_withdrawal_request(request_id: uuid.UUID, payload: WithdrawalSt
 async def update_order(order_id: str, payload: AdminOrderUpdateInput, admin: dict[str, Any] = Depends(require_admin)):
     try: order_id = str(uuid.UUID(order_id))
     except ValueError: raise HTTPException(422, "Invalid order ID")
-    before_rows = await db.select("orders", params={"select": "fulfillment_status", "id": f"eq.{order_id}", "limit": 1})
-    if not before_rows:
-        raise HTTPException(404, "Commande introuvable")
-    result = await db.rpc("admin_update_order", {"p_actor": admin["id"], "p_id": order_id, "p_status": payload.fulfillment_status,
-        "p_tracking": payload.tracking_number, "p_expected": payload.expected_updated_at})
-    await db.update("orders", {"carrier": payload.carrier, "tracking_url": payload.tracking_url}, params={"id": f"eq.{order_id}"})
-    if before_rows[0]["fulfillment_status"] != payload.fulfillment_status:
-        email_kind = {
-            "processing": "order_processing", "shipped": "order_shipped",
-            "delivered": "order_delivered", "cancelled": "order_cancelled",
-        }.get(payload.fulfillment_status)
-        if email_kind:
-            await _send_order_email(email_kind, order_id)
+    result = await db.rpc("admin_update_order_fulfillment", {"p_actor": admin["id"], "p_id": order_id,
+        "p_status": payload.fulfillment_status, "p_tracking": payload.tracking_number,
+        "p_carrier": payload.carrier, "p_tracking_url": payload.tracking_url,
+        "p_expected": payload.expected_updated_at.isoformat()})
+    # The locked SQL transition decides this, not a racy pre-read in Python.
+    if result.get('status_changed') is True and result.get('notification_kind') in {
+        'order_processing', 'order_shipped', 'order_delivered', 'order_cancelled'
+    }:
+        await _send_order_email(result['notification_kind'], order_id)
     return result
 
 
@@ -1100,6 +1096,14 @@ async def supabase_error_handler(_: Request, error: SupabaseError):
         "Variant does not belong": "Cette variante ne correspond pas à cet article.",
         "Variant unavailable": "Cette variante n’est pas disponible.",
         "Product unavailable": "Cet article n’est pas disponible.",
+        "Order changed. Reload": "La commande a changé. Rechargez-la avant d’enregistrer.",
+        "Order not found": "Commande introuvable.",
+        "Test orders require simulation": "Une commande de test doit conserver un suivi simulé.",
+        "Compatibility review required": "La compatibilité doit être vérifiée avant l’expédition.",
+        "Quoted orders require verified": "Le traitement multi-colis de cette commande doit être vérifié.",
+        "Shipment tracking is locked": "Le suivi d’une commande déjà expédiée ne peut pas être remplacé ici.",
+        "Simulated tracking cannot": "Un numéro simulé ne peut pas représenter une expédition réelle.",
+        "Invalid shipment details": "Les informations de suivi sont invalides.",
     }
     for fragment, message in messages.items():
         if fragment in error.detail:

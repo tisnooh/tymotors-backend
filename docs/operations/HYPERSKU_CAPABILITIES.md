@@ -1,5 +1,21 @@
 # PHOENIX — capacités HyperSKU et limites de preuve
 
+## Actualisation26octobre2026
+
+Le modèle XLSX a été obtenu dans le compte réel (téléchargement uniquement) et
+inspecté :16colonnes,hashc3fc64e82777c17b0882971138a1560fe7e5c1b690a398f11a513a093e63ad4b.
+Les mentions ci-dessous « modèle non obtenu » décrivent le contrôle24octobre,
+pas le dernier état. Aucun fichier n’a été importé ; les préparations internes
+restent non certifiées. StoreSettings consulté sans boutique liée visible ;
+liste AddStore standard sans canalReact/Python identifié, fenêtre fermée sansSave.
+Cela ne prouve pas l’absence de l’OpenAPI annoncée publiquement.
+
+Relance API/StoreID/SKU/devisFrance expressément autorisée, envoyée puis relueSENT
+le26octobre08:31:28UTC : message1a1775604c6d3c4e,fil1a1624419984de5e.
+Pas d’achat, clé, permission, connexion, donnéesclient ou servicepayant engagés.
+Connexion API/traitement/suivi externes toujours BLOCKED. Source du nouveau lot :
+TYMOTORS_DISPATCH_AND_HYPERSKU_2026-10-26.md.
+
 Vérification documentaire : **2026-10-24, 14:39 UTC**. Périmètre : lecture seule du code local, des dossiers antérieurs et des sources officielles publiques. Aucun message, appel API authentifié, import, achat, paiement, transmission de données client ou modification de configuration effectué. Aucun design ni fichier image modifié.
 
 ## Décision de contrôle
