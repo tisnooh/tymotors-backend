@@ -1,5 +1,29 @@
 # PHOENIX — journal de progression
 
+## Recentrage demandé — trois fournisseurs initiaux, étape photo écartée
+
+- Propriétaire : ne plus demander de confirmation/certification photo et avancer
+  les autres étapes. Partenaires initiaux : Tianzhiyu, Soyintech/Soyin, GZTM/Leju ;
+  HyperSKU séparé. Le chiffre38 désignait des pistes/sources historiques et ne
+  doit plus être présenté comme le nombre de fournisseurs de TYMotors.
+- Projection privée et CLI corrigés : trois partenaires actifs uniquement ;
+  anciens vendeurs/références/réponses conservés en historique. IMAGE_RIGHTS retiré
+  de la file de travail, DEFERRED_BY_OWNER sans autorisation inventée. Photos,
+  prix, données de production, quoteengine/SQL/checkout inchangés.
+- Rapprochement original :18SKU Soyin nommés +8anciennes annonces GZTM couvrent
+  20articles uniques (6recouvrements), pas26. Dix autres lignes Soyin n'ont pas
+  de SKU, une est absente. Aucun coût/port réel dans ces preuves ; les montants
+  des recettes restent synthétiques, hors calculs de marge.
+- Priorité : les cinq SKU Soyin existants, variante/montage/unité, devis/stock,
+  emballage/portFrance/garantie puis mapping HyperSKU. Ne pas reprendre de
+  démarche photo ni contacter les anciennes boutiques comme des fournisseurs.
+- Génération effective : backend/data/phoenix-2026-10-27-three-original-suppliers-v2,
+  dossiers40JSON/Markdown etprocurement-matrix-40.json ; première sortie conservée.
+  Une lecture du catalogue public, prix/date réutilisés exactement en v2.
+- Audit indépendant :73tests ciblés PASS, puis code et artefacts v2 APPROVED.
+  Union20/intersection6 vérifiées, mêmes40IDs/prix, SKU/URLs aux sources, aucun
+  coût/port/marge inventé. Chef2009pytest PASS (19,77s). Rapport et empreintes :
+  TYMOTORS_THREE_SUPPLIER_EXECUTION_2026-10-27.md. Aucun push/déploiement.
 ## Checkpoint réseau refunds —27octobre,13:45UTC
 
 - Réserves indépendantes corrigées,217unités finales indépendantes PASS,

@@ -1,5 +1,20 @@
 # PHOENIX — qualité et preuves
 
+## Recentrage propriétaire —27octobre, trois fournisseurs et autres étapes
+
+APPROVED LOCAL pour le plan privé :73tests dossiers indépendants PASS, puis
+vérification données v2/matrice aux sources. Chef2009pytest PASS (19,77s).
+Trois partenaires initiaux,18SKU Soyin+8annonces GZTM=20articles uniques,6communs,
+20sans référence ; pas26articles. Mêmes40IDs/prix/date réutilisés, coûts/ports/
+marges null, aucune compatibilité/offre sélectionnée inventée. État de la photo
+DEFERRED_BY_OWNER sans certification demandée ni fichier modifié. Sources externes
+conservées en historique, pas de nouvelle recherche fournisseur hors périmètre.
+
+Ce lot modifie la génération privée des dossiers et ses priorités. Il ne modifie
+ni quoteengine, SQL, checkout, design, images, prix publics ou production. Le
+travail suivant porte sur les variantes, montage, devis/stock, colis/portFrance
+et correspondances HyperSKU des3partenaires ; ne pas relancer la procédure photo.
+
 ## Refund Stripe réel isolé —27octobre
 
 APPROVED pour ce seul scénario sandbox. Chef2003pytest PASS (20,71s), SQL normal

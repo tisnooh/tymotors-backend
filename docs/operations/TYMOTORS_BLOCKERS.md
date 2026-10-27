@@ -1,5 +1,19 @@
 # PHOENIX — blocages explicites
 
+## Rectification propriétaire —27octobre
+
+La confirmation/certification des photos est **DIFFÉRÉE**, pas une dépendance
+du rapprochement fournisseurs, des variantes, des coûts, du montage ou de la
+logistique. Les anciennes mentions PENDING_RIGHTS décrivent la politique
+historique ; elles ne doivent pas faire recommencer cette étape. Aucun fichier
+image modifié, autorisation inventée ou refus explicite annulé.
+
+Périmètre courant :3partenaires initiaux, Tianzhiyu/Soyintech/GZTM-Leju, et
+HyperSKU comme prestataire distinct. Les autres sources sont archivées du travail
+actif. Restent à obtenir des3 : SKU/variantes exacts, montage, unités/prix, stock,
+colis/transportFrance, garanties et correspondances HyperSKU. Ne pas appeler
+«0fournisseur» le manque de rattachements article/offre confirmés.
+
 ## Dernier état —27octobre, recette refunds et clarifications
 
 - Réception réseau refund sandbox : RESOLVED pour le seul cas du paiement test

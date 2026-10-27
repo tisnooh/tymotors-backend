@@ -1,5 +1,22 @@
 # PHOENIX — fournisseurs, prestataire et cinq pilotes
 
+## Périmètre corrigé par le propriétaire —27octobre
+
+**Trois fournisseurs de départ : Tianzhiyu, Soyintech/Soyin et GZTM Auto/Leju.**
+HyperSKU est un prestataire distinct. Les38entrées historiques de vendeurs/sources
+ne sont pas38fournisseurs sélectionnés. Les compteurs0plus bas concernent les
+rattachements article/offre encore non confirmés, pas le choix des3partenaires.
+
+Étape de confirmation/certification photo différée sur instruction explicite ;
+pas de nouvelles démarches photos/droits pour poursuivre les autres étapes.
+Travail actif : référence/variante exacte, montage, unité/prix/stock, emballage,
+transportFrance/garantie et HyperSKU auprès de ces3partenaires uniquement.
+
+Rapprochement exécuté :18SKU Soyin et8annonces historiques GZTM couvrent20articles
+distincts (6communs). Matrice privée40articles et cinq pilotes établie, vérifiée
+indépendamment ; coûts/ports/marges inconnus restent null. Voir rapport
+TYMOTORS_THREE_SUPPLIER_EXECUTION_2026-10-27.md ; aucune autre boutique choisie.
+
 ## Clarifications envoyées — 27 octobre, 09:05 UTC
 
 Noeifevo : message1a17c9b267ef8dee (09:05:05UTC), même fil1a1639a21e37d0bb,

@@ -19,6 +19,64 @@ PILOT_REASON = ('Candidat carrosserie sans électronique : SKU et matière propo
                 'sans conflit explicite signalé dans cette ligne. Cela ne prouve ni le même produit, '
                 'ni le montage, ni les droits ; aucun fournisseur alternatif accepté.')
 
+ORIGINAL_SUPPLIERS = ('Tianzhiyu', 'Soyintech / Soyin', 'GZTM Auto / Leju')
+
+
+def apply_owner_execution_scope(result):
+    """Owner's 27 October correction, for private WORK planning only.
+
+    No image certification task, extra vendor selection, licence grant, quote
+    authorization or hosted mutation. Historical evidence remains historical.
+    Missing costs/fitments and explicit refusals must never become approvals.
+    """
+    scoped=deepcopy(result)
+    if len(scoped['articles'])!=40 or 'execution_policy' in scoped:
+        raise ValueError('Expected one unscoped forty-article dossier')
+    policy={'revision':'owner-three-suppliers-photo-step-deferred-2026-10-27',
+        'original_suppliers':list(ORIGINAL_SUPPLIERS),'hypersku_role':'sourcing_and_fulfillment_provider',
+        'photo_certification_required':False,'photo_review':'DEFERRED_BY_OWNER',
+        'images_modified':False,'permissions_granted':False,'publication_authorized':False,
+        'scope':'private_execution_plan_only_not_checkout_or_commercial_approval'}
+    scoped['execution_policy']=policy
+    for article in scoped['articles']:
+        article['historical_supplier_candidates_evidence']=article['supplier_candidates_evidence']
+        article['historical_source_reference_candidates']=article['source_reference_candidates']
+        article['sources']['historical_supplier']=article['sources']['supplier']
+        article['supplier_candidates_evidence']='Fournisseurs initiaux : '+', '.join(ORIGINAL_SUPPLIERS)
+        article['active_supplier_scope']=list(ORIGINAL_SUPPLIERS)
+        # Previous enquiries to other retailers remain traceable, never current
+        # procurement work or a reason to contact those retailers again.
+        if article.get('candidate_supplier_replies'):
+            article['historical_candidate_supplier_replies']=article.pop('candidate_supplier_replies')
+        article['blockers']=[b for b in article['blockers'] if b['code']!='IMAGE_RIGHTS']
+        article['verification_statuses']['image_rights']='DEFERRED_BY_OWNER'
+        article['photo_certification_required']=False
+        proposal=(article.get('candidate_soyin') or {}).get('source_values') or {}
+        sku=proposal.get('supplier_sku')
+        article['source_reference_candidates']='Soyintech : '+sku+' (variante à confirmer)' if sku else 'Référence à identifier chez les trois fournisseurs initiaux'
+        article['sources']['supplier']=('continuation/soyin-29-review.json#'+article['slug']
+            if article.get('candidate_soyin') else None)
+        article['next_action']=(
+            'Soyintech : rapprocher la variante et le montage du SKU '+sku+
+            ', puis obtenir coût, disponibilité et livraison France ; raccorder à HyperSKU sans achat.'
+            if sku else
+            'Retrouver la référence et variante exactes chez Tianzhiyu, Soyintech ou GZTM/Leju ; '
+            'puis montage, coût et port France. Aucun autre vendeur retenu.')
+    pending=Counter(status for a in scoped['articles'] for status in a['verification_statuses'].values()
+                    if status.startswith('PENDING_') or status=='DEFERRED_BY_OWNER')
+    scoped['counts']['pending_by_dimension']=dict(pending)
+    scoped['counts']['original_supplier_partners']=len(ORIGINAL_SUPPLIERS)
+    scoped['counts']['article_offer_mappings_confirmed']=scoped['counts'].pop('selected_suppliers_confirmed')
+    scoped['counts']['photo_reviews_deferred']=40
+    for key in ('candidate_reply_articles','documents_unreadable'):
+        if key in scoped['counts']:
+            scoped['counts']['historical_'+key]=scoped['counts'].pop(key)
+    scoped['counts']['blockers_by_owner']=dict(Counter(b['owner'] for a in scoped['articles'] for b in a['blockers']))
+    scoped['execution_digest_sha256']=sha256(json.dumps(
+        {'historical_source_digest':result['source_digest_sha256'],'policy':policy},
+        sort_keys=True,ensure_ascii=False).encode()).hexdigest()
+    return scoped
+
 
 def _index(rows, key):
     if not isinstance(rows, list) or any(not isinstance(x, dict) or not x.get(key) for x in rows):

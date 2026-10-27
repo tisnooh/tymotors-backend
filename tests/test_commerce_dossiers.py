@@ -266,7 +266,7 @@ def test_cli_optional_reply_review_is_used_without_live_request(evidence, reply_
     monkeypatch.setattr(cli, 'urlopen', no_network)
     monkeypatch.setattr(cli, 'datetime', FixedClock)
     monkeypatch.setattr(sys, 'argv', ['dossiers', '--source', str(source), '--output', str(output),
-                                    '--reply-review', str(supplement)])
+                                    '--reply-review', str(supplement),'--historical-scope'])
     cli.main()
     result = json.loads((output / 'dossiers-40.json').read_text(encoding='utf-8'))
     assert result['counts']['articles'] == 40
@@ -340,3 +340,79 @@ def test_supplement_fingerprint_also_records_the_explicit_review_clock(evidence,
                             reply_review_as_of='2026-10-27T09:00:00Z')
     assert first['source_digest_sha256'] != second['source_digest_sha256']
     assert first['counts'] == second['counts']
+
+
+def test_current_owner_scope_defers_photo_work_without_grant_or_data_mutation(evidence):
+    from app.commerce_dossiers import apply_owner_execution_scope,ORIGINAL_SUPPLIERS
+    historical=build_dossiers(*evidence,observed_at='historical')
+    original=deepcopy(historical)
+    current=apply_owner_execution_scope(historical)
+    assert historical==original
+    assert current['execution_policy']['photo_certification_required'] is False
+    assert current['execution_policy']['publication_authorized'] is False
+    assert current['counts']['original_supplier_partners']==3
+    assert current['counts']['article_offer_mappings_confirmed']==0
+    assert 'selected_suppliers_confirmed' not in current['counts']
+    assert current['counts']['photo_reviews_deferred']==40
+    assert 'PENDING_RIGHTS' not in current['counts']['pending_by_dimension']
+    for before,after in zip(historical['articles'],current['articles']):
+        assert after['active_supplier_scope']==list(ORIGINAL_SUPPLIERS)
+        assert after['verification_statuses']['image_rights']=='DEFERRED_BY_OWNER'
+        assert all(b['code']!='IMAGE_RIGHTS' for b in after['blockers'])
+        for key in ('product_id','slug','sku','image_rights_status','commercial_image_permission_confirmed',
+                    'images_changed','sale_price_changed','supplier_selected','compatibility_verified',
+                    'supplier_unit_cost_cents','supplier_currency','shipping_confirmed_cents','landed_cost_cents',
+                    'gross_margin_cents','publication_status','candidate_soyin'):
+            assert after[key]==before[key]
+        assert after['sources']['historical_supplier']==before['sources']['supplier']
+        assert after['historical_source_reference_candidates']==before['source_reference_candidates']
+
+
+def test_current_scope_preserves_explicit_refusal(evidence):
+    from app.commerce_dossiers import apply_owner_execution_scope
+    evidence[3]['articles'][0]['image_rights_status']='REFUSED'
+    current=apply_owner_execution_scope(build_dossiers(*evidence,observed_at='historical'))
+    row=next(a for a in current['articles'] if a['image_rights_status']=='REFUSED')
+    assert any(b['code']=='IMAGE_REFUSAL' for b in row['blockers'])
+    assert row['commercial_image_permission_confirmed'] is False
+
+
+def test_external_retailer_replies_are_history_not_active_procurement(evidence,reply_review):
+    from app.commerce_dossiers import apply_owner_execution_scope
+    original=build_dossiers(*evidence,observed_at='historical',reply_review=reply_review,
+        reply_review_as_of=REPLY_REVIEW_AS_OF)
+    current=apply_owner_execution_scope(original)
+    assert current['counts']['historical_candidate_reply_articles']==2
+    assert 'candidate_reply_articles' not in current['counts']
+    for a in current['articles']:
+        assert 'candidate_supplier_replies' not in a
+        assert 'droits' not in a['next_action'].lower()
+    assert sum(bool(a.get('historical_candidate_supplier_replies')) for a in current['articles'])==2
+    assert current['source_digest_sha256']==original['source_digest_sha256']
+    assert current['execution_digest_sha256']!=original['source_digest_sha256']
+
+
+def test_missing_soyin_sku_never_replaced_with_retailer_reference(evidence):
+    from app.commerce_dossiers import apply_owner_execution_scope
+    evidence[-1]['findings'][0]['source_values']=None
+    current=apply_owner_execution_scope(build_dossiers(*evidence,observed_at='historical'))
+    row=next(a for a in current['articles'] if a['slug']==PILOTS[0])
+    assert row['candidate_soyin']['source_values'] is None
+    assert 'Retrouver la référence' in row['next_action']
+    assert row['supplier_selected'] is None
+
+
+def test_current_markdown_prioritizes_non_photo_work(evidence):
+    from app.commerce_dossiers import apply_owner_execution_scope
+    from scripts.build_commercial_dossiers import render_markdown
+    current=apply_owner_execution_scope(build_dossiers(*evidence,observed_at='historical'))
+    text=render_markdown(current)
+    assert 'Trois fournisseurs initiaux uniquement' in text
+    assert 'montage, droits, devis' not in text
+    assert 'Prochaine action : Soyintech' in text
+
+
+def test_scope_cannot_be_applied_twice(evidence):
+    from app.commerce_dossiers import apply_owner_execution_scope
+    current=apply_owner_execution_scope(build_dossiers(*evidence,observed_at='historical'))
+    with pytest.raises(ValueError): apply_owner_execution_scope(current)

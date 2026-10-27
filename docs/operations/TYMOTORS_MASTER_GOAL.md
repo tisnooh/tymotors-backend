@@ -2,6 +2,27 @@
 
 Autorité : instructions du propriétaire du24octobre2026, « MAKE TYMOTORS FULLY OPERATIONAL ». Cette mission prolonge `../COMMERCE_WORKFLOWS.md`, elle ne recommence pas le projet.
 
+## Rectification prioritaire du propriétaire —27octobre2026
+
+Trois partenaires fournisseurs de départ uniquement : **Tianzhiyu, Soyintech/Soyin,
+GZTM Auto/Leju**. HyperSKU est le prestataire de sourcing/logistique envisagé.
+Les autres boutiques recensées sont des sources historiques, pas des fournisseurs
+sélectionnés ; aucune nouvelle démarche auprès d'elles sans accord.
+
+Instruction : « ignore cette étape de confirmation d'image certifiée […] et passe
+aux autres étapes ». Aucune certification photo n'est exigée dans le travail
+prioritaire ; la revue photo est différée, les fichiers restent inchangés. Ne pas
+faire de nouvelle demande de photos/droits pour poursuivre le rapprochement des
+références, variantes, montage, coûts, livraison et HyperSKU. Un statut inconnu
+ne devient pas une autorisation obtenue ; les refus explicites déjà enregistrés
+restent historiques et ne sont pas annulés.
+
+La projection privée des dossiers applique cette instruction par défaut. Ses
+compteurs distinguent **3partenaires initiaux** et **rattachements article/offre**
+à confirmer. L'ancienne sortie peut seulement être reproduite explicitement avec
+--historical-scope. Cette projection n'active aucune vente, publication, dépense
+ou changement des règles de paiement en production.
+
 ## Objectif non réduit
 
 Fournisseur d'origine → HyperSKU (prestataire envisagé, services à confirmer) → produit/variante → véhicule compatible → prix et livraison vérifiés → panier → Stripe → commande → agent TYMotors → fulfillment HyperSKU autorisé → expédition multicolis/suivi → incidents/retours/remboursements.
@@ -11,7 +32,7 @@ Réussite : cinq articles réellement validés commercialement et un parcours co
 ## Invariants absolus
 
 - Design définitif : aucun changement de couleurs, typographies, animations, espacements, bordures, effets, images/galeries, composants, responsive, mise en page ou administration. Frontend seulement pour raccorder les données aux contrôles existants ; tout besoin visuel attend un accord.
-- Images/fichiers inchangés. Signaler les droits manquants et bloquer la commercialisation, pas remplacer ou supprimer les photos. Refus SCP à respecter sans détour.
+- Images/fichiers inchangés. Étape de certification/confirmation photo différée par l'instruction du27octobre ; ne pas bloquer les autres travaux dessus. Aucun statut de droit inventé, refus explicites conservés, aucune nouvelle utilisation SCP.
 - Pas de prix public modifié, publication, déploiement production, achat, paiement réel, commande HyperSKU, engagement financier, message externe ou migration destructive sans autorisation humaine distincte.
 - Aucune référence, compatibilité, disponibilité, taxe, coût, livraison, licence, endpoint/auth API ou réponse fournisseur inventé. Conserver source/date/portée et distinguer preuve/hypothèse.
 - Ne pas exposer secrets, données client, coûts privés ou service_role. Aucun secret demandé dans le chat. Stripe isolé en test uniquement, signature et idempotence côté serveur.
