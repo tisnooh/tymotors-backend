@@ -1,5 +1,26 @@
 # PHOENIX — qualité et preuves
 
+## Refund Stripe réel isolé —27octobre
+
+APPROVED pour ce seul scénario sandbox. Chef2003pytest PASS (20,71s), SQL normal
+66+115+65 PASS ; auditeur217unités finales PASS (3,75s),31HTTP/SQL synthétiques
+PASS, puis artefacts réels APPROVED. Ancien paiement archivé restauré, pas
+réauthentifié. Un seul refund3500centimesEUR créé via le profil isolé, vrai webhook
+signé, journal/projection/financial_review_required et hold contrôlés. Événements
+refund.created et charge.refunded cumulatif ne doublent pas le montant.
+
+Deux rejets ont conduit à borner les rapports sous la racine privée et vérifier
+le secret du listener, puis à invalider toute bannière supplémentaire et
+recontrôler après le dernier await. Aucun write avant approbation du correctif.
+La recette locale a aussi corrigé le bootstrap financier sans effacer d'historique.
+Lecture SDK Chef séparée13:45:48UTC : un seul refund succeeded concordant ; pas
+d'appel API de l'auditeur. Processus fermés, versions frontend/images inchangées.
+
+BLOCKED/hors périmètre : fulfillment actif, HyperSKU réel, commercialisation et
+concurrence PostgreSQL hébergée. Aucun nouveau paiement/session/achat/email client,
+déploiement, prix/design/photo modifié. Détail et hashes dans
+TYMOTORS_REFUND_RECEIPT_QA_2026-10-27.md ; ne pas relancer le paiement remboursé.
+
 ## Réponses candidates et descriptions — 27 octobre, 07h UTC
 
 APPROVED LOCAL preuves/copy et moteur après rejet de chronologie : source2099

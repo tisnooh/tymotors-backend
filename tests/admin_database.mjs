@@ -1,6 +1,8 @@
 // Disposable PostgreSQL engine: no hosted database or production fixtures.
 import { readFile, access } from 'node:fs/promises';
 import assert from 'node:assert/strict';
+const archiveFixture=process.argv.includes('--refund-archive');
+if (archiveFixture && !process.argv.includes('--serve')) throw new Error('Archive fixture requires owned loopback server');
 let runtime;
 for (const url of [new URL('../tools/sql-tests/node_modules/@electric-sql/pglite/dist/index.js',import.meta.url),
                   new URL('../.admin-test-runtime/node_modules/@electric-sql/pglite/dist/index.js',import.meta.url),
@@ -221,10 +223,12 @@ assert.equal((await one('select count(*) n from supplier_products where supplier
 await db.exec('begin; set local role anon;');
 await rejects('select * from suppliers',[],/permission denied/);await db.exec('rollback');
 const {testOrderDispatch}=await import('./order_dispatch_database.mjs');
-const dispatchChecks=await testOrderDispatch(db,admin,customer,product);
+// The opt-in receipt fixture needs an empty financial journal. Do not delete
+// immutable fixtures produced by the ordinary dispatch/outbox test suites.
+const dispatchChecks=archiveFixture ? null : await testOrderDispatch(db,admin,customer,product);
 const {testOrderOutbox}=await import('./order_outbox_database.mjs');
-const outboxChecks=await testOrderOutbox(db,admin,customer,product);
-console.log(JSON.stringify({checks,dispatchChecks,outboxChecks,engine:'PostgreSQL/PGlite',result:'passed'}));
+const outboxChecks=archiveFixture ? null : await testOrderOutbox(db,admin,customer,product);
+console.log(JSON.stringify({checks,dispatchChecks,outboxChecks,archiveFixture,engine:'PostgreSQL/PGlite',result:'passed'}));
 if (process.argv.includes('--serve')) {
   // Restore an obvious disposable product for browser journeys after RPC tests.
   await db.query("update products set status='active',stock=10 where id=$1",[product]);

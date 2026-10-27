@@ -1,5 +1,28 @@
 # PHOENIX — blocages explicites
 
+## Dernier état —27octobre, recette refunds et clarifications
+
+- Réception réseau refund sandbox : RESOLVED pour le seul cas du paiement test
+  archivé du26octobre.3500centimesEUR réellement remboursés en sandbox, webhook
+  signé et journal/projection/hold contrôlés. Lecture SDK séparée : un seul
+  refund succeeded.217unités/31HTTP-SQL indépendants et artefacts APPROVED ;
+  Chef2003pytest PASS. Ne pas relancer ce paiement déjà remboursé.
+- PAYMENT_RECONCILE global reste PARTIEL : cette preuve ne résout pas toutes les
+  tentatives ambiguës, litiges, réservations ou interventions humaines. Pas de
+  tâche fulfillment active restaurée ni de concurrence hébergée testée ici.
+- Clarifications Noeifevo et Ikon : envoyées et vérifiées SENT09:05:05/09:05:30UTC,
+  sans engagement. Les mentions « préparées, non envoyées » plus bas sont
+  historiques. Recherche entrante élargie après09:05 : newsletters, aucune
+  nouvelle réponse technique fournisseur trouvée. Ne pas doubler les messages.
+- Les40dossiers commerciaux et cinq pilotes ne reçoivent aucune validation de
+  ce lot : références/variantes, droits, coûts, portFrance et mappings/canal
+  HyperSKU réels nécessitent toujours des preuves externes. Aucun déploiement,
+  prix public, photo ou design modifié.
+- Quota antérieurement atteint, disponibilité ordinaire officiellement rétablie
+  avant réaudit. Aucun compte alternatif, reset/crédit consommé ou automatisme
+  de contournement utilisé. Preuves et prochaine action dans le rapport dédié
+  TYMOTORS_REFUND_RECEIPT_QA_2026-10-27.md et PROGRESS.
+
 ## Fournisseurs — actualisation du 27 octobre, 07h UTC
 
 Deux réponses désormais accessibles ont été analysées (Ikon/Noe), sans valider

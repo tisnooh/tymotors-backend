@@ -1,4 +1,25 @@
-# TYMotors — clarifications préparées, non envoyées
+# TYMotors — clarifications du 27 octobre
+
+## Statut actualisé — envoyées et relues à 09:05 UTC
+
+Le « Continue » du propriétaire, suivant la demande d'accord précise sur ces
+deux textes et destinataires, a été traité comme l'autorisation de poursuivre
+ces deux clarifications uniquement. Fils relus avant envoi : aucune réponse
+technique nouvelle ni clarification déjà envoyée en doublon.
+
+| Destinataire | Parent Gmail | Message envoyé | Heure UTC | Fil |
+|---|---|---|---|---|
+|sale@noeifevo.de|1a17b15d835fb9cb|1a17c9b267ef8dee|09:05:05|1a1639a21e37d0bb|
+|support@ikonmotorsports.com|1a17b37757089ac8|1a17c9b880d9b930|09:05:30|1a1639a1d0eae4b9|
+
+Chaque message a été relu via Gmail : libellé SENT, destinataire exact, fil et
+In-Reply-To conformes, texte préparé reproduit à l'identique avant la citation
+automatique du message parent. Premier comparateur trop strict a signalé cette
+citation ajoutée par Gmail ; corps propre vérifié sans renvoi du message.
+Aucun achat, engagement, pièce jointe ou renseignement client transmis.
+Cette autorisation ne vaut pas mandat permanent pour d'autres messages.
+
+## Historique de préparation — avant accord
 
 Ces textes ne sont pas des messages envoyés, des devis acceptés ou des commandes.
 Les réponses entrantes ont été rapprochées avec les demandes précédentes avant

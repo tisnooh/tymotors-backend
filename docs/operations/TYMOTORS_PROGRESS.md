@@ -1,5 +1,68 @@
 # PHOENIX — journal de progression
 
+## Checkpoint réseau refunds —27octobre,13:45UTC
+
+- Réserves indépendantes corrigées,217unités finales indépendantes PASS,
+  APPROVED LOCAL avant réseau. Chef2003pytest PASS,20,71s ; même version du
+  lanceur contrôlée par empreinte avant exécution. SQL habituel246 PASS.
+- Recette réelle UNE fois, exit0 : refund sandbox3500EURcentimes sur le paiement
+  du26octobre, webhook authentique journalisé, commande locale refunded,
+  financial_review_required=true et hold conservé ; autres tables intactes.
+- Lecture SDK séparée13:45:48UTC : un seul refund, succeeded, montant/devise/PI
+  concordants. Aucune nouvelle charge/session, commande fournisseur, dépense
+  réelle, email, modification design/photo/prix ou publication. Ports fermés.
+- Audit final des artefacts réseau APPROVED, accepté par le Chef : mêmes
+  références/montants/données ; refund.created3500 et charge.refunded cumulatif
+  3500 sans double comptage. Aucun appel API par l'auditeur, lecture SDK du Chef
+  distincte. Dossier privé
+  refund-2026-10-27-existing-payment-1 : résultat/snapshot/confirmation SDK.
+  Rapport autonome TYMOTORS_REFUND_RECEIPT_QA_2026-10-27.md. Ne pas relancer ce
+  paiement déjà remboursé, ni en créer un autre pour répéter la preuve.
+- Limites conservées : ancien événement de paiement restauré non réauthentifié,
+  aucune tâche fulfillment active testée par cette fixture, HyperSKU réel non
+  connecté/transmis, aucun produit commercial validé par ce lot.
+
+## Reprise du 27 octobre, 09h UTC — envois et préparation refunds réseau
+
+- Deux clarifications présentées précédemment envoyées après « Continue » du
+  propriétaire : Noeifevo09:05:05UTC, message1a17c9b267ef8dee, et
+  Ikon09:05:30UTC, message1a17c9b880d9b930. Fils relus, SENT/destinataires/parents
+  et corps exacts avant citation automatique Gmail vérifiés ; aucun doublon,
+  achat, pièce jointe, engagement ni donnée client.
+- Recherche récente : newsletter HyperSKU animaux, pas de réponse technique
+  nouvelle. Aucun devis, droit, montage ou mapping commercial approuvé.
+- Profil Stripe isolé relu par whoami, clé live absente. Lecture SDK réelle :
+  Checkout/PI de l'ancien cas35EUR cohérents avec l'archive, livemodefalse,
+  paiement réussi et0remboursement existant. Aucune demande de remboursement,
+  nouvelle charge ou session créée par ce contrôle.
+- Lanceur tests/run_stripe_refund_sandbox.py et réception dédiée sans clé API/
+  clientStripe préparés. Importateur limité à six lignes financières sur PGlite
+  jetable. Aucun fichier applicatif/migration/frontend modifié.
+- Chef final :1999pytest PASS (17,66s),31contrôles HTTP/SQL locaux synthétiques PASS,
+  SQL habituel66+115+65 PASS. Premier essai local REJECTED : le bootstrap habituel
+  crée déjà un devis ; option de fixture --refund-archive ajoutée, sans effacer
+  l'historique ni changer le comportement des suites habituelles.
+- Rollback d'un import invalide, protections/RLS restaurées, import exact,
+  refus d'un doublon, signatures invalides/live/autrePI, journal et hold financier
+  vérifiés localement. Aucune signature Stripe réelle déduite des événements HMAC
+  synthétiques. Ancien paiement archivé non réauthentifié et aucune tâche active
+  de fulfillment restaurée. Recette réseau refunds toujours NON exécutée.
+- Sous-agent importateur interrompu par limite d'utilisation avant livraison
+  finale : ne pas le relancer ni créer un remplaçant pour contourner la limite.
+  À13:37UTC le contrôle officiel indique ordinaryUsageAllowed=true, sans limite
+  atteinte. Reprise du même auditeur indépendant demandée, sans compte/modèle
+  alternatif ni dépense/crédit supplémentaire. Validation indépendante requise
+  avant toute écriture Stripe ; aucun remboursement demandé à ce point.
+- Auditeur :199unités pré-correction et31contrôles locaux PASS, puis REJECTED
+  pour sortie potentiellement publique et secret du listener non comparé. Deux
+  corrections du lanceur +14tests ajoutés ; réaudit final en cours. Pas de write
+  Stripe anticipé, staged gitleaks sans fuite ni nouvelle exception.
+- Lecture SDK stricte répétée avec le validateur Checkout commun : original35EUR,
+  compte de test, identité/destination/montants concordants, aucun refund existant.
+  Recherche mail depuis09:05UTC : deux SENT déjà connus, aucune réponse technique
+  supplémentaire dans la recherche fournisseurs. Rapport détaillé :
+  TYMOTORS_REFUND_RECEIPT_QA_2026-10-27.md.
+
 ## Réponses fournisseurs et catalogue — 27 octobre, 07h UTC
 
 - Deux réponses maintenant visibles, Ikon27oct02:36UTC et Noeifevo01:59UTC,

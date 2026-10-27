@@ -1,5 +1,18 @@
 # PHOENIX — fournisseurs, prestataire et cinq pilotes
 
+## Clarifications envoyées — 27 octobre, 09:05 UTC
+
+Noeifevo : message1a17c9b267ef8dee (09:05:05UTC), même fil1a1639a21e37d0bb,
+renvoi du manuel complet/SKU et rappel du devis hypothétique d'un kitFrance.
+Ikon : message1a17c9b880d9b930 (09:05:30UTC), même fil1a1639a1d0eae4b9,
+droits des fichiers GBK et fixations/contenu/garantie. « Continue » après demande
+d'accord précise traité comme autorisation de ces deux clarifications ; aucun
+autre envoi déduit. Fils relus avant, puis deux SENT/destinataires/In-Reply-To/
+corps exacts vérifiés, citation parent automatique distincte. Aucune commande,
+dépense ou donnée client. Réponses techniques encore attendues ; newsletter
+HyperSKU animaux reçue ce matin n'est pas une réponse de fulfillment.
+Voir `TYMOTORS_SUPPLIER_CLARIFICATIONS_2026-10-27.md` pour l'historique et preuves.
+
 ## Nouvelles réponses traitées — 27 octobre, 07h UTC
 
 Le constat de recherche précédent n'est plus l'état actuel. Deux réponses relues :
