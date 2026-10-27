@@ -1,5 +1,24 @@
 # PHOENIX — qualité et preuves
 
+## Réponses candidates et descriptions — 27 octobre, 07h UTC
+
+APPROVED LOCAL preuves/copy et moteur après rejet de chronologie : source2099
+acceptée initialement, puis contrôle received<=recorded<=clockUTCexplicite ajouté.
+83tests ciblés indépendants PASS (67dossiers+16copy), contre-exemples sources/revues
+futures refusés, historique prix antérieur accepté. Chefglobal1786pytest PASS
+en17,98s,exit0 ; avertissementStarlette/httpxpréexistant.
+
+Quatre mails sources relus indépendamment, PDF taille/hash/absenceEOF corroborés ;
+aucune propriété technique du manuel inférée.40dossiers finaux07:11:55UTC,40draft,
+2réponses candidates,1docillisible,0validation et0coût/port/margeconfirmé. Original
+et première génération conservés, v2nouveaunonécrasant. Description GR86 conditionnelle
+préparée sous gardesUUID/slug/ancien texte ; statut fournisseur/compatibilité inchangé.
+Pas de frontend/photo/prix, commande fournisseur ou publication modifiés.
+Contrôle final indépendantv2 : hashes conformes, chronologie etnulls vérifiés,
+APPROVED LOCAL seulement. Gitleaks staged final sans fuite, diffcheck PASS ;
+aucune règle de détection désactivée pour une fausse alerte sur une ligne de prose.
+Rapport : `TYMOTORS_SUPPLIER_REPLIES_2026-10-27.md`.
+
 ## Remboursements test — 27 octobre
 
 Chef : 320 ciblés PASS (8,83 s), puis 792 HTTP/SQL finaux PASS

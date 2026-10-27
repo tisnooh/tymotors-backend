@@ -1,5 +1,28 @@
 # PHOENIX — journal de progression
 
+## Réponses fournisseurs et catalogue — 27 octobre, 07h UTC
+
+- Deux réponses maintenant visibles, Ikon27oct02:36UTC et Noeifevo01:59UTC,
+  relues avec leurs fils/parents. GBK LHD uniquement, pas guide/pro recommandé ;
+  prix Noe générique sans montant/SKU et manuel inexploitable. Aucun produit validé.
+- PDF téléchargé via Gmail après échec connecteur ; taille/hash préservés,
+  Poppler/pypdf/pdfminer EOF et aperçu Gmail impossible. Aucun contenu technique
+  inventé. Notification Alibaba2non-lus rapprochée avec introduction Harrison22oct,
+  pas nouvelle validation ; aucun message ni permission Trade Agent acceptés.
+- Overlay description GR86 préparé sous garde UUID/slug/ancien texte, sans modifier
+  photo/design/prix. Deux demandes complémentaires préparées, non envoyées ;
+  autorisation précise demandée. Les cinq pilotes restent non approuvés.
+- Moteur dossiers accepte des preuves candidates séparées, schéma fermé et horloge
+  UTC explicite. Auditeur a rejeté l'absence de contrôle des dates futures : corrigée.
+  83ciblés indépendants PASS puis1786pytest globaux Chef PASS (17,98s).
+- Génération finale40dossiers/40draft,2réponses,1document illisible,0validation dans
+  `backend/data/phoenix-2026-10-27-supplier-replies/dossiers-v2/`, observation07:11:55UTC.
+  Première génération conservée comme historique pré-correction, ne pas écraser.
+  Rapport : `TYMOTORS_SUPPLIER_REPLIES_2026-10-27.md`.
+- Auditeur final : artefactsv2/hashes/identités/chronologie/nulls et rapport
+  APPROVED LOCAL. Gitleaks staged final sans fuite, aucune allowlist ajoutée ;
+  une prose ambiguë ressemblant à une clé a été reformulée. Aucun envoi effectué.
+
 ## Reprise du 27 octobre — remboursements sandbox
 
 - Recherche des réponses fournisseurs complètes vers 03:10 UTC : aucune nouvelle

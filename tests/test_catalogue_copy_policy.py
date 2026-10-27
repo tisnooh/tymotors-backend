@@ -4,10 +4,10 @@ import pytest
 from app.catalogue_copy_policy import REVIEW, _validated_changes, reviewed_product_copy
 
 
-def test_only_eight_reviewed_titles_and_two_descriptions_change_without_prices_or_validation():
-    assert len(REVIEW['changes']) == 9
+def test_only_eight_reviewed_titles_and_three_descriptions_change_without_prices_or_validation():
+    assert len(REVIEW['changes']) == 10
     assert sum('name' in c['fields'] for c in REVIEW['changes']) == 8
-    assert sum('description' in c['fields'] for c in REVIEW['changes']) == 2
+    assert sum('description' in c['fields'] for c in REVIEW['changes']) == 3
     assert all(set(c['fields']) <= {'name', 'description'} for c in REVIEW['changes'])
     for change in REVIEW['changes']:
         product = {'id': change['id'], 'slug': change['slug'], 'price': 39, 'is_verified': False,
@@ -58,7 +58,25 @@ def test_synthetic_forty_product_catalogue_preserves_non_editorial_data_and_inpu
         if after != before:
             changed.append(item['slug'])
         assert reviewed_product_copy(after) is after
-    assert len(changed) == 9
+    assert len(changed) == 10
+
+
+def test_gr86_candidate_restriction_does_not_select_or_validate_a_supplier():
+    change = next(c for c in REVIEW['changes'] if c['slug'] == 'toyota-gr86-mirror-caps')
+    correction = change['fields']['description']
+    before = {'id':change['id'],'slug':change['slug'],'description':correction['before'],
+              'status':'draft','is_verified':False,'supplier_id':None,'compatibilities':[],
+              'price_cents':6900,'images':['UNCHANGED-IMAGE']}
+    result = reviewed_product_copy(before)
+    assert result['description'] == correction['after']
+    assert 'RMC-SBRZ22JDM-GBK uniquement' in result['description']
+    assert 'LHD' in result['description'] and 'RHD' in result['description']
+    assert 'ne vaut pas sélection' in result['description']
+    assert 'ancienne GT86' in result['description']
+    assert {k:v for k,v in result.items() if k!='description'} == {
+        k:v for k,v in before.items() if k!='description'}
+    assert correction['before'] == before['description']
+    assert 'gmail-message:1a17b37757089ac8' in correction['proof']
 
 
 def test_porsche_spoiler_does_not_imply_a_complete_kit_or_reinstate_unsupported_features():

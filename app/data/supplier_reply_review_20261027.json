@@ -1,0 +1,131 @@
+{
+  "recorded_at": "2026-10-27T07:05:00Z",
+  "scope": "candidate_supplier_evidence_only",
+  "articles": [
+    {
+      "product_id": "bd03f31c-b1c3-46f5-9054-53f08523dc40",
+      "slug": "toyota-gr86-mirror-caps",
+      "supplier_name": "Ikon Motorsports",
+      "candidate_reference": "RMC-SBRZ22JDM-GBK",
+      "reply_status": "RESPONSE_INCOMPLETE",
+      "sources": [
+        {
+          "message_id": "1a166961544fedb9",
+          "thread_id": "1a1639a1d0eae4b9",
+          "received_at": "2026-10-23T02:27:48Z",
+          "evidence_ref": "gmail-message:1a166961544fedb9"
+        },
+        {
+          "message_id": "1a17601118461fd5",
+          "thread_id": "1a1639a1d0eae4b9",
+          "received_at": "2026-10-26T02:19:01Z",
+          "evidence_ref": "gmail-message:1a17601118461fd5"
+        },
+        {
+          "message_id": "1a17b37757089ac8",
+          "thread_id": "1a1639a1d0eae4b9",
+          "received_at": "2026-10-27T02:36:32Z",
+          "evidence_ref": "gmail-message:1a17b37757089ac8"
+        }
+      ],
+      "confirmed_candidate_facts": [
+        {
+          "fact": "declared_models_and_years",
+          "value": "Pour GBK uniquement, le vendeur déclare Subaru BRZ et Toyota GR86 2022-2026. Aucune extension à GT86, à CFL ou à une autre variante approvisionnée.",
+          "scope": "candidate_only",
+          "evidence_refs": ["gmail-message:1a17601118461fd5"]
+        },
+        {
+          "fact": "material_and_construction",
+          "value": "Le vendeur confirme ABS, surcoques et paire gauche/droite pour GBK. Cela ne prouve pas une pièce de remplacement ni du carbone véritable.",
+          "scope": "candidate_only",
+          "evidence_refs": ["gmail-message:1a17601118461fd5"]
+        },
+        {
+          "fact": "steering_restriction",
+          "value": "GBK : conduite à gauche (LHD) uniquement ; les versions à conduite à droite (RHD) sont exclues pour ce candidat. Le pays France ne prouve pas le côté de conduite du véhicule.",
+          "scope": "candidate_only",
+          "evidence_refs": ["gmail-message:1a17b37757089ac8"]
+        },
+        {
+          "fact": "installation_documentation",
+          "value": "Pas d'instructions de montage proposées pour cet article ; installation professionnelle recommandée. Méthode de fixation et adhésif fourni non confirmés.",
+          "scope": "candidate_only",
+          "evidence_refs": ["gmail-message:1a17b37757089ac8"]
+        },
+        {
+          "fact": "direct_shipping_restriction",
+          "value": "Le vendeur ne livre pas directement en France et limite ses livraisons aux 48 États contigus des États-Unis. Aucun transitaire n'a été choisi ; coût rendu et acheminement HyperSKU non confirmés.",
+          "scope": "candidate_only",
+          "evidence_refs": ["gmail-message:1a166961544fedb9"]
+        }
+      ],
+      "documents": [],
+      "unresolved": [
+        "Équivalence avec la pièce réellement présentée et SKU d'approvisionnement retenu",
+        "Forme/OE des rétroviseurs et exclusions d'équipements",
+        "Fixations, dimensions, photos authentiques du dessous et contenu des adhésifs",
+        "Autorisation commerciale des fichiers et variantes existantes",
+        "Prix daté, livraison France exploitable, garantie et retours",
+        "Mapping HyperSKU, responsable opérationnel et validation administrateur"
+      ],
+      "next_action": "Faire confirmer les équipements/fixations et les droits GBK manquants ; aucun fournisseur alternatif, acheminement ni compatibilité produit ne sont validés. Conserver l'avertissement LHD du candidat sans déduire le côté de conduite depuis le pays."
+    },
+    {
+      "product_id": "0e292931-1f20-4fd3-9cf7-5639fa440e09",
+      "slug": "carplay-screen-12",
+      "supplier_name": "Noeifevo",
+      "candidate_reference": null,
+      "reply_status": "RESPONSE_INCOMPLETE",
+      "sources": [
+        {
+          "message_id": "1a17b15d835fb9cb",
+          "thread_id": "1a1639a21e37d0bb",
+          "received_at": "2026-10-27T01:59:23Z",
+          "evidence_ref": "gmail-message:1a17b15d835fb9cb"
+        }
+      ],
+      "confirmed_candidate_facts": [
+        {
+          "fact": "supplier_unit_price_claim",
+          "value": "Le vendeur déclare que les prix du site sont unitaires et incluent le port et d'autres frais applicables. Aucun montant, devise, SKU, contenu exact, Incoterm ni devis France daté n'est donné : aucun coût rendu confirmé ne peut en être déduit.",
+          "scope": "supplier_generic_claim",
+          "evidence_refs": ["gmail-message:1a17b15d835fb9cb"]
+        },
+        {
+          "fact": "supplier_installation_claim",
+          "value": "Le vendeur présente l'installation comme un branchement direct et renvoie au manuel joint. Faute de manuel lisible et de modèle exact confirmé, ce propos ne valide ni câblage, ni alimentation, ni compatibilité universelle.",
+          "scope": "supplier_generic_claim",
+          "evidence_refs": ["gmail-message:1a17b15d835fb9cb"]
+        }
+      ],
+      "documents": [
+        {
+          "filename": "User Manual GPS Navigation.pdf",
+          "bytes": 10616832,
+          "sha256": "8a26b413fc9aebe52aae9eec96d45906efa8ef9f81efa0ef9eaccd770b837dac",
+          "status": "UNREADABLE_INCOMPLETE",
+          "evidence_ref": "gmail-message:1a17b15d835fb9cb",
+          "checks": [
+            "Taille identique à la métadonnée MIME ; téléchargement Gmail natif terminé",
+            "Connecteur read_attachment : INVALID_ARGUMENT sur les identifiants fournis",
+            "Poppler pdfinfo : entrée xref invalide, trailer manquant et xref illisible",
+            "pypdf strict=False : PdfStreamError, fin de flux inattendue et marqueur EOF manquant",
+            "pdfplumber/pdfminer : Unexpected EOF",
+            "Visionneuse Gmail : Impossible de prévisualiser le fichier",
+            "Copie originale préservée hors dépôt ; hash de la copie identique au téléchargement"
+          ]
+        }
+      ],
+      "unresolved": [
+        "Manuel complet non tronqué, modèle/SKU exact et photo d'étiquette",
+        "Diagonale et résolution natives de l'écran ; résolutions/fréquences des caméras",
+        "Connecteurs, alimentation, câbles et contenu du kit ; restrictions véhicule/téléphone",
+        "Devis comparatif non engageant pour un kit à destination de la France déjà demandé le 26 octobre",
+        "Frais et taxes détaillés, Incoterm, délais, garantie et retours",
+        "Autorisations des photographies, documents applicables au modèle et mapping HyperSKU"
+      ],
+      "next_action": "Préparer une demande de renvoi du manuel complet et de confirmation du modèle exact ; rappeler le scénario déjà communiqué d'un kit pour la France, sans quantité d'achat engagée. Ne pas traiter la déclaration générale de port inclus comme un devis validé."
+    }
+  ]
+}

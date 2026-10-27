@@ -1,5 +1,25 @@
 # PHOENIX — fournisseurs, prestataire et cinq pilotes
 
+## Nouvelles réponses traitées — 27 octobre, 07h UTC
+
+Le constat de recherche précédent n'est plus l'état actuel. Deux réponses relues :
+Ikon (message `1a17b37757089ac8`, 02:36:32 UTC) et Noeifevo (message
+`1a17b15d835fb9cb`, 01:59:23 UTC), associées aux bons fils et demandes du26octobre.
+GBK candidat : LHD uniquement, pas guide et professionnel recommandé ; droits,
+fixations et transportFrance inconnus. Noe : prix sites unitaires port inclus
+déclarés sans montant/SKU, manuel reçu mais illisible/tronqué, rien validé.
+
+Notification Alibaba1a17bdc40ebdc9e9 vérifiée dans le centre messages : deux
+messages Harrison22oct de présentation, pas deux confirmations nouvelles du27.
+Aucun accord Trade Agent, commande ou message envoyé. Deux clarifications
+préparées séparément, en attente d'autorisation ; aucun SENT présumé.
+
+Les40dossiers ont été régénérés à07:11:55UTC dans
+`backend/data/phoenix-2026-10-27-supplier-replies/dossiers-v2/`, avec preuves
+candidates séparées et date de revue contrôlée.40draft,0validé,2réponses intégrées,
+1document inexploitable ; aucun fournisseur retenu, coût/port/marge confirmé.
+Rapport : `TYMOTORS_SUPPLIER_REPLIES_2026-10-27.md`.
+
 ## Contrôle du 27 octobre vers 03:10 UTC
 
 Recherche incluant les spams et messages depuis le 26 octobre sur les domaines et

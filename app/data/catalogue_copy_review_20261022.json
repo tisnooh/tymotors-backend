@@ -1,10 +1,27 @@
 {
   "reviewed_on": "2026-10-22",
-  "decision": "Local-only editorial restrictions, rechecked across all 40 live titles/descriptions on 2026-10-23. Existing eight title restrictions and dashcam wording retained; one Porsche spoiler opening no longer implies a complete supplied assembly. No product, supplier identity, fitment, right, price, delivery, warranty or publication approved.",
-  "rechecked_on": "2026-10-23",
+  "decision": "Local-only editorial restrictions. Existing eight title restrictions and two description corrections retained. On 2026-10-27 the current GR86 description was reread from the public API and supplemented with the exact Ikon GBK candidate's written LHD restriction, without selecting that supplier or validating product fitment, rights, price, delivery, warranty or publication. No image or design changed.",
+  "rechecked_on": "2026-10-27",
   "audit_report": "data/catalogue-review-2026-10-23/catalogue/product-copy-audit.json",
   "preserve_future_edits": true,
   "changes": [
+    {
+      "id": "bd03f31c-b1c3-46f5-9054-53f08523dc40",
+      "slug": "toyota-gr86-mirror-caps",
+      "fields": {
+        "description": {
+          "before": "Des coques pour un projet Toyota GR86. La source du visuel concerne la GR86 ; elle ne démontre pas un montage sur l’ancienne GT86. Vérifier la génération, la forme et la référence des rétroviseurs ainsi que leurs équipements. Le type de coque, la finition et les côtés livrés restent à confirmer sur la variante exacte.",
+          "after": "Des coques pour un projet Toyota GR86, sans compatibilité démontrée avec l’ancienne GT86. Pour la référence candidate Ikon RMC-SBRZ22JDM-GBK uniquement, le vendeur précise : conduite à gauche (LHD) exclusivement, versions à conduite à droite (RHD) exclues et installation professionnelle recommandée. Cette restriction ne vaut pas sélection de ce fournisseur ni validation de la pièce présentée. La variante réellement approvisionnée, la forme et les équipements des rétroviseurs, les fixations et le contenu livré restent à confirmer.",
+          "reason": "Conserver la restriction écrite LHD du candidat GBK, sans l'étendre à CFL/GT86 ni transformer une proposition fournisseur en compatibilité ou référence d'approvisionnement validée. Ne pas déduire LHD du pays France.",
+          "proof": [
+            "gmail-message:1a17b37757089ac8",
+            "gmail-message:1a17601118461fd5",
+            "app/data/supplier_reply_review_20261027.json#toyota-gr86-mirror-caps",
+            "docs/operations/TYMOTORS_SUPPLIER_REPLIES_2026-10-27.md"
+          ]
+        }
+      }
+    },
     {
       "id": "0c5e4a70-a2ec-4603-8926-1b869e6b02f9",
       "slug": "porsche-911-rear-spoiler",

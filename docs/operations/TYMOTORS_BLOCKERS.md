@@ -1,5 +1,19 @@
 # PHOENIX — blocages explicites
 
+## Fournisseurs — actualisation du 27 octobre, 07h UTC
+
+Deux réponses désormais accessibles ont été analysées (Ikon/Noe), sans valider
+un article. Le constat « aucune confirmation complémentaire visible03:10 »
+ci-dessous reste historique. GBK LHD seulement, montage/transport/droits toujours
+incomplets ; Noe modèle/SKU/coût inconnu, manuel inexploitable avec EOF corroboré.
+Les deux clarifications sont préparées mais non envoyées, accord demandé.
+
+COMMERCIAL_5/HYPERSKU restent BLOCKED.40brouillons observés07:11:55UTC,
+2réponses candidates intégrées dans `dossiers-v2`,0approbation/0margecalculable.
+Moteur suivi rejeté puis corrigé sur dates futures,83ciblés indépendants et
+1786pytest globaux PASS ; aucun prix/photo/publication touché.
+Voir `TYMOTORS_SUPPLIER_REPLIES_2026-10-27.md` pour preuves et reprise.
+
 ## Reprise du 27 octobre — état non masqué
 
 - Les réponses recherchées vers 03:10 UTC n'apportent aucune nouvelle confirmation
