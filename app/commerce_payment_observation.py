@@ -146,6 +146,7 @@ class CommercePaymentObservation:
         refund_invalid = type(refund_amount) is not int or not 0 <= refund_amount <= order['total_cents']
         refund_present = (order['status'] == 'refunded' or order['payment_status'] == 'refunded'
                           or (type(refund_amount) is int and refund_amount > 0))
+        financial_hold = order.get('financial_review_required', False) is not False
         local_conflict = (
             (order['payment_status'] == 'paid' and order['status'] not in {'paid','cancelled','refunded'})
             or (order['status'] == 'paid' and order['payment_status'] != 'paid')
@@ -154,6 +155,8 @@ class CommercePaymentObservation:
             result['reason_codes'].append('local_refund_state_invalid')
         if refund_present:
             result['reason_codes'].append('quoted_refund_requires_dedicated_transaction')
+        if financial_hold:
+            result['reason_codes'].append('signed_financial_event_requires_review')
         if local_conflict:
             result['reason_codes'].append('local_financial_state_conflict')
         if not attempt['session_id']:
@@ -201,7 +204,7 @@ class CommercePaymentObservation:
             provider_payment_status=verified['payment_status'],
             provider_financial_valid=verified['financial_valid'],
             destination_matches=verified['destination_matches'])
-        if refund_invalid or refund_present:
+        if refund_invalid or refund_present or financial_hold:
             result['observation_status'] = 'refund_review_required'
         elif local_conflict:
             result['observation_status'] = 'local_financial_state_review'

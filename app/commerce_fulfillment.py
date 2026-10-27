@@ -137,7 +137,8 @@ def summarize_test_fulfillment(order, tasks, group_keys):
         parcels.append({'reference':'SIM-'+identity,'state':state,'tracking_number':tracking})
     if tasks and seen_groups != group_keys:
         raise FulfillmentPlanError('incomplete_simulation_tasks')
-    held = (order.get('status') in {'cancelled','refunded'} or order.get('refunded_amount_cents', 0) != 0)
+    held = (order.get('status') in {'cancelled','refunded'} or order.get('refunded_amount_cents', 0) != 0
+            or order.get('financial_review_required', False) is not False)
     states = [p['state'] for p in parcels]
     if held: aggregate = 'held'
     elif order.get('payment_status') != 'paid': aggregate = 'awaiting_payment'

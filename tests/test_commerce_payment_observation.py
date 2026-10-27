@@ -89,6 +89,19 @@ async def test_locally_recorded_payment_does_not_claim_ship_or_consume(wired):
 
 
 @pytest.mark.anyio
+@pytest.mark.parametrize('hold', [True, None, 'false', 0])
+async def test_financial_review_cannot_be_cleared_by_paid_checkout(wired, hold):
+    c, db, gateway, service = wired
+    locally_paid(c)
+    c['order']['financial_review_required'] = hold
+    result = await service.inspect(c['attempt']['id'])
+    assert result['observation_status'] == 'refund_review_required'
+    assert result['payment_reconciliation_required'] is True
+    assert 'signed_financial_event_requires_review' in result['reason_codes']
+    no_mutation(db, gateway)
+
+
+@pytest.mark.anyio
 @pytest.mark.parametrize('state', ['drafting','ready','creating','unknown','session_created','cancelled'])
 async def test_no_binding_means_manual_lookup_without_sdk(wired, state):
     c, db, gateway, service = wired

@@ -40,7 +40,10 @@ def test_test_checkout_rejects_live_or_unspecified_webhook_before_database(monke
 
 def test_test_webhook_is_processed_and_duplicate_remains_idempotent(monkeypatch):
     monkeypatch.setattr(server, "settings", replace(server.settings, stripe_secret_key="rk_test_synthetic_fixture", stripe_webhook_secret="synthetic_signing_fixture"))
-    monkeypatch.setattr(server.stripe.Webhook, "construct_event", lambda *args: server.stripe.Event.construct_from({"id": "evt_synthetic", "livemode": False}, None))
+    monkeypatch.setattr(server.stripe.Webhook, "construct_event", lambda *args: server.stripe.Event.construct_from({
+        "id": "evt_synthetic", "object": "event", "type": "payment_intent.created", "livemode": False,
+        "data": {"object": {"object": "payment_intent", "id": "pi_synthetic"}},
+    }, None))
     monkeypatch.setattr(server.db, "select", AsyncMock(return_value=[{"status": "completed"}]))
     response = TestClient(server.app).post("/api/stripe/webhook", content=b"{}", headers={"Stripe-Signature": "synthetic"})
     assert response.json() == {"received": True, "duplicate": True}

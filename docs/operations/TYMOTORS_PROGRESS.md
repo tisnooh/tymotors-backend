@@ -1,5 +1,24 @@
 # PHOENIX — journal de progression
 
+## Reprise du 27 octobre — remboursements sandbox
+
+- Recherche des réponses fournisseurs complètes vers 03:10 UTC : aucune nouvelle
+  confirmation complémentaire. Pas de relance doublée après les quatre SENT du
+  26 octobre à 20:25 UTC ; les cinq pilotes restent commercialement BLOCKED.
+- Journal signé privé durable et rapprochement par PI/Checkout ajoutés localement.
+  Déduplication par remboursement, cumuls Charge non additifs, revue persistante,
+  remboursement avant règlement conservé et garde tâches/préparations/SIM.
+- Auditeur a rejeté le PI développé legacy et le suivi SIM sans garde financière :
+  corrigés, 320 tests ciblés Chef puis 320 indépendants PASS. Chef 792 HTTP/SQL
+  finaux PASS (655 existants + 137 nouveaux), transport FAKE explicitement.
+- Contre-recette indépendante : mêmes 792 HTTP/SQL PASS, huit hashes inchangés,
+  ports libérés. Global final Chef : 1726 pytest PASS (20,59 s), Gitleaks staged et
+  diff check PASS. Chef accepte APPROVED LOCAL pour ce lot uniquement.
+  Rapport : `TYMOTORS_TEST_REFUNDS_2026-10-27.md`.
+- Aucun frontend/design/photo/prix public modifié, envoi fournisseur, achat,
+  remboursement réel, migration hébergée ni déploiement. Le rapprochement des
+  tentatives ambiguës, réservations et litiges n'est pas déclaré terminé.
+
 ## Fournisseurs et décision avant ouverture —26 octobre2026
 
 - Fils fournisseurs et derniers sortants relus. Nouvelle autorisation du

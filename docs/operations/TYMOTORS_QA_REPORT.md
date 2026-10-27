@@ -1,5 +1,22 @@
 # PHOENIX — qualité et preuves
 
+## Remboursements test — 27 octobre
+
+Chef : 320 ciblés PASS (8,83 s), puis 792 HTTP/SQL finaux PASS
+(655 parcours existant + 137 remboursements). Auditeur : 320 ciblés PASS (10,88 s),
+relecture des corrections après rejet PI legacy développé et agrégat SIM.
+Contre-recette indépendante : 792 HTTP/SQL PASS, huit hashes inchangés et ports
+nettoyés. Global final Chef : 1726 pytest PASS en20,59s, exit0 ; Gitleaks staged et
+diffcheck PASS. Chef APPROVED LOCAL pour ce lot seulement.
+Premier global 1701 PASS / 1 fixture replay incomplète,
+corrigée sans affaiblir la validation du webhook.
+
+Journal immuable/RLS, reçu avant règlement, déduplication par `re_`, devise/total/
+identité conflictuels, aucun cumul Charge double, gardes financières et projection
+publique expurgée testés. Zéro paiement/remboursement réel, fournisseur, mail,
+stock ou production touché. La signature SDK locale n'est pas un événement réseau
+Stripe réel. Rapport : `TYMOTORS_TEST_REFUNDS_2026-10-27.md`.
+
 ## Qualification fournisseurs et ouverture —26octobre2026
 
 Actions effectuées :4relances ciblées non engageantes, toutes relues SENT et

@@ -33,6 +33,7 @@ from app.commerce_api import create_commerce_router
 from app.commerce_quote_api import create_cart_quote_router
 from app.commerce_attempt_api import create_checkout_attempt_router
 from app.commerce_payment_service import CommerceTestPayments
+from app.commerce_refund_events import normalize_test_refund_event
 from app.commerce_fulfillment_api import create_test_fulfillment_router, load_test_fulfillment_summary
 from app.commerce_fulfillment import FulfillmentPlanError
 from app.commerce_operations_api import create_operations_router
@@ -705,7 +706,7 @@ async def _orders_with_items(orders: list[dict[str, Any]]) -> list[dict[str, Any
 async def order_tracking(payload: OrderTrackingLookupInput, request: Request):
     _rate_limit(tracking_attempts, _client_key(request), 10, 300)
     rows = await db.select("orders", params={
-        "select": "id,order_number,customer_email,payment_status,fulfillment_status,carrier,tracking_number,tracking_url,created_at,paid_at,shipped_at,delivered_at,is_test,commerce_quote_id,status,refunded_amount_cents",
+        "select": "id,order_number,customer_email,payment_status,fulfillment_status,carrier,tracking_number,tracking_url,created_at,paid_at,shipped_at,delivered_at,is_test,commerce_quote_id,status,refunded_amount_cents,financial_review_required",
         "order_number": f"eq.{payload.order_number.upper()}",
         "limit": 1,
     })
@@ -721,7 +722,7 @@ async def order_tracking(payload: OrderTrackingLookupInput, request: Request):
         try: simulation = await load_test_fulfillment_summary(db,order)
         except FulfillmentPlanError:
             raise HTTPException(409,'Simulation tracking requires review') from None
-    for key in ('commerce_quote_id','status','refunded_amount_cents','is_test'):
+    for key in ('commerce_quote_id','status','refunded_amount_cents','is_test','financial_review_required'):
         order.pop(key,None)
     order.pop("id", None)
     return {**order, "tracking_events": public_events, **({'simulation':simulation} if simulation is not None else {})}
@@ -994,7 +995,40 @@ async def stripe_webhook(request: Request, stripe_signature: str | None = Header
     except (ValueError, stripe.SignatureVerificationError): raise HTTPException(status_code=400, detail="Invalid webhook signature")
     if event.get("livemode") is not (not settings.stripe_test_mode):
         raise HTTPException(status_code=400, detail="Stripe event mode does not match checkout configuration")
-    metadata = (event.get('data', {}).get('object', {}).get('metadata') or {})
+    legacy_refund = False
+    normalized_refund_intent = None
+    if settings.stripe_test_mode and event.get('type') in {
+        'refund.created', 'refund.updated', 'refund.failed', 'charge.refunded'
+    }:
+        # SDK signature/mode verified above. Keep the minimal receipt BEFORE
+        # business reconciliation, including refunds arriving before settlement.
+        # No metadata-only association, provider request or refund creation here.
+        try:
+            normalized = normalize_test_refund_event(event)
+            normalized_refund_intent = normalized['payment_intent_id']
+        except ValueError:
+            raise HTTPException(status_code=400, detail='Invalid test refund event') from None
+        try:
+            receipt = await db.rpc('commerce_record_test_refund', {'p_event': normalized})
+            owners = (await db.select('orders', params={
+                'select': 'id,commerce_quote_id',
+                'stripe_payment_intent_id': 'eq.' + normalized['payment_intent_id'], 'limit': 2,
+            })) if normalized['payment_intent_id'] else []
+            if not owners or any(o.get('commerce_quote_id') for o in owners):
+                return receipt
+            # Existing non-quoted orders retain their legacy refund sync. A
+            # provider's arbitrary refund metadata must not select Checkout logic.
+            legacy_refund = True
+        except Exception as error:
+            logger.error('Test refund receipt requires inspection (%s)', type(error).__name__)
+            raise HTTPException(status_code=500, detail='Test refund requires inspection') from None
+    data = event.get('data')
+    obj = data.get('object') if isinstance(data, dict) else None
+    if not isinstance(obj, dict):
+        raise HTTPException(status_code=400, detail='Invalid Stripe event object')
+    metadata = {} if legacy_refund else (obj.get('metadata') or {})
+    if not isinstance(metadata, dict):
+        raise HTTPException(status_code=400, detail='Invalid Stripe event metadata')
     if metadata.get('attempt_id') or metadata.get('quote_id'):
         # Dedicated immutable variant path. Never use legacy stock/cost/cart logic.
         if not settings.stripe_test_mode:
@@ -1021,7 +1055,7 @@ async def stripe_webhook(request: Request, stripe_signature: str | None = Header
             order_id = (obj.get("metadata") or {}).get("order_id")
             if order_id: await db.update("orders", {"status": "payment_failed", "payment_status": "failed"}, params={"id": f"eq.{order_id}", "payment_status": "in.(unpaid,failed)", "stock_applied_at": "is.null"})
         elif event_type in {"charge.refunded", "refund.created", "refund.updated", "refund.failed"} and obj.get("payment_intent"):
-            await _sync_refunds(obj["payment_intent"])
+            await _sync_refunds(normalized_refund_intent or obj["payment_intent"])
         elif event_type in {"checkout.session.expired", "checkout.session.async_payment_failed"}:
             order_id = (obj.get("metadata") or {}).get("order_id")
             if order_id:

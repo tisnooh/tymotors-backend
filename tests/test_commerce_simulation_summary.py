@@ -54,10 +54,22 @@ def test_incomplete_or_inconsistent_projection_rejected(parcels,change):
 
 @pytest.mark.parametrize('changes,expected',[
     ({'payment_status':'unpaid'},'awaiting_payment'), ({'status':'cancelled'},'held'),
-    ({'status':'refunded'},'held'), ({'refunded_amount_cents':1},'held'), ({},'requires_review')])
+    ({'status':'refunded'},'held'), ({'refunded_amount_cents':1},'held'),
+    ({'financial_review_required':True},'held'), ({},'requires_review')])
 def test_no_tasks_does_not_claim_delivery(parcels,changes,expected):
     order,_,groups=parcels
     assert summarize_test_fulfillment({**order,**changes},[],groups)['aggregate_state']==expected
+
+
+@pytest.mark.parametrize('hold', [True, None, 'false', 0])
+def test_financial_review_holds_existing_delivered_history(parcels, hold):
+    order,tasks,groups=parcels
+    order['financial_review_required']=hold
+    for index,task in enumerate(tasks):
+        task.update(state='delivered',tracking_number='SIM-'+str(index))
+    result=summarize_test_fulfillment(order,tasks,groups)
+    assert result['aggregate_state']=='held'
+    assert all(p['state']=='delivered' for p in result['parcels'])
 
 
 def test_private_simulation_route_requires_admin_before_storage(operations):

@@ -1,5 +1,19 @@
 # PHOENIX — blocages explicites
 
+## Reprise du 27 octobre — état non masqué
+
+- Les réponses recherchées vers 03:10 UTC n'apportent aucune nouvelle confirmation
+  fournisseur complémentaire. COMMERCIAL_5 et HyperSKU externe restent BLOCKED ;
+  détails du 26 octobre conservés ci-dessous. Aucune relance doublée ni activation.
+- PAYMENT_RECONCILE : sous-lot remboursements signés des commandes à devis
+  APPROVED LOCAL : 792 HTTP/SQL Chef et 792 indépendants PASS, 320 ciblés
+  indépendants PASS, 1726 pytest globaux finaux PASS. L'ancien « refunds toujours
+  refusés » est historique.
+  Tentatives ambiguës, réservations, litiges et résolution humaine restent séparés.
+- Aucun remboursement réseau Stripe ni concurrence PostgreSQL multi-session ne
+  sont prouvés par cette recette FAKE/PGlite. Migration hébergée non effectuée.
+  Voir `TYMOTORS_TEST_REFUNDS_2026-10-27.md` pour le point de reprise exact.
+
 ## Décision avant ouverture —26octobre2026,20:30UTC
 
 COMMERCIAL_5 reste BLOCKED après nouvelle vérification et4relances ciblées
@@ -63,10 +77,10 @@ Voir TYMOTORS_DISPATCH_AND_HYPERSKU_2026-10-26.md pour preuves et reprise.
 | HYPERSKU_API | BLOCKED | HyperSKU / administrateur | OpenAPIannoncée mais contrat endpoints/auth/payload/notifications/sandbox/éligibilité absent ducode ; loginhistorique12/10 ne prouve pas accèsactuel | Obtenir documentation/accèsautorisés ; préparationmanuellelocaleenattendant, aucunenvoi |
 | COMMERCIAL_5 | BLOCKED | Fournisseurs |5propositionsSoyinnonretenues, 0devis/portFrance/droits/fitmentconfirmé | RéponsesdatéesSKUfinition/montage/photo/devise/MOQ/port/Incoterm/garantie ; pasnouvelenvoisansautorisation |
 | OWNER_TERMS | BLOCKED | Administrateur | Agent réel, fiscalité, marge minimale, légal/conditions nonconfirmés | Désigner/valider ; aucunprixpublicmodifié |
-| PAYMENT_RECONCILE | PARTIEL — lot financier restant | Codex | Inspection privée test APPROVED local après145 contre-tests indépendants ; aucun rapprochement financier automatique, remboursements quoted toujours refusés. Les réservations held sont une protection intentionnelle | Implémenter journal durable/transaction de rapprochement et remboursements quoted dans un lot séparé ; aucun retry aveugle, faux événement ou libération présumée |
+| PAYMENT_RECONCILE | PARTIEL — journal refunds APPROVED LOCAL le27octobre | Codex | Remboursements signés quoted journalisés/projetés avec revue financière persistante ; 792 HTTP/SQL Chef et indépendants PASS, 1726 pytest globaux PASS. Réservations held intentionnelles | Restent rapprochement des tentatives ambiguës, résolution humaine, réservations/litiges et recette réseau refunds ; aucun retry aveugle ni libération présumée |
 | HOSTED_CONCURRENCY | BLOCKED | Environnementisolé / Codex | PGlitesinglesession, pasPostgreSQLmulticonnexion/GoTrue/PostgRESTréel | Recetteisoléeautorisée, pasmigrationproduction |
 | SIM_AGGREGATE_MULTIPARCEL | APPROVED local SIM uniquement | Codex / auditeur | Chef et auditeur : 91 assertions HTTP chacun, deux fournisseurs/agents/colis synthétiques ; régression557 PASS ; statut réel requires_review conservé | Pas de preuve d'expédition réelle ni de condition commerciale déduite |
-| SANDBOX_BROWSER | BLOCKED | Accès navigateur | Checkout réel de test créé/bindé ; page test35EUR visible, puis trois opérations CUA sans réponse avant carte ; pas de paiement achevé | Rétablir navigateur intégré puis inspecter état existant/rapport privé avant reprise ; pas de nouvelle charge aveugle |
+| SANDBOX_BROWSER | RESOLVED pour la recette du26octobre | Codex / navigateur | Ancienne interruption dépassée par Cart→Checkout35EUR réellement payé en sandbox et webhook signé, voir STRIPE_ACCESS ; pas de remboursement réseau validé par le lot27octobre | Ne pas recréer une charge pour une interruption historique ; conserver preuves privées et distinguer paiements/refunds/HyperSKU |
 | QA_RESUMPTION | RESOLVED pour ce lot | Auditeur | Reprise exécutée :35 tests ciblés et91 assertions HTTP indépendants PASS ; guard live45 tests et smoke1 PASS | Ne pas en déduire une disponibilité permanente du service ni une validation commerciale |
 | LIVE_LEGACY_GATE | APPROVED local | Codex / auditeur | Checkout legacy live interdit avant panier/RPC/provider ; aucune activation par un produit active/verified ni un simple flag légal. Testmode conservé, contre-audit45 tests et smoke FAKE1 PASS | Activer la vente réelle exigera un futur lot revu et les preuves commerciales, pas un contournement de ce verrou |
 
