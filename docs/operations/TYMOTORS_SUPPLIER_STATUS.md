@@ -1,5 +1,25 @@
 # PHOENIX — fournisseurs, prestataire et cinq pilotes
 
+## Vérification des réponses —28octobre, recherche07:42UTC
+
+- Recherche entrante ciblée + lecture du dernier message de chacun des quatre
+  fils : CJ1a181738767320c7, NextSmartShip1a181739372e56fc, Soyin1a1621f1af2501cc,
+  GZTM1a167d80286bd1a3. Derniers messages toujours SENT du propriétaire ; aucune
+  réponse fournisseur/prestataire ni devis nouveau. Aucun envoi supplémentaire.
+  CJ/NextSmartShip contactés07:39UTC seulement : aucune relance immédiate utile.
+- Recherche plus large : réponse historique Ikon du28octobre01:45:49UTC,
+  message1a1802f6680bf1d3/fil1a1639a1d0eae4b9, lue : refus explicite d'utiliser
+  les photos originales GBK. Candidat RMC-SBRZ22JDM-GBK, article
+  toyota-gr86-mirror-caps, pas un des trois fournisseurs choisis. Refus conservé
+  en historique ; aucune permission accordée ni demande photo relancée.
+  Aucun changement de fichiers images ou publication ; ce refus ne peut pas
+  être traité comme une autorisation lors d'une future mise en vente.
+- Reçu privé du contrôle : backend/data/logistics-2026-10-28-enquiries/
+  check-074214.json. Prix, coûts, livraison, marges et validation inchangés.
+- Reprise : analyser le prochain vrai retour des quatre fils ; pas de doublon,
+  devis inventé, commande, paiement, déploiement ou surveillance en arrière-plan.
+
+
 ## Deux demandes logistiques envoyées —28octobre2026,07:39UTC
 
 - Accord explicite « Ok fait » : messages envoyés à CJ support et NextSmartShip
