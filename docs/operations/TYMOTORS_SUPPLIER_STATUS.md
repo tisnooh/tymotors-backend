@@ -1,5 +1,16 @@
 # PHOENIX — fournisseurs, prestataire et cinq pilotes
 
+## HyperSKU / Rita —28octobre,03:08–03:10 Europe/Paris
+
+WhatsApp connecté par le propriétaire. Deux messages à Rita dans le fil HyperSKU,
+statuts Distribué vérifiés : connexion magasin React/Python, cinq références
+Soyin, devis France/logistique ; après réponse générique AliExpress, précision
+sur les fournisseurs Alibaba à conserver et exemple GZTM G20. Aucun vendeur
+alternatif, achat ou service payant retenu. Aucun devis/Store ID/SKU HyperSKU/
+contrat API confirmé par cet échange. Ne pas doubler ces messages ni relancer
+la demande de connexion WhatsApp sans constater une nouvelle déconnexion.
+Texte et preuve : HYPERSKU_RITA_WHATSAPP_REPLY_2026-10-28.md.
+
 ## Périmètre corrigé par le propriétaire —27octobre
 
 **Trois fournisseurs de départ : Tianzhiyu, Soyintech/Soyin et GZTM Auto/Leju.**

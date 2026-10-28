@@ -1,5 +1,14 @@
 # PHOENIX — capacités HyperSKU et limites de preuve
 
+## Actualisation WhatsApp —28octobre,03:10 Europe/Paris
+
+Connexion WhatsApp vérifiée après intervention du propriétaire ; Rita a reçu
+deux messages marqués Distribué. Demande Store ID/SKU/API ou manuel et devis
+France pour les fournisseurs initiaux ; réponse générique AliExpress suivie
+d'une précision sur Alibaba et boutique React/Python. Blocage QR levé, aucun
+devis, accès API, mapping ou commande obtenu pour autant. Voir le journal
+HYPERSKU_RITA_WHATSAPP_REPLY_2026-10-28.md ; ne pas renvoyer les messages.
+
 ## État du28octobre2026 — DIY réel, API encore distincte
 
 DIY Sourced Orders activé dans le compte (27octobre), menu/liste0ordre sous filtre

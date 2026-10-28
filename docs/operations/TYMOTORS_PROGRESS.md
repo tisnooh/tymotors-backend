@@ -1,5 +1,21 @@
 # PHOENIX — journal de progression
 
+## WhatsApp connecté, réponse à Rita exécutée —28octobre,03:08–03:10 Paris
+
+- Après réponse humaine « Connecté », session WhatsApp réellement accessible.
+  Fil HyperSKU vérifié, message complet de Rita lu : demande sourcing/devis ou
+  fulfillment. Deux réponses envoyées puis relues, toutes deux Distribué.
+- Premier message : trois fournisseurs initiaux, cinq SKU Soyin, boutique custom
+  React/Python, Store ID/SKU HyperSKU/canal API ou manuel, devis/logistique France.
+  Une réponse générique immédiate propose AliExpress. Précision suivante :
+  fournisseurs Alibaba à conserver, besoin de prise en charge humaine/custom,
+  exemple d'annonce GZTM G20 exact ; aucune commande, dépense ou donnée client.
+- Blocage QR désormais RESOLVED. Ne pas demander une nouvelle connexion ou un
+  nouvel accord d'envoi sans changement d'état observé. Ne pas renvoyer les deux
+  messages ni considérer le guide générique comme devis/mapping/API obtenus.
+- Preuves et textes dans HYPERSKU_RITA_WHATSAPP_REPLY_2026-10-28.md, reçus/capture
+  privés backend/data/hypersku-2026-10-28. Aucune API réelle connectée ni achat.
+
 ## HyperSKU / Rita —28octobre2026
 
 - Instruction explicite : finaliser HyperSKU et répondre à Rita sur WhatsApp.

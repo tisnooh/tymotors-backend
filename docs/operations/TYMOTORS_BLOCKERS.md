@@ -1,5 +1,14 @@
 # PHOENIX — blocages explicites
 
+## WhatsApp résolu —28octobre,03:10 Europe/Paris
+
+Session liée par le propriétaire et vérifiée. Deux messages envoyés à Rita dans
+le fil HyperSKU puis états Distribué contrôlés. Le QR décrit plus bas est
+historique ; ne pas redemander cette étape. Réponse générique AliExpress reçue,
+puis précision Alibaba/boutique custom/exempleGZTM envoyée. Aucun devis, mapping,
+Store ID ou contrat API n'est confirmé par cet échange à ce point. Attendre une
+réponse exploitable sans doublonner ni changer les trois fournisseurs.
+
 ## HyperSKU / WhatsApp —28octobre
 
 | Blocage | Responsable / état réel | Suite |

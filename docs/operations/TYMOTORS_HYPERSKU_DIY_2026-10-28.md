@@ -9,8 +9,8 @@ ou d'envoi. Aucun achat, débit, commande ou transfert de données client autori
 Les partenaires restent Tianzhiyu, Soyintech/Soyin et GZTM Auto/Leju. Pas de
 nouvelle démarche de certification photo.
 
-**CONNECTED : interface du compte. Module DIY actif. PREPARED : inspection des
-modèles. BLOCKED : liaison API/Store ID/SKU et WhatsApp non connecté.** Aucun
+**CONNECTED : interface du compte et WhatsApp. Module DIY actif. PREPARED :
+inspection des modèles. BLOCKED : liaison API/Store ID/SKU.** Aucun
 import, ordre fournisseur ou expédition réellement exécuté dans ce lot.
 
 ## Compte HyperSKU
@@ -73,17 +73,18 @@ Suite globale Chef sur le lot final : **2124pytest PASS,22,65s**, un avertisseme
 Starlette/httpx préexistant. Aucun code applicatif de vente, migration, frontend,
 photo ou prix public modifié par ce lot.
 
-## WhatsApp : accès manquant, pas autorisation manquante
+## WhatsApp : accès rétabli, réponses distribuées
 
-WhatsApp Web affiche le QR de connexion, pas les conversations. Aucun message
-à Rita n'a été envoyé. Le propriétaire doit lier le navigateur depuis son
-téléphone ; l'agent ne peut pas scanner à sa place. La réponse est conservée
-dans HYPERSKU_RITA_WHATSAPP_REPLY_2026-10-28.md, explicitement NON ENVOYÉE.
+Le propriétaire a lié WhatsApp depuis son téléphone. Session et fil HyperSKU
+vérifiés, message complet de Rita lu. Deux réponses à03:08 et03:10 le28octobre,
+Europe/Paris, sont marquées Distribué. Le premier accusé En attente n'a entraîné
+aucun doublon. Textes et preuve dans HYPERSKU_RITA_WHATSAPP_REPLY_2026-10-28.md.
 
-Une fois connecté : lire tout le message récent, vérifier le fil HyperSKU/Rita,
-adapter le texte puis l'envoyer sans redemander d'autorisation ordinaire. Vérifier
-la bulle sortante et son état avant de déclarer l'envoi ; conserver une preuve
-sans données de destinataires clients ou informations d'authentification.
+Une réponse générique immédiate a proposé le guide AliExpress. Une précision
+demande le traitement des trois fournisseurs Alibaba et de la boutique custom,
+avec une annonce GZTM concrète. Aucun achat/service payant/donnée client engagé.
+Ne pas renvoyer ces messages ni confondre distribution WhatsApp et réponse
+technique. Aucune lecture humaine ou validation de devis/mapping/API supposée.
 
 ## Suite nécessaire
 

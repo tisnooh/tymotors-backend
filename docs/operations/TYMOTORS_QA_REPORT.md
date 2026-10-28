@@ -1,5 +1,15 @@
 # PHOENIX — qualité et preuves
 
+## Communication Rita exécutée —28octobre,03:08 et03:10 Paris
+
+Après connexion WhatsApp du propriétaire : bon fil HyperSKU vérifié, message
+complet de Rita lu, réponse non engageante envoyée, puis précision Alibaba/
+boutique custom après réponse générique AliExpress. Deux états Distribué relus,
+aucun renvoi de la tentative initialement En attente. Pas de lecture humaine,
+devis, accès API ou mapping supposé ; aucun achat, donnée client ou pièce jointe.
+Capture finale filtrée à HyperSKU et reçu privé conservés. Ce lot documentaire
+ne change aucun code ; aucun test logiciel relancé pour un simple envoi WhatsApp.
+
 ## Modèles HyperSKU distincts et module DIY —28octobre
 
 APPROVED LOCAL inspecteur :119tests indépendants PASS après rejet d'une formule
