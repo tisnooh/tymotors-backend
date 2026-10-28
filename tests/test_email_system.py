@@ -146,8 +146,8 @@ def test_smtp_failure_is_logged_without_being_raised():
     result = asyncio.run(EmailService(settings(), db, transport=fail).send(recipient="client@example.com",
         email_type="payment_confirmed", content=EmailContent("Sujet", "html", "text"),
         idempotency_key="order:1:paid"))
-    assert result["status"] == "failed"
-    assert db.updated[-1][1]["error_message"] == "OSError: email delivery failed"
+    assert result["status"] == "unknown"
+    assert db.updated[-1][1]["error_message"] == EmailService.LEGACY_OUTCOME_UNKNOWN
 
 
 def test_templates_escape_user_and_order_content():

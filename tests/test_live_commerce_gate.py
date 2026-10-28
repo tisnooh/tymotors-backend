@@ -24,7 +24,8 @@ def test_live_legacy_payment_stays_closed_before_cart_and_provider(monkeypatch,l
 
 
 def test_existing_sandbox_path_is_not_disabled_by_live_guard(monkeypatch):
-    monkeypatch.setattr(server,'settings',replace(server.settings,stripe_mode='test'))
+    monkeypatch.setattr(server,'settings',replace(server.settings,stripe_mode='test',
+        stripe_webhook_secret='whsec_synthetic_fixture_not_a_credential'))
     monkeypatch.setattr(server,'stripe_client',object())
     monkeypatch.setattr(server,'legal_ready',lambda:False)
     monkeypatch.setattr(server,'_rate_limit',lambda *_args:None)

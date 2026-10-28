@@ -179,6 +179,8 @@ def test_request_cannot_supply_price_or_supplier_and_bad_line_id(client):
 
 
 def test_variant_cannot_reach_old_checkout_and_charge_base_reference(client, monkeypatch):
+    monkeypatch.setattr(server, 'settings', replace(server.settings, stripe_mode='test',
+        stripe_webhook_secret='whsec_synthetic_fixture_not_a_credential'))
     monkeypatch.setattr(server, 'stripe_client', object())
     monkeypatch.setattr(server, 'checkout_attempts', {})
     monkeypatch.setattr(server, '_cart_response', AsyncMock(return_value={'items': [{'variant_id': VARIANT}], 'checkout_available': False}))

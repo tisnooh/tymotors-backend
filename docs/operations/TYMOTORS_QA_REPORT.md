@@ -1,5 +1,50 @@
 # PHOENIX — qualité et preuves
 
+## Contre-audits finaux repris et acceptés —28octobre
+
+- Disponibilité ordinaire officiellement vérifiée ; mêmes agents repris sans
+  nouveau compte/modèle, consommation de reset ou crédit. Aucun contournement.
+- Backend final :177tests ciblés indépendants PASS, mêmes fichiers stagés et
+  empreintes stables, APPROVED LOCAL (paiements/guards/email/retrait).
+- Frontend final :50tests/4suites indépendants PASS, diff stagé/worktree identiques,
+  AST classes/styles/images inchangés, APPROVED LOCAL. Build final Chef PASS.
+- Chef accepte ces lots locaux et la préparation des5pilotes.0produit validé
+  commercialement, aucun Stripe live ou envoi réel validé. Les mentions d'audit
+  interrompu ci-dessous sont l'historique du premier passage, désormais résolu.
+- Rapport de référence : TYMOTORS_INDEPENDENT_WORK_2026-10-28.md.
+
+
+## Paiements, pilotes et informations commerciales —28octobre, lot local
+
+- Trois travaux indépendants des réponses fournisseurs exécutés. Rapport de
+  reprise complet : TYMOTORS_INDEPENDENT_WORK_2026-10-28.md.
+- Paiements : reçus durables des trois échecs/expirations signés, protection
+  des doublons/collisions et refus avant création si signature webhook absente.
+  Aucun état financier/réservation/tâche libéré par un simple reçu d'échec.
+- Emails : reprises legacy ambiguës refusées ; seul pré-transport désactivé
+  prouvé est reprenable sous CAS. Panne après transport => unknown, sans renvoi
+  automatique ou rétrogradation d'un sent. Accusé de rétractation corrigé.
+- Chef :2230pytest PASS (22,66s). Recette isolée HTTP/SQL :655contrôles parcours
+  existant +42nouveaux reçus PASS ; Stripe FAKE/signatureSDKlocale, aucun paiement
+  distant ou achat. Ports de fixtures fermés. Pas de migration hébergée.
+- Cinq fiches pilotes générées dans backend/data/phoenix-2026-10-28-pilots-prep-v1,
+  brouillons et modèles d'import incomplets sur preuve manquante. Audit
+  indépendant139tests PASS, APPROVED LOCAL pour préparation,0validation vente.
+- Frontend commercial : promesses non justifiées retirées, coordonnées publiques
+  unifiées, rétractation/CGV/SAV corrigés. Chef703tests/43suites PASS avant dernier
+  allègement rédactionnel, puis50tests/4suites concernés PASS après ; ESLint et
+  comparaison AST structures/classes/styles inchangées PASS. Build final PASS.
+- Config publique lue : mode test, legal_ready=false, identité vide ; aucune
+  valeur d'entreprise inventée. Sources/tarifs fournisseurs restent inconnus.
+- Audit indépendant final paiements/emails et frontend interrompu par la limite
+  de ses exécutions ; ne pas déclarer APPROVED ces deux lots. Root a poursuivi
+  les vérifications et enregistré la reprise sans contournement de quota.
+- Reprise : contre-audit final du diff, puis traitement des anomalies éventuelles.
+  Les fonctions de règlement à devis restent sandbox-only ; leur adaptation live,
+  la recette hébergée, l'identité/configuration et l'approbation de mise en service
+  ne sont pas déclarées terminées. Aucun push/déploiement, image ou prix modifié.
+
+
 ## Livraison directe et alternatives — lot local contrôlé28octobre
 
 - Générateur privé corrigé : plus de consigne imposant HyperSKU. Refus clos,

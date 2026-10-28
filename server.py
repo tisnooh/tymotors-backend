@@ -798,22 +798,24 @@ async def retry_email(log_id: str, admin: dict[str, Any] = Depends(require_admin
         return {'accepted': result.get('sent', False), 'delivery': result['status']}
     if rows[0]['email_type'] in FULFILLMENT_EMAIL_KINDS:
         raise HTTPException(409, 'Legacy delivery outcome requires manual provider review; automatic resend refused')
-    if rows[0]["status"] == "queued":
-        created = datetime.fromisoformat(rows[0]["created_at"].replace("Z", "+00:00"))
-        if created > datetime.now(timezone.utc) - timedelta(minutes=5):
-            raise HTTPException(409, "Email delivery is still in progress")
+    # Age is not proof of non-delivery. A crashed queued claim or a provider/DB
+    # failure can already have sent this legacy financial notification. Only
+    # the exact, pre-transport disabled outcome remains safely retryable.
+    if rows[0]['status'] != 'failed' or rows[0].get('error_message') != EmailService.LEGACY_NOT_ATTEMPTED:
+        raise HTTPException(409, 'Legacy delivery outcome requires manual provider review; automatic resend refused')
     amount = (rows[0].get("metadata") or {}).get("amount_cents")
     if rows[0]['email_type'] == 'withdrawal_received':
         from html import escape
         receipt = (rows[0].get('metadata') or {}).get('receipt_text')
         if not isinstance(receipt, str) or not receipt:
             raise HTTPException(409, 'Withdrawal receipt is unavailable')
-        html, text = _layout('Demande de rétractation reçue', [escape(receipt).replace('\n','<br>')])
+        html, text = _layout('Demande de rétractation reçue',
+            '<p>'+escape(receipt).replace('\n','<br>')+'</p>', receipt)
         result = await email_service.retry(log_id, rows[0]['recipient'], EmailContent('TYMotors — demande de rétractation reçue', html, text))
     else:
         result = await _send_order_email(rows[0]["email_type"], rows[0]["order_id"], amount_cents=amount, retry_log_id=log_id)
     await _audit(admin, "email.retry", log_id, {"order_id": rows[0]["order_id"], "email_type": rows[0]["email_type"]})
-    return {"accepted": bool(result), "delivery": result["status"] if result else "failed"}
+    return {"accepted": bool(result and result.get('sent') is True), "delivery": result["status"] if result else "failed"}
 
 
 @api.get('/admin/withdrawal-requests')
@@ -858,6 +860,8 @@ async def create_checkout_session(request: Request, promotion_code: str | None =
     # not an environment flag or an administrator's optimistic product label.
     if not settings.stripe_test_mode:
         raise HTTPException(409, 'Live checkout is disabled pending verified operations approval')
+    if not settings.stripe_webhook_secret:
+        raise HTTPException(503, 'Signed Stripe webhook is not configured')
     _rate_limit(checkout_attempts, 'ip:'+_client_key(request), 8, 60)
     actor = user["id"] if user else _session_id(x_session_id); _rate_limit(checkout_attempts, 'actor:'+actor, 8, 60)
     cart = await _cart_for(user, x_session_id, create=False); cart_view = await _cart_response(cart)

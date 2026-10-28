@@ -25,7 +25,8 @@ PATH='/api/cart/quote/'+QUOTE+'/checkout'
 def client(monkeypatch):
     server.checkout_attempts.clear()
     monkeypatch.setattr(server,'settings',replace(server.settings,stripe_mode='test',
-        stripe_secret_key='sk_test_synthetic_not_a_credential'))
+        stripe_secret_key='sk_test_synthetic_not_a_credential',
+        stripe_webhook_secret='whsec_synthetic_fixture_not_a_credential'))
     user=AsyncMock(return_value=None);monkeypatch.setattr(server.db,'get_user',user)
     cart=AsyncMock(return_value={'id':CART,'user_id':None,'guest_session_id':GUEST})
     monkeypatch.setattr(server,'_cart_for',cart)
@@ -64,7 +65,7 @@ def test_guest_uses_only_server_derived_capability_and_test_gateway(client):
 
 
 @pytest.mark.parametrize('changes,status',[
-    ({'stripe_mode':'live'},409),({'stripe_secret_key':''},503),
+    ({'stripe_mode':'live'},409),({'stripe_secret_key':''},503),({'stripe_webhook_secret':''},503),
 ])
 def test_closed_configuration_does_not_read_cart_or_construct_sdk(client,monkeypatch,changes,status):
     monkeypatch.setattr(server,'settings',replace(server.settings,**changes))

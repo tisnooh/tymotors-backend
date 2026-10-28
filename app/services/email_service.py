@@ -17,6 +17,11 @@ from app.supabase_rest import SupabaseError
 
 
 class EmailService:
+    # This exact legacy outcome is recorded before the transport is entered.
+    # All other failed/queued rows may already have reached the provider.
+    LEGACY_NOT_ATTEMPTED = "Email delivery is not configured"
+    LEGACY_OUTCOME_UNKNOWN = "Delivery outcome is unknown; manual provider review required"
+
     def __init__(self, settings: Settings, db: Any, transport: Callable[[str, EmailContent], str | None] | None = None):
         self.settings = settings
         self.db = db
@@ -61,30 +66,48 @@ class EmailService:
 
     async def retry(self, log_id: str, recipient: str, content: EmailContent) -> dict[str, Any]:
         recipient = self.normalize_email(recipient)
-        claimed = await self.db.update("email_logs", {
-            "status": "queued", "error_message": None,
-        }, params={"id": f"eq.{log_id}", "status": "in.(failed,queued)", "event_snapshot": "is.null"})
-        if not claimed:
+        try:
+            # One atomic winner. Neither a stale queued claim nor an ambiguous
+            # failure is proof that nothing was sent. No historical conversion.
+            claimed = await self.db.update("email_logs", {
+                "status": "queued", "error_message": None,
+            }, params={"id": f"eq.{log_id}", "status": "eq.failed",
+                "error_message": "eq." + self.LEGACY_NOT_ATTEMPTED,
+                "recipient": "eq." + recipient, "event_snapshot": "is.null"})
+        except Exception:
+            # The claim may have committed even if its response was lost.
+            return {"status": "unknown", "sent": False, "log_id": log_id}
+        if not isinstance(claimed, list) or len(claimed) != 1:
             return {"status": "not_retryable", "sent": False, "log_id": log_id}
+        if (not isinstance(claimed[0], dict) or claimed[0].get('id') != log_id
+                or claimed[0].get('status') != 'queued'):
+            return {"status": "unknown", "sent": False, "log_id": log_id}
         return await self._deliver(log_id, recipient, content)
 
     async def _deliver(self, log_id: str, recipient: str, content: EmailContent) -> dict[str, Any]:
         if not self.settings.email_enabled:
-            await self._mark_failed(log_id, "Email delivery is not configured")
+            await self._mark_failed(log_id, self.LEGACY_NOT_ATTEMPTED)
             return {"status": "failed", "sent": False, "log_id": log_id}
         try:
             message_id = await asyncio.to_thread(self.transport, recipient, content)
-            await self.db.update("email_logs", {
+            saved = await self.db.update("email_logs", {
                 "status": "sent", "provider_message_id": message_id,
                 "sent_at": datetime.now(timezone.utc).isoformat(), "error_message": None,
             }, params={"id": f"eq.{log_id}", "status": "eq.queued"})
+            if (not isinstance(saved, list) or len(saved) != 1 or saved[0].get('id') != log_id
+                    or saved[0].get('status') != 'sent'):
+                raise RuntimeError('Email completion was not confirmed')
             return {"status": "sent", "sent": True, "log_id": log_id}
-        except Exception as error:  # Delivery must never roll back a paid order.
-            await self._mark_failed(log_id, f"{type(error).__name__}: email delivery failed")
-            return {"status": "failed", "sent": False, "log_id": log_id}
+        except Exception:  # Provider acceptance/DB completion can be ambiguous.
+            try:
+                await self._mark_failed(log_id, self.LEGACY_OUTCOME_UNKNOWN)
+            except Exception:
+                pass  # Queued is also non-retryable; never resend after a crash.
+            return {"status": "unknown", "sent": False, "log_id": log_id}
 
     async def _mark_failed(self, log_id: str, reason: str) -> None:
-        await self.db.update("email_logs", {"status": "failed", "error_message": reason[:500]}, params={"id": f"eq.{log_id}"})
+        await self.db.update("email_logs", {"status": "failed", "error_message": reason[:500]},
+                             params={"id": f"eq.{log_id}", "status": "eq.queued"})
 
     def _smtp_send(self, recipient: str, content: EmailContent) -> str | None:
         message = EmailMessage()

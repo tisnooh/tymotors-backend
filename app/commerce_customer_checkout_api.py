@@ -29,6 +29,8 @@ def create_customer_checkout_router(db,cart_for,optional_user,get_settings,rate_
             raise HTTPException(409,'Live commerce checkout is not approved')
         if not settings.stripe_secret_key:
             raise HTTPException(503,'Isolated Stripe test checkout is not configured')
+        if not settings.stripe_webhook_secret:
+            raise HTTPException(503,'Signed Stripe webhook is not configured')
         rate_limit(bucket,'customer-checkout:ip:'+client_key(request),10,60)
         try:
             owner=customer_owner(user,request.headers.get('authorization'),x_session_id)

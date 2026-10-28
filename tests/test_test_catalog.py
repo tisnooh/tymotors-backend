@@ -66,7 +66,8 @@ def test_draft_cart_server_gate_not_browser_flag(monkeypatch, mode, expected):
 
 @pytest.mark.parametrize('enabled,expected', [(True, 200), (False, 409)])
 def test_checkout_recomputes_test_gate_and_prices(monkeypatch, enabled, expected):
-    monkeypatch.setattr(server, 'settings', replace(server.settings, stripe_mode='test', test_catalog_enabled=enabled))
+    monkeypatch.setattr(server, 'settings', replace(server.settings, stripe_mode='test', test_catalog_enabled=enabled,
+        stripe_webhook_secret='whsec_synthetic_fixture_not_a_credential'))
     monkeypatch.setattr(server, 'checkout_attempts', {})
     create = AsyncMock(return_value=SimpleNamespace(id='cs_test_fixture', url='https://checkout.stripe.com/test'))
     monkeypatch.setattr(server, 'stripe_client', SimpleNamespace(v1=SimpleNamespace(checkout=SimpleNamespace(sessions=SimpleNamespace(create_async=create)))))
@@ -87,7 +88,8 @@ def test_checkout_recomputes_test_gate_and_prices(monkeypatch, enabled, expected
 
 
 def test_test_purchase_does_not_bypass_incompatible_vehicle(monkeypatch):
-    monkeypatch.setattr(server, 'settings', replace(server.settings, stripe_mode='test', test_catalog_enabled=True))
+    monkeypatch.setattr(server, 'settings', replace(server.settings, stripe_mode='test', test_catalog_enabled=True,
+        stripe_webhook_secret='whsec_synthetic_fixture_not_a_credential'))
     monkeypatch.setattr(server, 'checkout_attempts', {})
     monkeypatch.setattr(server, 'stripe_client', object())
     monkeypatch.setattr(server, '_cart_for', AsyncMock(return_value={'id': 'cart'}))
