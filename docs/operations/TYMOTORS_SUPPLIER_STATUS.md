@@ -1,5 +1,31 @@
 # PHOENIX — fournisseurs, prestataire et cinq pilotes
 
+## Refus HyperSKU confirmé : sourcing ET expédition — 28 octobre 2026
+
+- Nouveau message WhatsApp, signé Lexi, affiché05:44 : refus du sourcing et de
+  l'expédition du type de pièces automobiles discuté. Le module DIY actif ne
+  permet donc pas de conclure à une prise en charge. Refus à respecter ; ne pas
+  transmettre ces pièces/commandes à HyperSKU. Ne pas étendre cette preuve à
+  des catégories non discutées ou inventer une acceptation pour les autres40.
+- Accusé de réception envoyé une fois, affiché05:47 et Distribué : refus compris,
+  pas d'envoi de marchandises/commandes, poursuite auprès des fournisseurs initiaux.
+- Recherche Gmail avant relance : aucun message entrant après26octobre de Nicy
+  ou Jade. Deux mises à jour envoyées dans les fils existants à cause du refus :
+  Soyin message1a180d6007168e50, fil1a1621f1af2501cc, SENT relu ;
+  GZTM/Leju message1a180d61777bf44f, fil1a167d80286bd1a3, SENT relu.
+  Demande directe France75001 (scénario de devis) : exact SKU/variante, unité ou
+  paire, prix/MOQ/stock, emballage, port, suivi/délais/taxes/retours, colis neutre.
+  Aucun nouveau document photo/certification demandé. Aucun client transmis.
+- Cinq SKU Soyin et trois candidats BMW GZTM repris exactement, sans substitution.
+  Tianzhiyu reste le troisième partenaire initial mais aucun contact unique
+  vérifié retrouvé ici : pas de message envoyé à une identité devinée.
+- Voie directe : DEMANDEE, NON CONFIRMEE ; pas de tarif ni transporteur inventé.
+  Les offres/mappings de production ne sont pas modifiés. Aucun achat, paiement,
+  commande, changement prix/design/photo, déploiement ou activation commerciale.
+- Prochaine action : analyser les deux réponses, rattacher par variante les
+  conditions confirmées et recalculer les coûts avant validation du pilote réel.
+
+
 ## HyperSKU : refus de sourcing G20 et clarification — 28 octobre 2026
 
 - Fil WhatsApp HyperSKU consulté : Lexi indique à 03:52 que ce type de produit
