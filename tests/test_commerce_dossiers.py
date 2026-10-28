@@ -416,3 +416,83 @@ def test_scope_cannot_be_applied_twice(evidence):
     from app.commerce_dossiers import apply_owner_execution_scope
     current=apply_owner_execution_scope(build_dossiers(*evidence,observed_at='historical'))
     with pytest.raises(ValueError): apply_owner_execution_scope(current)
+
+
+@pytest.fixture
+def refusal_review():
+    return {'provider':'HyperSKU','observed_at':'2026-10-28T04:51:21Z',
+            'evidence_ref':'local-proof.png','evidence_sha256':'a'*64,
+            'product_slugs':['bmw-g20-m-performance-spoiler'],
+            'decision':'SOURCING_AND_SHIPPING_DECLINED'}
+
+
+def test_refusal_is_scoped_preserves_history_and_never_confirms_direct_shipping(evidence, refusal_review):
+    from app.commerce_dossiers import apply_owner_execution_scope, apply_provider_refusal
+    current=apply_owner_execution_scope(build_dossiers(*evidence,observed_at='historical'))
+    before=deepcopy(current)
+    reviewed=apply_provider_refusal(current,refusal_review,as_of='2026-10-28T05:00:00Z')
+    assert current == before
+    assert reviewed['source_digest_sha256'] == before['source_digest_sha256']
+    assert reviewed['execution_digest_sha256'] != before['execution_digest_sha256']
+    assert reviewed['counts']['pending_by_dimension']['PENDING_HYPERSKU'] == 39
+    assert reviewed['counts']['provider_declined_articles'] == 1
+    for old,new in zip(before['articles'],reviewed['articles']):
+        if new['slug'] != 'bmw-g20-m-performance-spoiler':
+            assert new == old
+            continue
+        assert new['verification_statuses']['hypersku'] == 'PROVIDER_DECLINED'
+        assert new['logistics_route']['shipping_confirmed'] is False
+        assert new['logistics_route']['provider'] is None
+        assert new['logistics_route']['external_send_allowed'] is False
+        for field in ('supplier_selected','supplier_unit_cost_cents','shipping_confirmed_cents',
+                      'gross_margin_cents','publication_status','images_changed','sale_price_changed'):
+            assert new[field] == old[field]
+    assert reviewed['counts']['fully_verified'] == 0
+    assert reviewed['counts']['commercially_blocked'] == 40
+
+
+@pytest.mark.parametrize('change', ['unknown_slug','duplicate','empty','provider','decision','hash',
+                                  'clock','extra_field','twice','historical'])
+def test_refusal_rejects_ambiguous_or_unscoped_reviews(evidence,refusal_review,change):
+    from app.commerce_dossiers import apply_owner_execution_scope,apply_provider_refusal
+    historical=build_dossiers(*evidence,observed_at='historical')
+    current=apply_owner_execution_scope(historical)
+    if change=='unknown_slug': refusal_review['product_slugs']=['not-a-product']
+    if change=='duplicate': refusal_review['product_slugs']*=2
+    if change=='empty': refusal_review['product_slugs']=[]
+    if change=='provider': refusal_review['provider']='unselected provider'
+    if change=='decision': refusal_review['decision']='APPROVED'
+    if change=='hash': refusal_review['evidence_sha256']='missing'
+    if change=='clock': refusal_review['observed_at']='2026-10-28'
+    if change=='extra_field': refusal_review['shipping_confirmed']=True
+    if change=='twice': current=apply_provider_refusal(current,refusal_review,as_of='2026-10-28T05:00:00Z')
+    if change=='historical': current=historical
+    with pytest.raises(ValueError): apply_provider_refusal(current,refusal_review,as_of='2026-10-28T05:00:00Z')
+
+
+def test_default_execution_does_not_mandate_rejected_provider(evidence):
+    from app.commerce_dossiers import apply_owner_execution_scope
+    current=apply_owner_execution_scope(build_dossiers(*evidence,observed_at='historical'))
+    assert all('raccorder à HyperSKU' not in row['next_action'] for row in current['articles'])
+
+
+def test_refusal_markdown_keeps_the_pilot_table_contiguous(evidence,refusal_review):
+    from app.commerce_dossiers import apply_owner_execution_scope,apply_provider_refusal
+    from scripts.build_commercial_dossiers import render_markdown
+    current=apply_provider_refusal(apply_owner_execution_scope(
+        build_dossiers(*evidence,observed_at='historical')),refusal_review,as_of='2026-10-28T05:00:00Z')
+    md=render_markdown(current)
+    assert '|---|---|---|---|\n| 1 |' in md
+    assert 'Refus HyperSKU' in md and 'local-proof.png' in md
+
+
+def test_refusal_rejects_future_evidence_and_fingerprints_review_clock(evidence,refusal_review):
+    from app.commerce_dossiers import apply_owner_execution_scope,apply_provider_refusal
+    current=apply_owner_execution_scope(build_dossiers(*evidence,observed_at='historical'))
+    with pytest.raises(ValueError,match='after the explicit review clock'):
+        apply_provider_refusal(current,refusal_review,as_of='2026-10-28T04:00:00Z')
+    first=apply_provider_refusal(current,refusal_review,as_of='2026-10-28T05:00:00Z')
+    second=apply_provider_refusal(current,refusal_review,as_of='2026-10-28T06:00:00Z')
+    assert first['counts'] == second['counts']
+    assert first['execution_digest_sha256'] != second['execution_digest_sha256']
+    assert first['provider_refusal_checked_as_of'] == '2026-10-28T05:00:00Z'

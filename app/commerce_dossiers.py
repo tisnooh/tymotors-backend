@@ -32,8 +32,8 @@ def apply_owner_execution_scope(result):
     scoped=deepcopy(result)
     if len(scoped['articles'])!=40 or 'execution_policy' in scoped:
         raise ValueError('Expected one unscoped forty-article dossier')
-    policy={'revision':'owner-three-suppliers-photo-step-deferred-2026-10-27',
-        'original_suppliers':list(ORIGINAL_SUPPLIERS),'hypersku_role':'sourcing_and_fulfillment_provider',
+    policy={'revision':'owner-three-suppliers-direct-shipping-review-2026-10-28',
+        'original_suppliers':list(ORIGINAL_SUPPLIERS),'hypersku_role':'candidate_provider_subject_to_product_acceptance',
         'photo_certification_required':False,'photo_review':'DEFERRED_BY_OWNER',
         'images_modified':False,'permissions_granted':False,'publication_authorized':False,
         'scope':'private_execution_plan_only_not_checkout_or_commercial_approval'}
@@ -58,7 +58,7 @@ def apply_owner_execution_scope(result):
             if article.get('candidate_soyin') else None)
         article['next_action']=(
             'Soyintech : rapprocher la variante et le montage du SKU '+sku+
-            ', puis obtenir coût, disponibilité et livraison France ; raccorder à HyperSKU sans achat.'
+            ', puis obtenir coût, disponibilité et livraison directe France ; aucun canal logistique accepté par défaut.'
             if sku else
             'Retrouver la référence et variante exactes chez Tianzhiyu, Soyintech ou GZTM/Leju ; '
             'puis montage, coût et port France. Aucun autre vendeur retenu.')
@@ -75,6 +75,55 @@ def apply_owner_execution_scope(result):
     scoped['execution_digest_sha256']=sha256(json.dumps(
         {'historical_source_digest':result['source_digest_sha256'],'policy':policy},
         sort_keys=True,ensure_ascii=False).encode()).hexdigest()
+    return scoped
+
+
+def apply_provider_refusal(result, review, *, as_of):
+    """Apply a dated, explicitly scoped refusal to a PRIVATE dossier only.
+
+    A refusal cannot select a replacement carrier, confirm shipping or approve
+    a product. Unnamed articles keep their previous status. No runtime routing
+    or production order is modified by this reporting projection.
+    """
+    _closed_record(review, ('provider', 'observed_at', 'evidence_ref', 'evidence_sha256',
+                           'product_slugs', 'decision'), 'provider refusal')
+    if (review['provider'] != 'HyperSKU' or review['decision'] != 'SOURCING_AND_SHIPPING_DECLINED'
+            or not isinstance(review['evidence_sha256'], str)
+            or not re.fullmatch(r'[0-9a-f]{64}', review['evidence_sha256'])):
+        raise ValueError('Invalid provider refusal evidence')
+    observed = _timestamp(review['observed_at'], 'provider refusal clock')
+    checked = _timestamp(as_of, 'provider refusal review clock')
+    if observed > checked:
+        raise ValueError('Provider refusal observation is after the explicit review clock')
+    _text(review['evidence_ref'], 'provider refusal source')
+    slugs = review['product_slugs']
+    known = {row['slug'] for row in result['articles']}
+    if (not isinstance(slugs, list) or not slugs or any(not isinstance(s, str) for s in slugs)
+            or len(set(slugs)) != len(slugs) or not set(slugs) <= known
+            or 'execution_policy' not in result or 'provider_refusal_review' in result):
+        raise ValueError('Invalid provider refusal scope')
+    scoped = deepcopy(result)
+    scoped['provider_refusal_review'] = deepcopy(review)
+    scoped['provider_refusal_checked_as_of'] = as_of
+    for row in scoped['articles']:
+        if row['slug'] not in slugs:
+            continue
+        row['verification_statuses']['hypersku'] = 'PROVIDER_DECLINED'
+        row['sources']['provider_refusal'] = deepcopy(review)
+        row['logistics_route'] = {
+            'provider': None, 'status': 'PENDING_DIRECT_SUPPLIER_QUOTE',
+            'external_send_allowed': False, 'shipping_confirmed': False,
+        }
+        row['next_action'] = ('Obtenir auprès des fournisseurs initiaux la variante exacte, le montage, '
+                              'le coût et un devis de livraison directe France avec suivi. '
+                              'HyperSKU a refusé cette prise en charge ; aucun achat autorisé.')
+    scoped['counts']['provider_declined_articles'] = len(slugs)
+    scoped['counts']['pending_by_dimension'] = dict(Counter(
+        status for row in scoped['articles'] for status in row['verification_statuses'].values()
+        if status.startswith('PENDING_') or status == 'DEFERRED_BY_OWNER'))
+    scoped['execution_digest_sha256'] = sha256(json.dumps(
+        {'previous_digest': result['execution_digest_sha256'], 'provider_refusal': review, 'checked_as_of': as_of},
+        sort_keys=True, ensure_ascii=False).encode()).hexdigest()
     return scoped
 
 

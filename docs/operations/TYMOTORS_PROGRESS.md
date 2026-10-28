@@ -1,5 +1,31 @@
 # PHOENIX — journal de progression
 
+## Livraison directe et alternatives — lot local contrôlé28octobre
+
+- Générateur privé corrigé : plus de consigne imposant HyperSKU. Refus clos,
+  explicitement limité au G20 rapproché, avec source/empreinte/date ; aucun
+  prestataire de remplacement choisi, aucune livraison confirmée par déduction.
+- Premier audit REJECTED : observation future acceptée. Correction : horloge
+  explicite as_of, rejet des observations futures, CLI UTC indépendant du prix,
+  horloge incluse dans l'empreinte.87tests dossiers PASS puis audit APPROVED LOCAL.
+- Dossiers privés v4 : backend/data/phoenix-2026-10-28-direct-shipping-v4,
+  40articles/5pilotes,0validation commerciale, coûts/ports/marges toujours null.
+  Prix et date du snapshot27octobre conservés, aucune lecture de production.
+  v3 antérieur conservé comme historique pré-correction, pas livraison validée.
+- Contrôle indépendant :40IDs/SKU/prix/publication/photos/fournisseurs/coûts
+  protégés inchangés ; preuve PNG concordante ; table5pilotes/40sections intacte.
+- Suite Chef finale2142pytest PASS,30,44s ; avertissement Starlette/httpx existant.
+- Alternatives examinées sur sources officielles : CJ Service Products/API et
+  NextSmartShip réception/préparation/expédition/intégrations. Éligibilité pièces,
+  frais France et contrat compte à confirmer. Aucun contact ni compte créé.
+  Comparaison et demande NON ENVOYÉE : TYMOTORS_LOGISTICS_ALTERNATIVES_2026-10-28.md.
+- Les demandes Soyin/GZTM envoyées au lot précédent restent en attente ; aucun
+  doublon. Aucun achat, nouveau transporteur activé, design/photo/prix modifié,
+  push, déploiement ou activation commerciale.
+- Reprise : lire les réponses des deux fils, comparer la voie directe avec les
+  candidats ; aucun raccordement réel sans offre/référence/transport confirmés.
+
+
 ## Refus HyperSKU confirmé : sourcing ET expédition — 28 octobre 2026
 
 - Nouveau message WhatsApp, signé Lexi, affiché05:44 : refus du sourcing et de

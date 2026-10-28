@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 from urllib.request import urlopen
 
-from app.commerce_dossiers import build_dossiers,apply_owner_execution_scope
+from app.commerce_dossiers import build_dossiers,apply_owner_execution_scope,apply_provider_refusal
 
 URL = 'https://tymotors-backend-eu.onrender.com/api/products?preview=true&limit=100'
 
@@ -33,6 +33,12 @@ def render_markdown(result):
     deferred=result.get('execution_policy',{}).get('photo_review')=='DEFERRED_BY_OWNER'
     if deferred:
         md[2]='Trois fournisseurs initiaux uniquement : Tianzhiyu, Soyintech/Soyin, GZTM/Leju. Étape de certification photo écartée du travail prioritaire ; images inchangées. Aucune validation commerciale inventée.'
+    if result.get('provider_refusal_review'):
+        review = result['provider_refusal_review']
+        md[6:6] = ['', 'Refus HyperSKU (sourcing et expédition), limité aux références explicitement rapprochées : '
+               + ', '.join(_md(slug) for slug in review['product_slugs']) + '.',
+               'Preuve : ' + _md(review['evidence_ref']) + ' ; SHA-256 : ' + review['evidence_sha256'],
+               'Livraison directe fournisseur : à confirmer, aucun prestataire de remplacement accepté.', '']
     for item in sorted((x for x in result['articles'] if x['pilot_rank']), key=lambda x: x['pilot_rank']):
         candidate_sku = ((item.get('candidate_soyin') or {}).get('source_values') or {}).get('supplier_sku') or 'NON CONFIRMÉ / MANQUANT'
         missing='Variante/finition, montage, devis, port France, agent, garantie' if deferred else 'Variante/finition, montage, droits, devis, port France, agent, garantie'
@@ -80,7 +86,11 @@ def main():
                         help='Reproduce the former private workflow; current default uses the owner three-supplier scope')
     parser.add_argument('--reply-review', type=Path,
                         help='Optional closed-schema candidate reply evidence; never an approval or price import')
+    parser.add_argument('--provider-refusal', type=Path,
+                        help='Optional scoped provider refusal review; never selects a replacement carrier')
     args = parser.parse_args()
+    if args.provider_refusal and args.historical_scope:
+        parser.error('Provider refusal requires the current private execution scope')
     if args.output.exists():
         parser.error('Output must be a new directory; evidence is never overwritten')
     def read(relative):
@@ -103,6 +113,9 @@ def main():
                             reply_review_as_of=datetime.now(timezone.utc).isoformat() if args.reply_review else None)
     if not args.historical_scope:
         result=apply_owner_execution_scope(result)
+    if args.provider_refusal:
+        result=apply_provider_refusal(result,json.loads(args.provider_refusal.read_text(encoding='utf-8')),
+                                      as_of=datetime.now(timezone.utc).isoformat())
     args.output.mkdir(parents=True)
     (args.output / 'dossiers-40.json').write_text(json.dumps(result, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     (args.output / 'DOSSIERS.md').write_text(render_markdown(result), encoding='utf-8')
