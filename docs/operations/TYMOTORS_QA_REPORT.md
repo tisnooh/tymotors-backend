@@ -1,5 +1,14 @@
 # PHOENIX — qualité et preuves
 
+## 28 octobre — contrôle exhaustivité du dossier fulfillment
+
+- Suite complète exécutée après correctif : 2128 tests PASS en25,88s.
+- Un avertissement existant Starlette/httpx, aucun échec.
+- API : source tronquée refusée avant planification, aucune transmission réelle.
+- Tests locaux uniquement ; ni connexion HyperSKU ni livraison réelle prouvée.
+- Aucune modification frontend, photo, tarif public, schéma ou production.
+
+
 ## Communication Rita exécutée —28octobre,03:08 et03:10 Paris
 
 Après connexion WhatsApp du propriétaire : bon fil HyperSKU vérifié, message

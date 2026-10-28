@@ -1,5 +1,44 @@
 # PHOENIX — journal de progression
 
+## Exécution : exhaustivité du dossier agent et voie logistique — 28 octobre
+
+- Correctif API local : le fulfillment-plan lit les lignes avec comptage exact,
+  ordre stable et limite 100 ; une réponse tronquée ou hors capacité est refusée
+  en 409 avant toute planification. Aucun changement visuel/photo/prix.
+- 40 tests ciblés PASS, dont quatre nouveaux cas : source partielle, plus de
+  100 lignes, comptage contradictoire, dossier complet transmis exactement une fois.
+- Recherche Gmail après le26octobre : aucun nouveau retour technique parmi les
+  messages correspondant aux trois fournisseurs et HyperSKU. Derniers envois
+  Soyin et GZTM du26octobre relus : devis une unité France75001, emballage,
+  transport/taxes, délais, suivi, garantie et retours déjà demandés. Pas de doublon.
+- WhatsApp consulté de nouveau : clarification05:27 Distribué, réponse attendue.
+- Décision : choisir le canal par offre exacte, jamais globalement. HyperSKU
+  uniquement après acceptation de la référence et conditions ; sinon voie directe
+  des fournisseurs initiaux à confirmer. Aucun changement de prestataire activé.
+- Prochaine étape externe : retour chiffré et engagement sur livraison/variante.
+  Avant première vente : coût complet, suivi, disponibilité, attribution agent,
+  puis validation humaine du pilote réel. Aucun achat lancé.
+
+## HyperSKU : refus de sourcing G20 et clarification — 28 octobre 2026
+
+- Fil WhatsApp HyperSKU consulté : Lexi indique à 03:52 que ce type de produit
+  n'est pas pris en charge et refuse le sourcing/devis du spoiler G20 présenté.
+  Ce refus est une preuve négative pour cette demande, pas une validation des
+  autres produits et pas encore une réponse sur le fulfillment DIY.
+- Clarification envoyée une seule fois à 05:27 Paris, état Distribué observé :
+  portée du refus (G20 ou accessoires automobiles), réception de pièces des trois
+  fournisseurs par DIY Sourced Orders, inspection/emballage/livraison France,
+  restrictions et prise en charge boutique custom React/Python.
+- Aucun achat, paiement, transfert client, changement design/photo/prix ou
+  déploiement. Aucun SKU HyperSKU, Store ID ou devis obtenu. Ne pas considérer
+  HyperSKU comme transporteur disponible pour ce produit sans réponse précise.
+- Preuve privée : backend/data/hypersku-2026-10-28/
+  whatsapp-hypersku-refusal-clarification.png. Ne pas réexpédier la clarification.
+- Prochaine action : analyser la réponse. Si refus confirmé pour le fulfillment,
+  préparer la voie fournisseur directe avec devis France et suivi vérifiés ; ne
+  pas substituer silencieusement un prestataire ni inventer un tarif.
+
+
 ## WhatsApp connecté, réponse à Rita exécutée —28octobre,03:08–03:10 Paris
 
 - Après réponse humaine « Connecté », session WhatsApp réellement accessible.

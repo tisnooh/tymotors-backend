@@ -1,5 +1,25 @@
 # PHOENIX — blocages explicites
 
+## HyperSKU : refus de sourcing G20 et clarification — 28 octobre 2026
+
+- Fil WhatsApp HyperSKU consulté : Lexi indique à 03:52 que ce type de produit
+  n'est pas pris en charge et refuse le sourcing/devis du spoiler G20 présenté.
+  Ce refus est une preuve négative pour cette demande, pas une validation des
+  autres produits et pas encore une réponse sur le fulfillment DIY.
+- Clarification envoyée une seule fois à 05:27 Paris, état Distribué observé :
+  portée du refus (G20 ou accessoires automobiles), réception de pièces des trois
+  fournisseurs par DIY Sourced Orders, inspection/emballage/livraison France,
+  restrictions et prise en charge boutique custom React/Python.
+- Aucun achat, paiement, transfert client, changement design/photo/prix ou
+  déploiement. Aucun SKU HyperSKU, Store ID ou devis obtenu. Ne pas considérer
+  HyperSKU comme transporteur disponible pour ce produit sans réponse précise.
+- Preuve privée : backend/data/hypersku-2026-10-28/
+  whatsapp-hypersku-refusal-clarification.png. Ne pas réexpédier la clarification.
+- Prochaine action : analyser la réponse. Si refus confirmé pour le fulfillment,
+  préparer la voie fournisseur directe avec devis France et suivi vérifiés ; ne
+  pas substituer silencieusement un prestataire ni inventer un tarif.
+
+
 ## WhatsApp résolu —28octobre,03:10 Europe/Paris
 
 Session liée par le propriétaire et vérifiée. Deux messages envoyés à Rita dans

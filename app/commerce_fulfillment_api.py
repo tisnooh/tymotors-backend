@@ -41,7 +41,11 @@ def create_test_fulfillment_router(db, require_admin, get_settings):
         orders = await db.select('orders', params={'id': f'eq.{order_id}', 'limit': 1})
         if not orders:
             raise HTTPException(404, 'Order not found')
-        lines = await db.select('commerce_order_lines', params={'order_id': f'eq.{order_id}'})
+        page = await db.page('commerce_order_lines',
+            params={'order_id': f'eq.{order_id}', 'order': 'order_item_id.asc'}, page=1, limit=100)
+        if page['total'] != len(page['items']) or page['total'] > 100:
+            raise HTTPException(409, 'incomplete_fulfillment_plan_source')
+        lines = page['items']
         try:
             return {'is_test': True, 'external_send_allowed': False,
                     'tasks': plan_test_fulfillment(orders[0], lines)}
