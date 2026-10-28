@@ -1,5 +1,27 @@
 # Alternatives logistiques — étude du28octobre2026
 
+## Envoi effectué après accord du propriétaire —28octobre,07:39UTC
+
+- CJ : support@cjdropshipping.com, message/fil1a181738767320c7.
+- NextSmartShip : sales@nextsmartship.com, message/fil1a181739372e56fc.
+- Les deux messages ont été relus : SENT, bon destinataire, objet et corps exact.
+  Cela prouve l'envoi, pas la lecture ni l'acceptation commerciale.
+- Historique consulté avant envoi : pas de demande similaire retrouvée aux deux
+  domaines. Ancien compte CJ identifié dans un avis11juin2026 nommant Metis Xiang ;
+  support prié de router au responsable actuel, sans présumer que cet agent est
+  toujours affecté. Aucun nouveau compte créé, aucun email de vérification suivi.
+- Contacts vérifiés sur les pages officielles :
+  [CJ](https://developers.cjdropshipping.com/en/about.html),
+  [NextSmartShip](https://www.nextsmartship.com/contact-us/).
+- Demande : pièces automobiles reçues des trois fournisseurs initiaux,
+  éligibilité avant devis, colis longs/fragiles, unité ou paire, tous frais France,
+  stock minimum/dépôt, suivi/retours, documentation API et alternative manuelle.
+  Aucun volume promis, achat, frais, expédition, service ou contrat accepté.
+- Reçus et textes exacts privés :
+  backend/data/logistics-2026-10-28-enquiries/sent-receipts.json.
+- Prochaine action : analyser les deux fils ; ne pas renvoyer ces demandes.
+  Aucun candidat n'est sélectionné, connecté ou déclaré apte à nos produits.
+
 ## Décision de travail
 
 Conserver Tianzhiyu, Soyintech/Soyin et GZTM/Leju comme trois fournisseurs
@@ -40,7 +62,7 @@ Le guide CJ sur la réception externe date de2020 : procédure exacte à reconfi
 avec le compte actuel. La documentation API et les pages commerciales ont été
 relues le28octobre. Aucun délai public n'est promis à un client TYMotors.
 
-## Demande préparée pour les deux candidats — NON ENVOYÉE
+## Modèle de préparation historique — messages adaptés envoyés ci-dessus
 
 Hello,
 
@@ -74,7 +96,7 @@ charge, ship or start any paid service.
 Thank you,
 TYMotors
 
-## État d'exécution
+## État lors de la préparation, avant les envois ci-dessus
 
 - Deux devis directs déjà demandés à Soyin/GZTM : SENT vérifié, pas de doublon.
 - Recherche entrante de ce lot : aucune nouvelle réponse Soyin/GZTM trouvée.

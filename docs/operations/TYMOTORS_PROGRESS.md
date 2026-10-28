@@ -1,5 +1,26 @@
 # PHOENIX — journal de progression
 
+## Deux demandes logistiques envoyées —28octobre2026,07:39UTC
+
+- Accord explicite « Ok fait » : messages envoyés à CJ support et NextSmartShip
+  sales après vérification des contacts officiels et recherche anti-doublon.
+- CJ message/fil1a181738767320c7 à07:39:54UTC ; NextSmartShip message/fil
+  1a181739372e56fc à07:39:57UTC. Relecture séparée : SENT, destinataire/objet et
+  corps exacts concordants. Envoi confirmé, aucune réponse ou acceptation déduite.
+- Ancien avis CJ11juin2026 retrouvé : compte préexistant et Metis Xiang nommé à
+  l'époque. Demande adressée au support pour routage au responsable actuel,
+  aucune nouvelle inscription ou vérification d'email effectuée.
+- Réception depuis les trois fournisseurs, pièces exactes, critères de colis,
+  frais France75001/scénario, suivi/retours/stock, API/custom et import manuel.
+  Aucun client, secret, volume promis, achat, dépense, contrat ou expédition.
+- Preuve privée et corps : backend/data/logistics-2026-10-28-enquiries/
+  sent-receipts.json ; suivi TYMOTORS_LOGISTICS_ALTERNATIVES_2026-10-28.md.
+- Attendre les réponses de ces deux fils et des demandes Soyin/GZTM existantes.
+  Aucun doublon à envoyer. Aucun opérateur validé ou intégré. Design, photos,
+  prix publics et production inchangés. Lot documentaire, pas de nouvelle suite
+  logicielle nécessaire ; précédent lot logiciel2142tests PASS reste inchangé.
+
+
 ## Livraison directe et alternatives — lot local contrôlé28octobre
 
 - Générateur privé corrigé : plus de consigne imposant HyperSKU. Refus clos,
