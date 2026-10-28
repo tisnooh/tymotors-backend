@@ -1,5 +1,26 @@
 # PHOENIX — journal de progression
 
+## HyperSKU / Rita —28octobre2026
+
+- Instruction explicite : finaliser HyperSKU et répondre à Rita sur WhatsApp.
+  Autorisation d'envoi déjà présente ; WhatsApp Web reste sur le QR, donc aucun
+  message envoyé. Connexion du téléphone demandée, pas nouvel accord commercial.
+  Réponse locale prête : HYPERSKU_RITA_WHATSAPP_REPLY_2026-10-28.md.
+- Module DIY Sourced Orders réellement activé27octobre et revérifié28octobre.
+  Vue d'entrée stock0commande sous filtre3mois, brouillons vides ; aucun Upload,
+  Submit, Pay Together, achat, paiement, expédition ou transfert de données client.
+- Modèle DIY téléchargé :2colonnes SKU Code/Hypersku Quantity, distinct du modèle
+  commande client16colonnes/Store ID. Fichiers officiels vides conservés intacts,
+  empreintes dans TYMOTORS_HYPERSKU_DIY_2026-10-28.md. Aucun SKU HyperSKU inventé.
+- Correctif limité outil d'inspection/tests : sortie header-only sans cellules ou
+  commentaires privés, contrats explicites2/16colonnes, gardesZIP/XML/formules.
+  Auditeur a rejeté les formules de mise en forme non détectées ; corrigé puis
+  119tests indépendants PASS, deux vrais modèles inchangés, APPROVED LOCAL.
+- API/Store ID/SKU réels/devis restent à obtenir ; compte web et module actif ne
+  sont pas une connexion automatique. Autres contacts exclus ; pas de démarche
+  photo, design/prix/checkout/SQL inchangés. Chef :2124pytest PASS (22,65s),
+  un avertissement Starlette/httpx existant, aucune dépendance changée.
+
 ## Recentrage demandé — trois fournisseurs initiaux, étape photo écartée
 
 - Propriétaire : ne plus demander de confirmation/certification photo et avancer

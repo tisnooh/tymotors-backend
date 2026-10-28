@@ -1,5 +1,20 @@
 # PHOENIX — qualité et preuves
 
+## Modèles HyperSKU distincts et module DIY —28octobre
+
+APPROVED LOCAL inspecteur :119tests indépendants PASS après rejet d'une formule
+de mise en forme conditionnelle non détectée ; scan globalXML corrigé et contre-
+exemple refusé dans les deux contrats. Les deux fichiers officiels restent
+inchangés : entrée de stock2colonnes, commande client16colonnes. Sortie limitée
+hash/en-têtes/compteurs, aucun contenu client/commentaire ni formule exécutée.
+Chefglobal2124pytest PASS en22,65s, avertissementStarlette/httpxpréexistant.
+
+UI réelle : module DIY actif, liste0ordre avec filtre3mois, brouillons vides et
+modèle stock téléchargé seulement. Aucun import/API/achat/paiement/expédition.
+WhatsApp affiche le QR de connexion : la réponse autorisée à Rita est préparée,
+NON ENVOYÉE. LiaisonStoreID/SKU/API et coûtFrance restent à obtenir, pas fictifs.
+Rapport et reprise : TYMOTORS_HYPERSKU_DIY_2026-10-28.md.
+
 ## Recentrage propriétaire —27octobre, trois fournisseurs et autres étapes
 
 APPROVED LOCAL pour le plan privé :73tests dossiers indépendants PASS, puis

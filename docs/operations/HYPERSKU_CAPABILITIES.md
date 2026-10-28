@@ -1,5 +1,19 @@
 # PHOENIX — capacités HyperSKU et limites de preuve
 
+## État du28octobre2026 — DIY réel, API encore distincte
+
+DIY Sourced Orders activé dans le compte (27octobre), menu/liste0ordre sous filtre
+3mois et brouillons revérifiés le28octobre. Le modèle d'entrée de stock téléchargé
+dans ce parcours a **2colonnes**, pas les16du modèle commande client. Inspection
+locale des deux contrats corrigée et contre-audit119PASS ; ce n'est pas un import.
+Aucun achat, upload, Submit ou paiement effectué. Store ID, références HyperSKU
+et documentation/accès API personnalisée restent à obtenir, pas inventés.
+
+Réponse à Rita sur WhatsApp explicitement autorisée par le propriétaire, préparée
+mais **NON ENVOYÉE : WhatsApp Web attend la connexion du téléphone par QR**.
+Ne pas redemander l'accord d'envoi ni le remplacer silencieusement par le chat
+Chloe/Lexi. Reprise détaillée : TYMOTORS_HYPERSKU_DIY_2026-10-28.md.
+
 ## Actualisation26octobre2026
 
 Le modèle XLSX a été obtenu dans le compte réel (téléchargement uniquement) et

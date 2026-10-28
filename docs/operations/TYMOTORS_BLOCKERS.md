@@ -1,5 +1,17 @@
 # PHOENIX — blocages explicites
 
+## HyperSKU / WhatsApp —28octobre
+
+| Blocage | Responsable / état réel | Suite |
+|---|---|---|
+| WhatsApp |Accès humain : QR affiché, conversations indisponibles ; réponse à Rita déjà autorisée mais non envoyée |Lier le navigateur sur le téléphone, puis lire/répondre dans le fil existant sans nouvel accord ordinaire |
+| Liaison personnalisée |HyperSKU : aucun Store ID/contrat API/SKU exploitable obtenu dans les vues consultées |Rita doit orienter la connexion React/Python ou le parcours manuel et mapper les variantes |
+| Coûts/logistique |HyperSKU/fournisseurs : pas de devis unitaire France confirmé |Devis détaillé, unité/colis/délai/frais et suivi des variantes pilotes |
+
+Avancée concrète : module DIY actif, modèle stock2colonnes téléchargé et distingué
+du modèle client16colonnes. Contrôleur local des modèles APPROVED après119tests
+indépendants. Aucun import/achat effectué, aucune connexion API simulée comme réelle.
+
 ## Rectification propriétaire —27octobre
 
 La confirmation/certification des photos est **DIFFÉRÉE**, pas une dépendance
