@@ -63,6 +63,13 @@ def test_database_stop_gate_ends_batch():
     assert box.deliver_financial.await_count == 1
 
 
+def test_scope_changed_before_sql_claim_skips_without_transport_or_blocking_next_log():
+    box = outbox()
+    box.deliver_financial.side_effect = [{'sent': False, 'status': 'not_eligible'}, {'sent': True, 'status': 'sent'}]
+    assert asyncio.run(FinancialNotificationWorker(box, enabled=True).run_once()) == {
+        'status': 'completed', 'attempted': 2, 'sent': 1}
+
+
 @pytest.mark.parametrize('damage', ['duplicate', 'kind', 'state', 'id', 'oversize'])
 def test_invalid_batch_is_rejected_before_any_delivery(damage):
     box = outbox()

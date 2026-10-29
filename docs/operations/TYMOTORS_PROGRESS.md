@@ -1,5 +1,24 @@
 # PHOENIX — journal de progression
 
+## Finalisation et push demandés — 29 octobre
+
+- Autorisation utilisateur : finaliser et pousser la branche de travail ; aucune
+  activation du flag DB/runtime, aucun SMTP ou déploiement production demandé.
+- Garde DB false par défaut dans shop_settings ; claim commun admin/système,
+  mêmes contrôles financiers, acteur système NULL et aucun nouveau toggle API.
+- Chef :2 600 pytest PASS,27,27s. Recette finale655 parcours +95 outbox +90 claim
+  système PASS, sortie0. Le singleton de test revient false en finally.
+- Écart de libellé not_eligible du SQL aligné avec le worker ; contre-test d'une
+  ligne devenue hors scope ajouté. Audit Python indépendant120 ciblés PASS.
+- Premier probe SQL refusé pour collision d'un PI fictif réutilisé ; identifiant
+  unique et diagnostic de fixture corrigés sans changer les protections métier.
+- Contre-exécution SQL indépendante655+95+90 PASS, sortie0 ; Python120 ciblés
+  indépendants PASS. APPROVED LOCAL et accepté Chef : flag finalfalse, empreintes
+  inchangées et ports fermés. Contrôle secrets des19commits backend et1frontend
+  sortants PASS ; le dernier lot SQL est aussi scanné avant commit.
+- Finalisation autorisée sur codex/commerce-workflows des deux dépôts. Le traitement
+  demeure une préparation inactive sans scheduler ni preuve SMTP distante.
+
 ## Préparation du traitement automatique — lot en cours,29 octobre
 
 - Départ propre après commit localfdd09dd. Pas de push ni déploiement.

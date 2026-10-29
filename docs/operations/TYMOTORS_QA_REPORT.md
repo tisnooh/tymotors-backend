@@ -1,5 +1,17 @@
 # PHOENIX — qualité et preuves
 
+## Traitement système inactif — finalisation29octobre
+
+- APPROVED LOCAL après contre-exécution indépendante655+95+90 contrôles PASS.
+  Python global Chef2 600 PASS ; ciblés indépendants120 PASS. Ports fermés.
+- Garde DB persistante false contrôlée dans le core, aucune usurpation admin,
+  lock partagé de configuration puis commande/journal, droits client refusés,
+  snapshot/finance/propriétaire communs et états ambigus non renvoyés.
+- Écarts corrigés : not_eligible aligné et PI fictif unique dans le probe.
+  Garde DB explicitement false à la fin ; aucun scheduler ou transport activé.
+- Autorisation de push de la branche de travail reçue ; aucune activation réelle
+  ni migration hébergée. Design, images et prix publics inchangés.
+
 ## Notifications financières — lot local accepté,29 octobre
 
 - Python110 ciblés PASS indépendants ; Chef global2 578 PASS, un avertissement

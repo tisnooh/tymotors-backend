@@ -55,7 +55,7 @@ class FinancialNotificationWorker:
                     report['sent'] += 1
                 elif status == 'disabled':
                     return {**report, 'status': 'disabled'}
-                elif status not in {'blocked', 'ineligible', 'not_found', 'legacy_review', 'sent', 'claimed'}:
+                elif status not in {'blocked', 'ineligible', 'not_eligible', 'not_found', 'legacy_review', 'sent', 'claimed'}:
                     return {**report, 'status': 'requires_review'}
             except Exception:
                 return {**report, 'status': 'requires_review'}
