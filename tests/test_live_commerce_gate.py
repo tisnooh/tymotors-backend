@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 import server
 
 
-@pytest.mark.parametrize('legal_ready,expected', [(False,503),(True,409)])
+@pytest.mark.parametrize('legal_ready,expected', [(False,409),(True,409)])
 def test_live_legacy_payment_stays_closed_before_cart_and_provider(monkeypatch,legal_ready,expected):
     provider=AsyncMock()
     monkeypatch.setattr(server,'settings',replace(server.settings,stripe_mode='live'))

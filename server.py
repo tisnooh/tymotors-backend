@@ -33,6 +33,9 @@ from app.commerce_api import create_commerce_router
 from app.commerce_quote_api import create_cart_quote_router
 from app.commerce_attempt_api import create_checkout_attempt_router
 from app.commerce_payment_service import CommerceTestPayments
+from app.commerce_context_webhook_api import create_context_webhook_router
+from app.commerce_context_receipt import context_checkout_receipt_order, ContextReceiptError
+from app.commerce_webhook_profiles import load_webhook_profiles, WebhookProfileError
 from app.commerce_refund_events import normalize_test_refund_event
 from app.commerce_fulfillment_api import create_test_fulfillment_router, load_test_fulfillment_summary
 from app.commerce_fulfillment import FulfillmentPlanError
@@ -865,12 +868,11 @@ async def update_order(order_id: str, payload: AdminOrderUpdateInput, admin: dic
 async def create_checkout_session(request: Request, promotion_code: str | None = Query(None, max_length=40),
                                   x_session_id: str | None = Header(default=None), user: dict[str, Any] | None = Depends(optional_user)):
     if stripe_client is None: raise HTTPException(status_code=503, detail="Stripe test checkout is not configured")
-    if not settings.stripe_test_mode and not legal_ready():
-        raise HTTPException(503, 'Legal identity must be completed before live checkout')
     # The legacy path has no verified supplier/rights/landed-cost snapshots.
     # Manually toggling a product active/verified must never open real payments.
-    # Keep the existing sandbox demo; live activation needs a reviewed workflow,
-    # not an environment flag or an administrator's optimistic product label.
+    # Keep the existing sandbox demo. Account-bound production uses the owned
+    # quote route, not this unquoted product-level legacy endpoint. No SIRET
+    # presence check is a substitute for a functioning payment/order workflow.
     if not settings.stripe_test_mode:
         raise HTTPException(409, 'Live checkout is disabled pending verified operations approval')
     if not settings.stripe_webhook_secret:
@@ -945,7 +947,24 @@ async def create_checkout_session(request: Request, promotion_code: str | None =
 
 @api.get("/checkout-session/{stripe_session_id}")
 async def checkout_session(stripe_session_id: str, x_session_id: str | None = Header(default=None), user: dict[str, Any] | None = Depends(optional_user)):
-    order = await checkout_receipt_order(db, stripe_session_id)
+    order = None
+    if settings.stripe_webhook_profiles_json:
+        try:
+            profiles = load_webhook_profiles(settings.stripe_webhook_profiles_json,
+                                             legacy_secret=settings.stripe_webhook_secret)
+        except WebhookProfileError:
+            raise HTTPException(503, 'Stripe receiver is not configured') from None
+        try:
+            order = await context_checkout_receipt_order(db, stripe_session_id, profiles, user, x_session_id)
+        except ContextReceiptError:
+            raise HTTPException(404, 'Order not found') from None
+    legacy_order = await checkout_receipt_order(db, stripe_session_id)
+    legacy_owned = legacy_order is not None and (bool(user and legacy_order.get('user_id') == user['id'])
+        or bool(not user and x_session_id and legacy_order.get('guest_session_id') == x_session_id))
+    if order is not None and legacy_owned:
+        raise HTTPException(404, 'Order not found')
+    if order is None:
+        order = legacy_order
     if not order: raise HTTPException(status_code=404, detail="Order not found")
     allowed = bool(user and order.get("user_id") == user["id"]) or bool(not user and x_session_id and order.get("guest_session_id") == x_session_id)
     if not allowed: raise HTTPException(status_code=404, detail="Order not found")
@@ -958,22 +977,26 @@ async def checkout_session(stripe_session_id: str, x_session_id: str | None = He
         "shipping_address": result.get("shipping_address") or {}}
 
 
-async def _complete_checkout_payment(obj: Any) -> str | None:
+async def _complete_checkout_payment(obj: Any, *, expected_is_test: bool | None = None) -> str | None:
     if obj.get("payment_status") not in {"paid", "no_payment_required"}:
         return None
     order_id = (obj.get("metadata") or {}).get("order_id")
     if not order_id:
         return None
     order_rows = await db.select("orders", params={
-        "select": "id,total_cents,currency,stripe_session_id,customer_email,is_test,commerce_quote_id", "id": f"eq.{order_id}", "limit": 1,
+        "select": "id,total_cents,currency,stripe_session_id,customer_email,is_test,commerce_quote_id", "id": f"eq.{order_id}",
+        "stripe_account_id": "is.null", "is_test": 'eq.true' if (settings.stripe_test_mode if expected_is_test is None else expected_is_test) else 'eq.false', "limit": 1,
     })
     if not order_rows:
         raise RuntimeError("Stripe event references an unknown order")
     expected = order_rows[0]
     if expected.get('commerce_quote_id'):
         raise RuntimeError('Quoted orders require their dedicated signed-event transaction')
-    if expected.get('is_test') and not settings.stripe_test_mode:
+    receiver_is_test = settings.stripe_test_mode if expected_is_test is None else expected_is_test
+    if expected.get('is_test') and not receiver_is_test:
         raise RuntimeError('A test order cannot be completed by a live payment')
+    if 'is_test' in expected and expected['is_test'] is not receiver_is_test:
+        raise RuntimeError('Order mode does not match the signed receiver')
     if obj.get("payment_status") == "no_payment_required" and expected["total_cents"] != 0:
         raise RuntimeError("A non-zero order cannot be completed without payment")
     if (
@@ -1010,11 +1033,14 @@ async def stripe_webhook(request: Request, stripe_signature: str | None = Header
     # verification so nested Checkout data supports dictionary operations too.
     try: event = stripe.Webhook.construct_event(payload, stripe_signature, settings.stripe_webhook_secret).to_dict()
     except (ValueError, stripe.SignatureVerificationError): raise HTTPException(status_code=400, detail="Invalid webhook signature")
-    if event.get("livemode") is not (not settings.stripe_test_mode):
+    if 'account' in event or 'context' in event:
+        raise HTTPException(400, 'Delegated Stripe events are not supported')
+    legacy_is_test = settings.stripe_legacy_webhook_mode == 'test'
+    if event.get("livemode") is not (not legacy_is_test):
         raise HTTPException(status_code=400, detail="Stripe event mode does not match checkout configuration")
     legacy_refund = False
     normalized_refund_intent = None
-    if settings.stripe_test_mode and event.get('type') in {
+    if legacy_is_test and event.get('type') in {
         'refund.created', 'refund.updated', 'refund.failed', 'charge.refunded'
     }:
         # SDK signature/mode verified above. Keep the minimal receipt BEFORE
@@ -1030,6 +1056,7 @@ async def stripe_webhook(request: Request, stripe_signature: str | None = Header
             owners = (await db.select('orders', params={
                 'select': 'id,commerce_quote_id',
                 'stripe_payment_intent_id': 'eq.' + normalized['payment_intent_id'], 'limit': 2,
+                'stripe_account_id': 'is.null', 'is_test': 'eq.true',
             })) if normalized['payment_intent_id'] else []
             if not owners or any(o.get('commerce_quote_id') for o in owners):
                 return receipt
@@ -1048,7 +1075,7 @@ async def stripe_webhook(request: Request, stripe_signature: str | None = Header
         raise HTTPException(status_code=400, detail='Invalid Stripe event metadata')
     if metadata.get('attempt_id') or metadata.get('quote_id'):
         # Dedicated immutable variant path. Never use legacy stock/cost/cart logic.
-        if not settings.stripe_test_mode:
+        if not legacy_is_test:
             raise HTTPException(status_code=409, detail='Quoted checkout is test-only')
         try:
             return await CommerceTestPayments(db, stripe_client).accept_signed_event(event)
@@ -1067,17 +1094,19 @@ async def stripe_webhook(request: Request, stripe_signature: str | None = Header
     try:
         obj = event["data"]["object"]; event_type = event["type"]
         if event_type in {"checkout.session.completed", "checkout.session.async_payment_succeeded"} and obj.get("payment_status") in {"paid", "no_payment_required"}:
-            await _complete_checkout_payment(obj)
+            await _complete_checkout_payment(obj, expected_is_test=legacy_is_test)
         elif event_type == "payment_intent.payment_failed":
-            order_id = (obj.get("metadata") or {}).get("order_id")
-            if order_id: await db.update("orders", {"status": "payment_failed", "payment_status": "failed"}, params={"id": f"eq.{order_id}", "payment_status": "in.(unpaid,failed)", "stock_applied_at": "is.null"})
+            # Metadata is not a bound financial identity. Record for review;
+            # a failure can arrive after payment and must not release a hold.
+            await db.update('stripe_events', {'error_message': 'requires_payment_reconciliation'},
+                            params={'event_id': 'eq.' + event_id})
         elif event_type in {"charge.refunded", "refund.created", "refund.updated", "refund.failed"} and obj.get("payment_intent"):
+            if legacy_is_test is not settings.stripe_test_mode:
+                raise RuntimeError('Legacy refund inspection needs its original provider credentials')
             await _sync_refunds(normalized_refund_intent or obj["payment_intent"])
         elif event_type in {"checkout.session.expired", "checkout.session.async_payment_failed"}:
-            order_id = (obj.get("metadata") or {}).get("order_id")
-            if order_id:
-                await db.update("orders", {"status": "payment_failed", "payment_status": "failed"},
-                    params={"id": f"eq.{order_id}", "stock_applied_at": "is.null", "payment_status": "in.(unpaid,failed)"})
+            await db.update('stripe_events', {'error_message': 'requires_payment_reconciliation'},
+                            params={'event_id': 'eq.' + event_id})
         await db.update("stripe_events", {"status": "completed", "completed_at": datetime.now(timezone.utc).isoformat()}, params={"event_id": f"eq.{event_id}"})
     except Exception as error:
         await db.update("stripe_events", {"status": "failed", "error_message": type(error).__name__}, params={"event_id": f"eq.{event_id}"})
@@ -1088,7 +1117,10 @@ async def stripe_webhook(request: Request, stripe_signature: str | None = Header
 async def _sync_refunds(payment_intent: str) -> None:
     if stripe_client is None:
         raise RuntimeError("Stripe client required to confirm refunds")
-    before = await db.select("orders", params={"select": "id,refunded_amount_cents,commerce_quote_id", "stripe_payment_intent_id": f"eq.{payment_intent}", "limit": 1})
+    before = await db.select("orders", params={"select": "id,refunded_amount_cents,commerce_quote_id", "stripe_payment_intent_id": f"eq.{payment_intent}",
+        'stripe_account_id':'is.null', 'is_test':'eq.true' if settings.stripe_test_mode else 'eq.false', 'limit': 2})
+    if len(before) != 1:
+        raise RuntimeError('Unambiguous historical refund owner required')
     if before and before[0].get('commerce_quote_id'):
         raise RuntimeError('Quoted refunds require a dedicated reviewed financial transaction')
     refunds = await stripe_client.v1.refunds.list_async(params={"payment_intent": payment_intent, "limit": 100})
@@ -1110,6 +1142,7 @@ api.include_router(create_admin_router(
     stripe_test_mode=settings.stripe_test_mode,
 ))
 app.include_router(api)
+app.include_router(create_context_webhook_router(db, lambda: settings))
 app.include_router(create_commerce_router(db, catalog, require_admin, settings.shipping_countries))
 app.include_router(create_public_variant_router(db, catalog, lambda: settings))
 app.include_router(create_customer_checkout_router(

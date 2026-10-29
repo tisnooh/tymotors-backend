@@ -33,7 +33,11 @@ class MemoryDatabase:
         rows = deepcopy(self.tables.get(table, []))
         for field, value in (params or {}).items():
             if field in {'select', 'limit', 'offset', 'order'}: continue
-            if value.startswith('eq.'): rows = [row for row in rows if str(row.get(field)) == value[3:]]
+            if value == 'is.null': rows = [row for row in rows if row.get(field) is None]
+            elif value.startswith('eq.'):
+                def text(item):
+                    return 'true' if item is True else 'false' if item is False else str(item)
+                rows = [row for row in rows if text(row.get(field)) == value[3:]]
             elif value.startswith('in.('): rows = [row for row in rows if str(row.get(field)) in value[4:-1].split(',')]
             else: raise AssertionError('Unsupported offline fixture filter')
         return rows

@@ -15,6 +15,7 @@ from app.commerce_delivery_options import CartDeliveryOptions
 from app.commerce_quote_engine import CartQuoteError
 from app.commerce_quote_service import CartQuoteService, public_quote
 from app.supabase_rest import SupabaseError
+from app.commerce_webhook_profiles import load_webhook_profiles, WebhookProfileError
 
 
 def create_cart_quote_router(db, cart_for, optional_user, require_admin, get_settings,
@@ -24,8 +25,26 @@ def create_cart_quote_router(db, cart_for, optional_user, require_admin, get_set
     def service():
         return CartQuoteService(db, get_settings().shipping_countries)
 
-    def sandbox_checkout_available():
+    async def sandbox_checkout_available():
         settings = get_settings()
+        if settings.stripe_checkout_profile:
+            try:
+                profiles = load_webhook_profiles(settings.stripe_webhook_profiles_json,
+                                                 legacy_secret=settings.stripe_webhook_secret)
+                profile = next((p for p in profiles if p.reference == settings.stripe_checkout_profile), None)
+                expected = 'sandbox' if settings.stripe_test_mode else 'production'
+                key_pattern = r'(sk|rk|rkcs)_test_[A-Za-z0-9_]+' if settings.stripe_test_mode else r'(sk|rk)_live_[A-Za-z0-9_]+'
+                configured = bool(profile is not None and profile.context.mode == expected
+                                  and re.fullmatch(key_pattern, settings.stripe_secret_key or ''))
+                if not configured or settings.stripe_test_mode:
+                    return configured
+                # This indication is never purchase authority; the transactional
+                # claim rechecks the current gate before any provider write.
+                return await db.rpc('commerce_context_checkout_enabled', {
+                    'p_is_test': False, 'p_stripe_account_id': profile.context.stripe_account_id,
+                    'p_profile_ref': profile.reference}) is True
+            except (WebhookProfileError, SupabaseError):
+                return False
         return settings.stripe_test_mode and bool(re.fullmatch(
             r'(sk|rk|rkcs)_test_[A-Za-z0-9_]+', settings.stripe_secret_key or ''))
 
@@ -67,7 +86,7 @@ def create_cart_quote_router(db, cart_for, optional_user, require_admin, get_set
         rate_limit(attempts, 'quote:' + cart['id'], 20, 3600)
         try:
             return public_quote(await service().create(payload, cart, user, x_session_id),
-                sandbox_checkout_available=sandbox_checkout_available())
+                sandbox_checkout_available=await sandbox_checkout_available())
         except CartQuoteError as error:
             refuse(error)
 
@@ -80,7 +99,7 @@ def create_cart_quote_router(db, cart_for, optional_user, require_admin, get_set
             row = await service().read(quote_id, cart, user, x_session_id)
             if row is None:
                 raise HTTPException(404, 'Quote not found')
-            return public_quote(row, sandbox_checkout_available=sandbox_checkout_available())
+            return public_quote(row, sandbox_checkout_available=await sandbox_checkout_available())
         except CartQuoteError as error:
             refuse(error)
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 import os
 import re
@@ -55,6 +55,10 @@ class Settings:
     stripe_mode: str = "test"
     test_catalog_enabled: bool = True
     shipping_countries: tuple[str, ...] = ("FR", "BE", "DE", "ES", "IT", "LU", "NL", "PT")
+    stripe_webhook_profiles_json: str = field(default='', repr=False)
+    stripe_checkout_profile: str = ''
+    # The historical receiver keeps its own mode after new checkout switches.
+    stripe_legacy_webhook_mode: str = 'test'
 
     @property
     def stripe_test_mode(self) -> bool:
@@ -91,6 +95,18 @@ class Settings:
             re.compile(self.cors_origin_regex)
         if self.stripe_mode not in {"test", "live"}:
             raise RuntimeError("STRIPE_MODE must be test or live")
+        from app.commerce_webhook_profiles import load_webhook_profiles, WebhookProfileError
+        try:
+            profiles = load_webhook_profiles(self.stripe_webhook_profiles_json,
+                                             legacy_secret=self.stripe_webhook_secret)
+        except WebhookProfileError:
+            raise RuntimeError('Invalid server Stripe webhook profiles') from None
+        if self.stripe_legacy_webhook_mode not in {'test', 'live'}:
+            raise RuntimeError('STRIPE_LEGACY_WEBHOOK_MODE must be test or live')
+        if self.stripe_checkout_profile:
+            chosen = next((p for p in profiles if p.reference == self.stripe_checkout_profile), None)
+            if chosen is None or (chosen.context.mode == 'sandbox') is not self.stripe_test_mode:
+                raise RuntimeError('STRIPE_CHECKOUT_PROFILE must match the checkout mode')
         if self.stripe_secret_key and self.stripe_mode == "test" and not self.stripe_secret_key.startswith(("sk_test_", "rk_test_", "rkcs_test_")):
             raise RuntimeError("A live Stripe key cannot be used in test mode")
         if self.stripe_mode == "live" and (self.environment != "production" or not self.stripe_secret_key.startswith(("sk_live_", "rk_live_"))):
@@ -166,5 +182,8 @@ def get_settings() -> Settings:
         stripe_mode=os.getenv("STRIPE_MODE", "test").strip().lower(),
         test_catalog_enabled=os.getenv("TEST_CATALOG_ENABLED", "true").lower() in {"1", "true", "yes"},
         shipping_countries=tuple(_csv("SHIPPING_COUNTRIES", "FR,BE,DE,ES,IT,LU,NL,PT")),
+        stripe_webhook_profiles_json=os.getenv('STRIPE_WEBHOOK_PROFILES_JSON', ''),
+        stripe_checkout_profile=os.getenv('STRIPE_CHECKOUT_PROFILE', ''),
+        stripe_legacy_webhook_mode=os.getenv('STRIPE_LEGACY_WEBHOOK_MODE', 'test').strip().lower(),
     )
     return settings

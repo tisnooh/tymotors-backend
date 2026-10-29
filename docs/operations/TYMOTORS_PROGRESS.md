@@ -1,5 +1,41 @@
 # PHOENIX — journal de progression
 
+## Checkout par compte/profil —29octobre, APPROVED LOCAL
+
+- Remplace les limites techniques décrites dans les sections historiques : le
+  parcours devis/commande/claim/session/règlement est désormais implémenté pour
+  un compte et un profil explicites, en sandbox ou production. L'approbation
+  serveur nécessaire à une nouvelle vente ne dépend pas de la présence du SIRET.
+- Adaptateur Stripe réel avec authentification du compte par le SDK avant toute
+  création ; aucune clé réelle ou requête externe utilisée dans cette recette.
+- Chef :2 842 tests Python PASS ;655 contrôles historiques +250 contrôles nouveaux
+  SQL/HTTP PASS. Transport Stripe HTTPX factice avec vrai SDK, signature HMAC
+  locale, une seule création factice, règlement et reçu client réellement testés.
+- Auditeur indépendant :226 Python +655/250 recette +39 ACL sur13helpers PASS,
+  APPROVED LOCAL. Rapports dédiés CONTEXT_SQL_EXECUTION et
+  CONTEXT_CHECKOUT_INDEPENDENT_AUDIT. Ports fermés, frontend propre.
+- Les échecs de recette intermédiaires provenaient de filtres incomplets dans
+  l'adaptateur mémoire de smoke, du routage GET du compteur factice et de son
+  injection HTTPX ; corrigés et recette complète relancée avec succès.
+- Dossiers fournisseurs/agents créés aussi en incident payé, avec motifs et
+  envoi interdit ; stock production consommé une seule fois dans les fixtures.
+- Reste à compléter séparément : progression manuelle multicolis et suivi des
+  remboursements par compte. Aucun produit réel activé, migration distante,
+  paiement, commande fournisseur, photo, prix public ou design modifié.
+
+## Rectification du blocage administratif —29octobre
+
+- Retour propriétaire pris en compte : ne plus bloquer le développement ni les
+  tests sans encaissement dans l'attente de l'immatriculation. La réception du
+  SIRET n'est pas une condition universelle préalable au début de toute activité.
+- Règle micro/EI vérifiée sur Service Public : demande possible jusqu'à quinze
+  jours après le début d'activité ; chiffre d'affaires nul ne dispense pas à lui
+  seul des formalités. Détails et sources dans le rapport de lancement.
+- Code inspecté : le checkout sandbox ne conditionne pas son entrée au contrôle
+  légal. Aucun assouplissement de paiement réel, faux justificatif, changement
+  visuel ou déploiement effectué. Le vrai parcours production et le traitement
+  logistique restent des travaux distincts à terminer et vérifier.
+
 ## Préflight du lancement —29octobre, lot à pousser après audit
 
 - Contrôle Python pur : profil attendu typé, empreinte canonique des14champs

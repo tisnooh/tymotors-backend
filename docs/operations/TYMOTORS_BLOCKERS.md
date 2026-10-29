@@ -1,5 +1,23 @@
 # PHOENIX — blocages explicites
 
+## Mise à jour —29octobre : ne pas attendre le SIRET pour les travaux techniques
+
+Les paragraphes plus bas sont historiques. Le parcours checkout par compte/profil
+est maintenant implémenté et audité localement (2 842 pytest ;655+250 SQL/HTTP).
+L'absence du numéro SIRET ne bloque ni ce développement ni la recette sans débit.
+
+Restent distincts :
+- CODE : progression manuelle des dossiers en colis/suivi et rapprochement des
+  remboursements nouveaux ; lot séparé en cours, pas encore approuvé ici.
+- ACCÈS : compte Stripe marchand et signing secrets hébergés non vérifiés dans
+  cette session. Aucun contournement de l'activation Stripe, aucun secret au chat.
+- COMMERCIAL : cinq offres pilotes réelles non approuvées sur les preuves
+  disponibles (références/coûts/ports/disponibilité à confirmer).
+- LOGISTIQUE : HyperSKU a refusé les pièces ; aucune acceptation alternative
+  vérifiée ne doit être inventée. Le dossier interne n'est pas une expédition.
+- PUBLICATION : aucune migration distante, bascule de mode ou production
+  déployée par ce lot ; design/photos/prix restent inchangés.
+
 ## Paiement réel : préparation technique distincte de l'activation — 29 octobre
 
 - Le contrat pur mode/compte est contre-audité (commit local510a69a). Il

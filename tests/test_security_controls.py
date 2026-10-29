@@ -29,11 +29,11 @@ def test_login_limit_cannot_be_bypassed_with_forwarded_header(monkeypatch):
     assert login.await_count == 5
     server.login_attempts.clear()
 
-def test_live_checkout_needs_legal_identity(monkeypatch):
+def test_legacy_live_checkout_does_not_mistake_missing_siret_for_technical_readiness(monkeypatch):
     monkeypatch.setattr(server, 'settings', replace(server.settings, stripe_mode='live'))
     monkeypatch.setattr(server, 'stripe_client', object())
     monkeypatch.setattr(server, 'legal_ready', lambda: False)
-    assert TestClient(server.app).post('/api/create-checkout-session').status_code == 503
+    assert TestClient(server.app).post('/api/create-checkout-session').status_code == 409
 
 def test_login_uses_only_publishable_key_and_returns_only_session_tokens():
     def transport(request):

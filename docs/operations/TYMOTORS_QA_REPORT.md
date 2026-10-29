@@ -1,5 +1,22 @@
 # PHOENIX — qualité et preuves
 
+## Exécution du checkout par compte/profil —29octobre : APPROVED LOCAL
+
+- Chef :2 842 pytest PASS ;655 historiques +250 nouveaux contrôles SQL/HTTP PASS.
+  Deux avertissements de dépréciation de dépendances (19 occurrences), sans échec.
+- Indépendant :226 Python PASS, contre-recette655+250 PASS et39 assertions ACL
+  sur13helpers privés. Empreintes migration/probe/journey figées et identiques.
+- HTTP client vers vrai SDK/transport HTTPX MockTransport, SQL transactionnel,
+  webhook signé et confirmation propriétaire avant/après paiement démontrés.
+- Compte/mode/profil immuables, deux comptes avec les mêmes identifiants opaques,
+  rejeux, arrêt des nouvelles créations, paiement tardif, incidents de stock,
+  conservation du sandbox et absence de double consommation vérifiés.
+- Aucun fichier frontend/image/style modifié ; aucun déploiement. Preuves locales,
+  pas de preuve d'accès marchand ou d'expédition. PGlite ne démontre pas la
+  concurrence native multi-connexion. Remboursements nouveaux encore en revue.
+- La nouvelle migration de traitement manuel est hors de cette approbation et
+  devra obtenir ses propres tests et son contre-audit avant livraison.
+
 ## Contrôle préparatoire du lancement —29octobre
 
 - Python pur16tests +4contre-vérifications indépendantes PASS. Global Chef2 616

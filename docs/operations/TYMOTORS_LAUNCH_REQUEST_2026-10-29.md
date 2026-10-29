@@ -1,5 +1,37 @@
 # Demande d'ouverture commerciale —29octobre
 
+## Avancement technique après ce constat
+
+Le checkout par compte/profil est désormais implémenté et APPROVED LOCAL :
+2 842 tests Python,655 historiques +250 contrôles SQL/HTTP, avec contre-exécution
+indépendante. Les descriptions « routes uniquement sandbox » ci-dessous décrivent
+le constat initial, pas le nouveau code. Aucun déploiement de ce code n'a eu lieu.
+Les comptes Stripe, offres et prestations réels ne sont pas validés par ces tests.
+La progression logistique manuelle et les remboursements nouveaux sont traités
+dans une tranche séparée. Voir les rapports CONTEXT_CHECKOUT_INDEPENDENT_AUDIT
+et CONTEXT_SQL_EXECUTION pour le périmètre exact.
+
+## Rectification après retour du propriétaire
+
+L'immatriculation en cours ne doit pas être présentée comme une interdiction
+générale de commencer ni comme un blocage du développement ou des tests sans
+encaissement. Pour une micro-entreprise ou une entreprise individuelle, Service
+Public précise que la demande peut être déposée au plus tard dans les quinze
+jours suivant le début d'activité. Un chiffre d'affaires nul ne constitue pas,
+à lui seul, une dispense générale de déclaration d'activité.
+
+Source officielle consultée le29octobre2026 :
+https://entreprendre.service-public.gouv.fr/vosdroits/F36746
+https://entreprendre.service-public.gouv.fr/vosdroits/F36763
+
+Le champ légal manquant est un constat de configuration, pas une preuve que
+toute activité avant réception du SIRET serait interdite. Le préflight actuel
+est une politique technique conservatrice, pas une détermination juridique.
+Continuer les travaux et les tests autorisés sans attendre le SIRET. L'ouverture
+effective reste à évaluer selon la forme d'activité réellement choisie, les
+exigences du prestataire de paiement et les capacités commerciales disponibles.
+Ne pas déduire de cette correction que Stripe réel ou la logistique sont prêts.
+
 Le propriétaire demande de retirer le mode test et lancer le site. Il confirme
 ensuite que l'immatriculation est encore en cours. Aucune identité légale ou
 information fournisseur n'est créée pour franchir artificiellement les contrôles.

@@ -225,5 +225,9 @@ async def fixture_spa(path: str):
     return FileResponse(fixture_site/'index.html')
 if __name__=="__main__":
     enable_fake_customer_checkout()
+    import os
+    if os.environ.get('TYMOTORS_CONTEXT_FIXTURE') == '1':
+        from tests.context_checkout_fixture import install
+        install(server)
     logging.getLogger('httpx').setLevel(logging.WARNING)
     uvicorn.run(server.app,host="127.0.0.1",port=8765,log_level='warning',access_log=False)

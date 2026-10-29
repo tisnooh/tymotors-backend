@@ -160,7 +160,8 @@ def create_admin_router(db, catalog, require_admin, audit, stripe_test_mode: boo
         if not rows:
             raise HTTPException(404, "Commande introuvable")
         payment_intent = rows[0].get("stripe_payment_intent_id")
-        stripe_prefix = "https://dashboard.stripe.com/test/payments/" if stripe_test_mode else "https://dashboard.stripe.com/payments/"
+        historical_test = rows[0].get('is_test', stripe_test_mode)
+        stripe_prefix = "https://dashboard.stripe.com/test/payments/" if historical_test else "https://dashboard.stripe.com/payments/"
         supplier_rows = await db.select("supplier_orders", params={"order_id": f"eq.{order_id}", "limit": 1})
         supplier_order = supplier_rows[0] if supplier_rows else None
         if supplier_order:
@@ -172,6 +173,9 @@ def create_admin_router(db, catalog, require_admin, audit, stripe_test_mode: boo
                 "stripe_dashboard_url": stripe_prefix + payment_intent if payment_intent else None,
                 "items": await db.select("order_items", params={"order_id": f"eq.{order_id}", "order": "created_at.asc"}),
                 "supplier_order": supplier_order,
+                "fulfillment_tasks": (await db.select('commerce_fulfillment_tasks',
+                    params={'order_id':f'eq.{order_id}','order':'created_at.asc,id.asc'}))
+                    if rows[0].get('stripe_profile_ref') else [],
                 "tracking_events": await db.select("order_tracking_events", params={"order_id": f"eq.{order_id}", "order": "occurred_at.asc,id.asc"}),
                 "history": await db.select("admin_audit", params={"resource": f"eq.{order_id}", "order": "created_at.desc", "limit": 50}),
                 "emails": await db.select("email_logs", params={"order_id": f"eq.{order_id}", "order": "created_at.desc", "limit": 50}),
