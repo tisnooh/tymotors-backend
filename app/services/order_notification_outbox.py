@@ -68,6 +68,15 @@ class OrderNotificationOutbox:
         self.db = service.db
 
     async def deliver(self, log_id: str, actor: str) -> dict[str, Any]:
+        return await self._deliver(log_id, actor)
+
+    async def deliver_financial(self, log_id: str, *, enabled=False) -> dict[str, Any]:
+        """Dormant system entry; SQL separately checks its persistent stop gate."""
+        if enabled is not True:
+            return {'log_id': log_id, 'sent': False, 'status': 'disabled'}
+        return await self._deliver(log_id, None, system_financial=True)
+
+    async def _deliver(self, log_id, actor, *, system_financial=False):
         result = {'log_id': log_id, 'sent': False}
         # Never log recipient, rendered content or provider exception strings.
         try:
@@ -75,6 +84,9 @@ class OrderNotificationOutbox:
             if not rows:
                 return {**result, 'status': 'not_found'}
             row = rows[0]
+            if system_financial and (row.get('email_type') not in FINANCIAL_KINDS
+                    or (row.get('metadata') or {}).get('source') != 'atomic_financial_transition'):
+                return {**result, 'status': 'ineligible'}
             if row.get('event_snapshot') is None:
                 return {**result, 'status': 'sent' if row.get('status') == 'sent' else 'legacy_review'}
             if row.get('delivery_state') not in {'pending', 'blocked'}:
@@ -95,8 +107,11 @@ class OrderNotificationOutbox:
             except (KeyError, TypeError, ValueError, AttributeError):
                 pass  # Invalid/missing snapshot is blocked before any transport.
             token = str(uuid.uuid4())
-            claim = await self.db.rpc('admin_claim_order_notification', {
-                'p_actor': actor, 'p_id': log_id, 'p_token': token, 'p_ready': ready})
+            claim_args = {'p_id': log_id, 'p_token': token, 'p_ready': ready}
+            if not system_financial:
+                claim_args['p_actor'] = actor
+            claim = await self.db.rpc('commerce_claim_financial_notification' if system_financial
+                                      else 'admin_claim_order_notification', claim_args)
             if claim.get('claimed') is not True:
                 return {**result, 'status': claim.get('state') or 'unknown'}
         except Exception:

@@ -1,5 +1,21 @@
 # PHOENIX — journal de progression
 
+## Préparation du traitement automatique — lot en cours,29 octobre
+
+- Départ propre après commit localfdd09dd. Pas de push ni déploiement.
+- Nouveau FinancialNotificationWorker.run_once : aucun lancement au démarrage,
+  enabled=False strict, lots1..50, vérification stop avant chaque ligne, sélection
+  financière pending/blocked, validation du lot entier avant toute livraison.
+- OrderNotificationOutbox réutilise son rendu, transport et complétion ; nouvelle
+  entrée financière fermée par défaut appelle un claim système dédié sans faux
+  administrateur. La garde SQL persistante séparée est encore en développement.
+-119 tests ciblés PASS, reproduits indépendamment : APPROVED LOCAL Python inactif.
+  Coupure DB, arrêt, lots et absence de scheduler contrôlés. La garde SQL reste
+  en développement/non validée. Aucun SMTP, clé live, environnement hébergé ou message utilisé.
+- Reprise : finir le claim commun et sa garde DB false par défaut, tests de
+  permissions/annulation/ambiguïté puis intégration HTTP/SQL et contre-audit.
+  Ne pas déclarer le worker actif ou prêt à envoyer ; aucun scheduler installé.
+
 ## Lot financier accepté localement — 29 octobre
 
 - Deux refus imposés et corrigés : bypass Python avec retry_log_id explicite et
