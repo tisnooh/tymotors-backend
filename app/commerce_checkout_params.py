@@ -1,4 +1,8 @@
-"""Pure, sandbox-only Checkout parameter construction; NOT a payment workflow.
+"""Pure Checkout parameter construction; sandbox by default, NOT a payment workflow.
+
+An explicit CheckoutServerContext permits structural production construction
+only, with matching server-loaded account snapshots and a public HTTPS origin.
+It is not authorization to call Stripe. Existing HTTP/gateway/SQL stay test-only.
 
 Inputs must be server-loaded immutable quoted ``orders``/``order_items`` rows and
 an attempt persisted elsewhere. The order MUST be enriched by the future service
@@ -45,6 +49,7 @@ from urllib.parse import urlsplit
 from uuid import UUID
 
 from app.product_image_policy import SCP_HOSTS, permitted_image
+from app.commerce_checkout_mode import CheckoutServerContext, CheckoutModeError, checkout_mode
 
 
 MAX_SUPPORTED_TOTAL_CENTS = 99_999_999
@@ -108,7 +113,7 @@ def _aware(value):
         _fail('invalid_checkout_timestamp')
 
 
-def _origin(value):
+def _origin(value, *, production=False):
     if not isinstance(value, str) or not value.isascii() or any(c.isspace() or ord(c) < 32 for c in value):
         _fail('invalid_checkout_origin')
     try:
@@ -124,7 +129,17 @@ def _origin(value):
         address = ip_address(host)
     except ValueError:
         address = None
+    # Browsers apply WHATWG IPv4 parsing beyond ip_address(): shortened,
+    # octal and hexadecimal hosts may resolve to private/loopback addresses.
+    # Refuse numeric-ending noncanonical authorities in every mode instead of
+    # treating them as public DNS names. No resolution/network is performed.
+    if address is None and re.fullmatch(r'(?:[0-9]+|0x[0-9a-f]*)', host.rsplit('.', 1)[-1], re.IGNORECASE):
+        _fail('invalid_checkout_origin')
     loopback = host == 'localhost' or (address is not None and address.is_loopback)
+    if production and (parsed.scheme != 'https' or loopback):
+        _fail('invalid_checkout_origin')
+    if production and host.endswith(('.test', '.invalid')):
+        _fail('invalid_checkout_origin')
     if not loopback:
         if parsed.scheme != 'https' or (address is not None and not address.is_global):
             _fail('invalid_checkout_origin')
@@ -170,7 +185,8 @@ def _image(value):
 
 
 def build_checkout_params(order: Mapping, items: Sequence, attempt: Mapping, *,
-                          trusted_origin: str, now: datetime) -> dict:
+                          trusted_origin: str, now: datetime,
+                          server_context: CheckoutServerContext | None = None) -> dict:
     """Return only Stripe create-session params, never SDK options or a session.
 
     Required item fields match persisted quoted order_items: id, order_id,
@@ -188,8 +204,10 @@ def build_checkout_params(order: Mapping, items: Sequence, attempt: Mapping, *,
         _fail('invalid_checkout_snapshot')
     if any(_OVERRIDES.intersection(row) for row in (order, attempt)):
         _fail('unsupported_checkout_override')
-    if order.get('is_test') is not True or attempt.get('is_test') is not True:
-        _fail('live_checkout_disabled')
+    try:
+        mode = checkout_mode(order, attempt, server_context)
+    except CheckoutModeError as error:
+        _fail('live_checkout_disabled' if error.code == 'checkout_mode_mismatch' and server_context is None else error.code)
     order_id, quote_id, attempt_id = _uuid(order.get('id')), _uuid(order.get('commerce_quote_id')), _uuid(attempt.get('id'))
     if _uuid(attempt.get('order_id')) != order_id or _uuid(attempt.get('commerce_quote_id')) != quote_id:
         _fail('checkout_attempt_mismatch')
@@ -205,8 +223,8 @@ def build_checkout_params(order: Mapping, items: Sequence, attempt: Mapping, *,
     total = _int(order.get('total_cents'), MIN_SUPPORTED_TOTAL_CENTS)
     if subtotal + shipping != total or tax > total or _int(attempt.get('total_cents')) != total:
         _fail('checkout_amount_mismatch')
-    origin = _origin(trusted_origin)
-    if _origin(attempt.get('frontend_origin')) != origin:
+    origin = _origin(trusted_origin, production=mode == 'production')
+    if _origin(attempt.get('frontend_origin'), production=mode == 'production') != origin:
         _fail('checkout_origin_mismatch')
     identifier = attempt.get('integration_identifier')
     if not isinstance(identifier, str) or not re.fullmatch(r'[A-Za-z0-9_-]+_[A-Za-z]{8}', identifier) or len(identifier) > 200:

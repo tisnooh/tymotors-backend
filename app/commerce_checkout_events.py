@@ -1,4 +1,8 @@
-"""Pure validation of server-trusted, sandbox Checkout Session mappings.
+"""Pure validation of server-trusted Checkout Session mappings; sandbox by default.
+
+Explicit production context is a structural contract only. Its separately
+supplied provider_account_id must be server established, never copied from
+session metadata. Neither this context nor this validator authenticates Stripe.
 
 NO signature verification, actor authorization, SDK, clock, SQL, network, stock,
 event journal or fulfillment occurs here. The future caller MUST verify Stripe
@@ -47,6 +51,8 @@ from collections.abc import Mapping
 import re
 import unicodedata
 from uuid import UUID
+from app.commerce_checkout_mode import (CheckoutServerContext, CheckoutModeError,
+                                       checkout_mode, check_provider_account)
 
 
 _MAX_CENTS = 99_999_999  # Supported builder policy, NOT a universal Stripe limit.
@@ -144,7 +150,9 @@ def _intent(value):
 
 
 def validate_checkout_session(session: Mapping, attempt: Mapping, order: Mapping, *,
-                              require_paid: bool = False) -> dict:
+                              require_paid: bool = False,
+                              server_context: CheckoutServerContext | None = None,
+                              provider_account_id: str | None = None) -> dict:
     """Return a redacted verified projection, or a typed identity/money refusal.
 
     Unpaid/open and unpaid/complete (asynchronous processing) are inspectable when
@@ -156,7 +164,12 @@ def validate_checkout_session(session: Mapping, attempt: Mapping, order: Mapping
     if (not isinstance(session, Mapping) or not isinstance(attempt, Mapping)
             or not isinstance(order, Mapping) or type(require_paid) is not bool):
         _fail('invalid_checkout_event_context')
-    if order.get('is_test') is not True or attempt.get('is_test') is not True or session.get('livemode') is not False:
+    try:
+        mode = checkout_mode(order, attempt, server_context)
+        check_provider_account(server_context, provider_account_id)
+    except CheckoutModeError as error:
+        _fail('checkout_event_mode_mismatch' if error.code == 'checkout_mode_mismatch' and server_context is None else error.code)
+    if session.get('livemode') is not (mode == 'production'):
         _fail('checkout_event_mode_mismatch')
     if session.get('object') != 'checkout.session' or session.get('mode') != 'payment':
         _fail('checkout_event_mode_mismatch')
@@ -170,7 +183,8 @@ def validate_checkout_session(session: Mapping, attempt: Mapping, order: Mapping
             or session.get('client_reference_id') != order_id):
         _fail('checkout_event_identity_mismatch')
     session_id = session.get('id')
-    if not isinstance(session_id, str) or not re.fullmatch(r'cs_test_[A-Za-z0-9_]+', session_id):
+    prefix = 'cs_live_' if mode == 'production' else 'cs_test_'
+    if not isinstance(session_id, str) or not re.fullmatch(prefix + r'[A-Za-z0-9_]+', session_id):
         _fail('checkout_event_session_mismatch')
     bound_session = attempt.get('session_id')
     if bound_session is not None and bound_session != session_id:
@@ -208,6 +222,8 @@ def validate_checkout_session(session: Mapping, attempt: Mapping, order: Mapping
     if status not in ('open', 'complete', 'expired') or payment_status not in ('paid', 'unpaid', 'no_payment_required'):
         _fail('checkout_event_state_mismatch')
     intent = _intent(session.get('payment_intent'))
+    if server_context is not None and intent is not None and not re.fullmatch(r'pi_[A-Za-z0-9_]{1,240}', intent):
+        _fail('invalid_checkout_payment_intent')
     if attempt.get('payment_intent_id') is not None and attempt['payment_intent_id'] != intent:
         _fail('checkout_event_payment_intent_mismatch')
     financial_valid = payment_status in ('paid', 'no_payment_required')
