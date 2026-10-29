@@ -1,5 +1,24 @@
 # PHOENIX — blocages explicites
 
+## Mise à jour après reconnexion du plugin —29octobre
+
+- RÉSOLU : accès en lecture au sandbox Stripe TYMotors via la nouvelle connexion.
+  Webhook actif et cinq paiements historiques rapprochés aux commandes payées.
+  Les refus UNAUTHORIZED ci-dessous concernent le contrôle antérieur.
+- CORRIGÉ LOCAL : compatibilité `Event.context` direct, avec compte serveur exact
+  et signature, sans autoriser Connect.2 969 pytest et655+252+216 SQL/HTTP PASS.
+- PUBLICATION : registre de la base hébergée inspecté, dernière migration
+  20261013063630. Les lots par contexte ne sont pas appliqués ; préparer et faire
+  valider cette publication avant de changer la destination Stripe historique.
+- CONFIGURATION : connexion MCP distincte des secrets du backend. Le compte du
+  receiver legacy reste explicite via STRIPE_LEGACY_ACCOUNT_ID ; aucun compte
+  ou secret n'est déduit des événements ni copié entre sandbox et production.
+- COMMERCIAL/LOGISTIQUE : offres et frais France acceptés restent à vérifier ;
+  les cinq commandes payées en test attendent une revue fournisseur. Elles ne
+  constituent pas cinq produits pilotes approuvés ni des commandes expédiées.
+- Aucune nouvelle opération financière, permission, migration distante, image,
+  prix public ou apparence modifié. Rapport STRIPE_CONNECTED_2026-10-29.
+
 ## Après validation du traitement manuel —29octobre
 
 Les lots checkout et progression manuelle ont réussi leurs recettes et
@@ -8,7 +27,7 @@ fournisseur humaine, les preuves, colis, timeline et incidents ont maintenant un
 parcours technique. Les mentions de développement manuel en cours plus bas sont
 historiques. Aucun design, image, tarif public ou stock catalogue changé.
 
-À distinguer de cette validation : accès Stripe actuellement refusés/réauth,
+À distinguer de cette validation lors du contrôle antérieur : accès Stripe refusés/réauth,
 offres et frais France réellement exploitables, acceptation logistique et version
 hébergée encore non déployée. L'immatriculation n'arrête pas les travaux techniques.
 La projection monétaire cumulative des remboursements nouveaux et la résolution

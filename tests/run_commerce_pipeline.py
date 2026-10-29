@@ -39,6 +39,7 @@ def main():
          'FRONTEND_URL':'http://127.0.0.1:8765','CORS_ORIGINS':'http://127.0.0.1:8765',
          'STRIPE_MODE':'test','STRIPE_SECRET_KEY':'','EMAIL_ENABLED':'false',
          'STRIPE_WEBHOOK_PROFILES_JSON':'','STRIPE_CHECKOUT_PROFILE':'','STRIPE_LEGACY_WEBHOOK_MODE':'test',
+         'STRIPE_LEGACY_ACCOUNT_ID':'',
          'TYMOTORS_CONTEXT_FIXTURE':'1' if args.probe_module in (
              'tests.commerce_production_http_probe', 'tests.commerce_context_dispatch_probe') else '',
          'BREVO_API_KEY':'','SMTP_PASSWORD':'','CLOUDINARY_URL':'','CLOUDINARY_API_KEY':'','CLOUDINARY_API_SECRET':''}

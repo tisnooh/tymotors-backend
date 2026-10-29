@@ -1,5 +1,24 @@
 # PHOENIX — qualité et preuves
 
+## Stripe connecté et contexte direct —29octobre
+
+- Preuve réelle en lecture seule : sandbox connecté, destination activée et
+  cinq événements de paiement rapprochés des cinq commandes/journaux en base.
+  Aucun nouveau paiement ni livraison de webhook déclenché pour ce constat.
+- Correctif local des trois gardes HTTP/métier/legacy rejetant `context` sans
+  distinction : contexte exact serveur autorisé après HMAC ; comptes étrangers,
+  Connect, mauvais mode et signatures invalides refusés avant effet base.
+- Chef :2 969 pytest PASS (29,18s),655+252+216 SQL/HTTP PASS, sortie0. Dans la
+  recette jetable, contexte signé accepté jusqu'au règlement SQL, dossier de
+  traitement et reçu client, avec idempotence et aucun appel fournisseur.
+- Auditeur indépendant :66 nouveaux contre-tests et226 tests combinés PASS.
+  Contre-exécution655+252+216 PASS et nettoyage de variable d'environnement
+  héritée vérifié. Chef accepte le correctif local après relecture.
+  Rapport `TYMOTORS_STRIPE_CONTEXT_INDEPENDENT_AUDIT_2026-10-29.md`.
+- Le champ vu via GET events n'est pas une preuve du corps webhook ancien reçu.
+  Les tests HMAC sont synthétiques ; la nouvelle version reste non déployée.
+  La base hébergée inspectée ne contient pas ses migrations. Aucun visuel modifié.
+
 ## Traitement manuel, colis et incidents —29octobre : APPROVED LOCAL
 
 - Chef :2 881 pytest PASS (46,06s),19 avertissements de dépendances ; recette

@@ -72,6 +72,12 @@ def run(fresh, enable, session_for):
     delegated['account'] = profile['account_id']
     signed(delegated, expected=400)
     eq(sql('select payment_status from orders where id=$1', [order['id']])[0]['payment_status'], 'unpaid')
+    # Direct snapshot contexts observed through the authenticated Stripe API
+    # must match our configured account, not be confused with Connect events.
+    foreign_context = {**event, 'context': PROFILES[1]['account_id']}
+    signed(foreign_context, expected=400)
+    event['context'] = profile['account_id']
+    signed(event, valid=False, expected=400)
     # A local sales stop must not lose financial truth for an existing checkout.
     sql('update shop_settings set commerce_live_enabled=false where id')
     eq(signed(event)['duplicate'], False)

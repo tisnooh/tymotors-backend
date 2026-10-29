@@ -246,13 +246,16 @@ async def test_provider_paid_read_never_settles_without_signed_callback(wired):
 
 
 @pytest.mark.anyio
-async def test_signed_event_with_different_destination_marks_settlement_for_hold(wired):
+@pytest.mark.parametrize('explicit_context', [False, True])
+async def test_signed_event_with_different_destination_marks_settlement_for_hold(wired, explicit_context):
     c, db, _, service = wired
     await start(wired)
     c['session'].update(status='complete', payment_status='paid', payment_intent='pi_ContextSynthetic')
     c['session']['shipping_details']['address']['line1'] = 'Different delivery address'
     event = {'id': 'evt_ContextSynthetic', 'type': 'checkout.session.async_payment_succeeded',
         'livemode': not c['order']['is_test'], 'data': {'object': deepcopy(c['session'])}}
+    if explicit_context:
+        event['context'] = ACCOUNT
     result = await service.accept_signed_event(event)
     assert result['held'] is True
     assert c['settled_payload']['p_destination_matches'] is False
@@ -273,7 +276,9 @@ async def test_unpaid_completed_event_cannot_settle(wired):
 
 
 @pytest.mark.anyio
-@pytest.mark.parametrize('change', [{'livemode': False}, {'account': ACCOUNT}, {'context': ACCOUNT}])
+@pytest.mark.parametrize('change', [{'livemode': False}, {'account': ACCOUNT},
+    {'context': 'acct_ForeignMerchant'}, {'context': None}, {'context': ''},
+    {'context': False}, {'context': [ACCOUNT]}, {'context': ACCOUNT + '/other'}])
 async def test_webhook_mode_or_delegation_refused_before_database(wired, change):
     c, db, _, service = wired
     event = {'id': 'evt_ContextSynthetic', 'type': 'checkout.session.completed', 'livemode': True,

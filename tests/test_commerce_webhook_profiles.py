@@ -77,7 +77,9 @@ def test_registry_rejects_ambiguous_or_untrusted_config(change):
 
 
 @pytest.mark.parametrize('changes', [{'livemode': True}, {'livemode': 0}, {'livemode': 'false'},
-    {'account': 'acct_sandboxFixture'}, {'account': None}, {'context': 'acct_sandboxFixture'},
+    {'account': 'acct_sandboxFixture'}, {'account': None}, {'context': 'acct_otherFixture'},
+    {'context': None}, {'context': ''}, {'context': False}, {'context': []},
+    {'context': 'acct_sandboxFixture/other'}, {'context': 'org_sandboxFixture'},
     {'object': 'not_event'}, {'id': 'not_an_event'}, {'data': {}}, {'type': None}])
 def test_correct_signature_still_rejects_wrong_profile_or_shape(changes):
     profile = load_webhook_profiles(json.dumps(records()))[0]
@@ -95,6 +97,14 @@ def test_signature_is_one_secret_exact_raw_body_and_aged_timestamps_rejected():
     old = str(int(time.time()) - 1000)
     digest = hmac.new(first.signing_secret.encode(), old.encode() + b'.' + raw, hashlib.sha256).hexdigest()
     with pytest.raises(WebhookProfileError): verify_profile_event(first, raw, 't=' + old + ',v1=' + digest)
+
+
+@pytest.mark.parametrize('index', [0, 1])
+def test_signed_context_matches_only_the_server_pinned_direct_account(index):
+    profile = load_webhook_profiles(json.dumps(records()))[index]
+    sample = {**event(live=index == 1), 'context': profile.context.stripe_account_id}
+    raw, headers = body(sample, profile.signing_secret)
+    assert verify_profile_event(profile, raw, headers['Stripe-Signature']) == sample
 
 
 def test_settings_profiles_are_opt_in_and_never_include_secrets_in_validation_errors():
@@ -171,9 +181,18 @@ def test_profile_config_loaded_only_from_environment(monkeypatch):
     monkeypatch.setenv('STRIPE_WEBHOOK_PROFILES_JSON', json.dumps(records()))
     monkeypatch.setenv('STRIPE_CHECKOUT_PROFILE', 'sandbox-one')
     monkeypatch.setenv('STRIPE_LEGACY_WEBHOOK_MODE', 'test')
+    monkeypatch.setenv('STRIPE_LEGACY_ACCOUNT_ID', 'acct_HistoricalMerchant')
     try:
         config = get_settings()
         assert config.stripe_checkout_profile == 'sandbox-one'
+        assert config.stripe_legacy_account_id == 'acct_HistoricalMerchant'
         assert 'whsec_synthetic_sandbox_receiver' not in repr(config)
     finally:
         get_settings.cache_clear()
+
+
+@pytest.mark.parametrize('value', [None, False, 0, ' ', 'org_Merchant', 'acct_',
+                                 'acct_Merchant/other', 'acct_Merchant\n'])
+def test_legacy_account_config_rejects_untrusted_scope(value):
+    with pytest.raises(RuntimeError, match='STRIPE_LEGACY_ACCOUNT_ID'):
+        replace(settings(email_enabled=False), stripe_legacy_account_id=value).validate()

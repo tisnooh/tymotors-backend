@@ -1,5 +1,32 @@
 # PHOENIX — journal de progression
 
+## Connexion Stripe rétablie et contexte signé —29octobre
+
+- Nouvelle connexion du plugin vérifiée : sandbox TYMotors identifié et webhook
+  activé. Cinq événements historiques payés rapprochés de cinq commandes payées
+  en base, toutes `is_test=true`, encore `requires_review` côté traitement.
+  Rapport `TYMOTORS_STRIPE_CONNECTED_2026-10-29.md`, sans données client ni secret.
+- Détection et correction d'une incompatibilité locale : `Event.context` direct
+  n'est pas automatiquement Connect. Accepter seulement le compte serveur exact,
+  après HMAC ; refuser tout compte étranger, Connect et type ambigu. Garde commune
+  HTTP/métier et nouveau compte legacy explicite, défaut vide conservateur.
+- Chef :2 969 pytest PASS (29,18s),19 avertissements connus. Recette isolée
+  655 historiques +252 contexte +216 traitement manuel PASS, sortie0. Parcours
+  HTTP avec contexte signé jusqu'au reçu payé et au dossier agent/fournisseur ;
+  un seul POST factice, aucun paiement réel ni doublon. Ports fermés après recette.
+- Audit indépendant :66 contre-tests et226 tests combinés PASS, APPROVED LOCAL ;
+  voir rapport STRIPE_CONTEXT_INDEPENDENT_AUDIT. Décision finale Chef après
+  contre-recette indépendante655+252+216 PASS et contrôle du diff : APPROVED LOCAL.
+  Variable de compte legacy nettoyée dans les fixtures ; contrôle indépendant
+  d'environnement parent volontairement pollué PASS. Frontend et photographies inchangés.
+- Écart hébergé objectivé par lecture seule : base Tymotors Paris arrêtée à la
+  migration20261013063630 ; nouvelles tables et migrations par contexte absentes.
+  Les cinq paiements historiques ne prouvent pas l'exécution du nouveau lot.
+- Reprise : préparer la version hébergée avec configuration secrète et migrations
+  relues, obtenir la validation de publication, vérifier une vraie livraison du
+  nouveau receiver ; compléter les offres/ports acceptés. Aucun déploiement,
+  clé créée, achat, paiement/refund ou message effectué dans ce contrôle.
+
 ## Traitement manuel et suivi —29octobre, APPROVED LOCAL
 
 - Premier lot déjà poussé :4b04154 ; SHA distant vérifié. Aucun déploiement.

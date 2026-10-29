@@ -18,6 +18,23 @@ class WebhookProfileError(ValueError):
     pass
 
 
+def direct_account_context_matches(event: dict, expected_account_id: str = '') -> bool:
+    """Accept an optional snapshot context only for the pinned direct account.
+
+    Stripe's Event.context is an authentication context, not automatically a
+    Connect delegation. Never derive our account from this provider field.
+    https://docs.stripe.com/api/events/object#event_object-context
+    """
+    if 'account' in event:  # Connect destinations remain unsupported.
+        return False
+    if 'context' not in event:
+        return True  # Historical signed snapshots may omit this field.
+    return (isinstance(expected_account_id, str)
+            and re.fullmatch(r'acct_[A-Za-z0-9]{1,240}', expected_account_id) is not None
+            and type(event['context']) is str
+            and event['context'] == expected_account_id)
+
+
 @dataclass(frozen=True, slots=True)
 class StripeWebhookProfile:
     reference: str
@@ -64,8 +81,7 @@ def verify_profile_event(profile: StripeWebhookProfile, payload: bytes, signatur
         raise WebhookProfileError('invalid_webhook_signature') from None
     if (event.get('object') != 'event'
             or event.get('livemode') is not (profile.context.mode == 'production')
-            or 'account' in event  # direct-account endpoint only; Connect is not implemented
-            or 'context' in event
+            or not direct_account_context_matches(event, profile.context.stripe_account_id)
             or not isinstance(event.get('id'), str)
             or not re.fullmatch(r'evt_[A-Za-z0-9_]{1,240}', event['id'])
             or not isinstance(event.get('type'), str)

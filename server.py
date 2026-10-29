@@ -36,7 +36,7 @@ from app.commerce_payment_service import CommerceTestPayments
 from app.commerce_context_webhook_api import create_context_webhook_router
 from app.commerce_context_receipt import context_checkout_receipt_order, ContextReceiptError
 from app.commerce_context_dispatch_api import create_context_dispatch_router, customer_context_parcels
-from app.commerce_webhook_profiles import load_webhook_profiles, WebhookProfileError
+from app.commerce_webhook_profiles import load_webhook_profiles, WebhookProfileError, direct_account_context_matches
 from app.commerce_refund_events import normalize_test_refund_event
 from app.commerce_fulfillment_api import create_test_fulfillment_router, load_test_fulfillment_summary
 from app.commerce_fulfillment import FulfillmentPlanError
@@ -1040,7 +1040,7 @@ async def stripe_webhook(request: Request, stripe_signature: str | None = Header
     # verification so nested Checkout data supports dictionary operations too.
     try: event = stripe.Webhook.construct_event(payload, stripe_signature, settings.stripe_webhook_secret).to_dict()
     except (ValueError, stripe.SignatureVerificationError): raise HTTPException(status_code=400, detail="Invalid webhook signature")
-    if 'account' in event or 'context' in event:
+    if not direct_account_context_matches(event, settings.stripe_legacy_account_id):
         raise HTTPException(400, 'Delegated Stripe events are not supported')
     legacy_is_test = settings.stripe_legacy_webhook_mode == 'test'
     if event.get("livemode") is not (not legacy_is_test):

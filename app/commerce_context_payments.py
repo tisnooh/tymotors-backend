@@ -13,7 +13,7 @@ from app.commerce_checkout_mode import checkout_mode
 from app.commerce_checkout_params import build_checkout_params
 from app.commerce_customer_checkout import CustomerCheckoutError
 from app.commerce_quote_service import CartQuoteService
-from app.commerce_webhook_profiles import StripeWebhookProfile
+from app.commerce_webhook_profiles import StripeWebhookProfile, direct_account_context_matches
 
 _ORDER_SNAPSHOT_FIELDS = ('id', 'commerce_quote_id', 'cart_id', 'user_id', 'guest_session_id',
     'order_number', 'is_test', 'stripe_account_id', 'stripe_profile_ref', 'currency',
@@ -104,7 +104,7 @@ class ContextCheckoutPayments:
         # Signature verification belongs to the raw HTTP boundary. Never call
         # this with client JSON or select a profile using session metadata.
         if (event.get('livemode') is not (self.profile.context.mode == 'production')
-                or 'account' in event or 'context' in event):
+                or not direct_account_context_matches(event, self.profile.context.stripe_account_id)):
             raise ValueError('Webhook profile mismatch')
         kind = event['type']
         session = event['data']['object']

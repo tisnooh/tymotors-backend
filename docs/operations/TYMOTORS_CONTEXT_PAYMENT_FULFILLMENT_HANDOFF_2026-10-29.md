@@ -2,19 +2,21 @@
 
 ## Accès effectivement vérifiés le29octobre
 
-- Les deux connexions Stripe proposées par le connecteur répondent UNAUTHORIZED
-  et demandent une réauthentification. Aucun compte marchand n'a été identifié
-  ou sélectionné sur cette base, aucune permission n'a été changée.
+- Mise à jour après reconnexion : accès réel au sandbox TYMotors
+  `acct_1Tc9uQJPkDEK6Dal` confirmé par le connecteur Stripe. Webhook activé et
+  cinq paiements historiques rapprochés de cinq commandes payées en base.
+  Détails dans `TYMOTORS_STRIPE_CONNECTED_2026-10-29.md`. L'ancien constat
+  UNAUTHORIZED n'est plus le blocage de ce sandbox.
 - Le profil CLI sandbox historique est présent. Vérification en lecture seule
   avec le nouvel adaptateur puis diagnostic limité : `GET /v1/account` refusé
   par Stripe en403 PermissionError. Ni clé ni réponse privée n'ont été affichées.
   Cela ne prouve pas une expiration, une immatriculation refusée ou une panne
   de Checkout ; cette clé temporaire n'autorise pas la lecture nécessaire ici.
 - Aucun nouveau paiement, remboursement, compte, clé ou achat n'a été créé.
-- Action d'accès : reconnecter Stripe dans Codex avec le compte TYMotors et
-  fournir la configuration de backend par son coffre de secrets, jamais au chat.
-  Cela ne constitue pas une nouvelle demande d'autorisation pour les travaux
-  techniques qui continuent ; c'est l'authentification réelle manquante.
+- La connexion du plugin n'installe pas automatiquement des clés de backend ni
+  les migrations. Configurer le backend via son coffre de secrets, jamais au chat.
+  La base hébergée inspectée ne possède pas encore les migrations du nouveau
+  parcours. Aucun compte réel n'est activé par ce contrôle.
 
 Le checkout par compte/profil a été poussé dans `4b04154`. Le traitement manuel
 des dossiers est APPROVED LOCAL après ses propres tests et contre-audit :
@@ -39,6 +41,8 @@ Ne pas les mettre dans Git, le frontend, une capture, un journal ou le chat.
   commandes. Le client ne choisit jamais le compte ou le mode.
 - `STRIPE_LEGACY_WEBHOOK_MODE` : conserve le mode du receiver historique même
   après bascule du nouveau checkout. Actuellement l'historique est en test.
+- `STRIPE_LEGACY_ACCOUNT_ID` : compte d'origine du receiver historique. Nécessaire
+  pour accepter son `Event.context` exact, jamais déduit du checkout courant.
 - Chaque destination Stripe correspond à `/api/stripe/webhook/{reference}`.
   La clé de test et le secret d'un autre endpoint ne conviennent pas au réel.
 

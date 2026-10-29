@@ -59,6 +59,7 @@ class Settings:
     stripe_checkout_profile: str = ''
     # The historical receiver keeps its own mode after new checkout switches.
     stripe_legacy_webhook_mode: str = 'test'
+    stripe_legacy_account_id: str = ''
 
     @property
     def stripe_test_mode(self) -> bool:
@@ -103,6 +104,9 @@ class Settings:
             raise RuntimeError('Invalid server Stripe webhook profiles') from None
         if self.stripe_legacy_webhook_mode not in {'test', 'live'}:
             raise RuntimeError('STRIPE_LEGACY_WEBHOOK_MODE must be test or live')
+        if (self.stripe_legacy_account_id != '' and (not isinstance(self.stripe_legacy_account_id, str)
+                or not re.fullmatch(r'acct_[A-Za-z0-9]{1,240}', self.stripe_legacy_account_id))):
+            raise RuntimeError('STRIPE_LEGACY_ACCOUNT_ID must be a direct Stripe account')
         if self.stripe_checkout_profile:
             chosen = next((p for p in profiles if p.reference == self.stripe_checkout_profile), None)
             if chosen is None or (chosen.context.mode == 'sandbox') is not self.stripe_test_mode:
@@ -185,5 +189,6 @@ def get_settings() -> Settings:
         stripe_webhook_profiles_json=os.getenv('STRIPE_WEBHOOK_PROFILES_JSON', ''),
         stripe_checkout_profile=os.getenv('STRIPE_CHECKOUT_PROFILE', ''),
         stripe_legacy_webhook_mode=os.getenv('STRIPE_LEGACY_WEBHOOK_MODE', 'test').strip().lower(),
+        stripe_legacy_account_id=os.getenv('STRIPE_LEGACY_ACCOUNT_ID', ''),
     )
     return settings
