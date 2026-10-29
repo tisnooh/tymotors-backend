@@ -225,13 +225,21 @@ def test_admin_retry_refuses_ambiguous_financial_and_old_queued_rows(client,monk
     (None, False),
 ])
 def test_admin_proven_unattempted_retry_reports_actual_sent_flag(client,monkeypatch,result,accepted):
-    legacy, outbox = retry_route(monkeypatch, error_message=EmailService.LEGACY_NOT_ATTEMPTED)
+    legacy, outbox = retry_route(monkeypatch, email_type='order_confirmation', error_message=EmailService.LEGACY_NOT_ATTEMPTED)
     legacy.return_value = result
     response = client.post('/api/admin/email-logs/' + CUSTOMER + '/retry', headers=HEADERS)
     assert response.status_code == 202
     assert response.json() == {'accepted': accepted, 'delivery': result['status'] if result else 'failed'}
-    legacy.assert_awaited_once_with('payment_confirmed', CUSTOMER, amount_cents=None, retry_log_id=CUSTOMER)
+    legacy.assert_awaited_once_with('order_confirmation', CUSTOMER, amount_cents=None, retry_log_id=CUSTOMER)
     outbox.assert_not_awaited()
+
+
+@pytest.mark.parametrize('kind', ['payment_confirmed', 'refund_confirmed'])
+def test_legacy_financial_receipt_never_reconstructed_even_if_transport_was_disabled(client,monkeypatch,kind):
+    legacy, outbox = retry_route(monkeypatch, email_type=kind, error_message=EmailService.LEGACY_NOT_ATTEMPTED)
+    response = client.post('/api/admin/email-logs/' + CUSTOMER + '/retry', headers=HEADERS)
+    assert response.status_code == 409
+    legacy.assert_not_awaited(); outbox.assert_not_awaited()
 
 
 def test_withdrawal_retry_renders_the_saved_receipt_safely(client,monkeypatch):

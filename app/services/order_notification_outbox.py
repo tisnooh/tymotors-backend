@@ -1,4 +1,4 @@
-"""Durable manual-fulfillment mail, not an exactly-once provider guarantee.
+"""Durable fulfillment/financial receipts, not an exactly-once provider guarantee.
 
 Only an explicit administrator action can claim a persisted event. An abandoned
 claim or ambiguous provider outcome is never automatically retried. No worker,
@@ -8,12 +8,58 @@ from __future__ import annotations
 
 import asyncio
 import uuid
+import re
+from datetime import datetime
 from typing import Any
 
 from app.services.email_service import EmailService
 from app.services.email_templates import order_event
 
 KINDS = frozenset({'order_processing', 'order_shipped', 'order_delivered', 'order_cancelled'})
+FINANCIAL_KINDS = frozenset({'payment_confirmed', 'refund_confirmed'})
+
+
+def financial_amount(snapshot, kind):
+    """Check the frozen receipt, not provider authenticity or current eligibility.
+
+    SQL independently checks current financial state under the order/log lock.
+    Refund amounts are cumulative, matching the historical idempotency key.
+    """
+    order, financial = snapshot['order'], snapshot['financial']
+    if (type(snapshot['version']) is not int or snapshot['version'] != 1
+            or kind not in FINANCIAL_KINDS or financial['kind'] != kind or order['is_test'] is not False
+            or order['currency'] != 'EUR' or financial['payment_intent_id'] != order['stripe_payment_intent_id']
+            or not isinstance(financial['payment_intent_id'], str)
+            or not re.fullmatch(r'pi_[A-Za-z0-9_]{1,240}', financial['payment_intent_id'])):
+        raise ValueError('Invalid financial receipt identity')
+    total, refunded = financial['total_cents'], financial['refunded_amount_cents']
+    for value in (total, refunded, order['total_cents'], order['refunded_amount_cents'],
+                  order['subtotal_cents'], order['shipping_amount_cents'], order['tax_amount_cents']):
+        if type(value) is not int or not 0 <= value <= 99_999_999:
+            raise ValueError('Invalid receipt amount')
+    stamp = datetime.fromisoformat(financial['occurred_at'].replace('Z', '+00:00'))
+    if (stamp.tzinfo is None or stamp.utcoffset() is None or total <= 0
+            or total != order['total_cents'] or refunded != order['refunded_amount_cents']
+            or refunded > total or order['subtotal_cents'] + order['shipping_amount_cents'] != total
+            or order['tax_amount_cents'] > total):
+        raise ValueError('Financial receipt amount mismatch')
+    items = snapshot['items']
+    if not isinstance(items, list) or not 1 <= len(items) <= 100:
+        raise ValueError('Financial receipt items missing')
+    for item in items:
+        if (not isinstance(item, dict) or type(item.get('quantity')) is not int
+                or not 1 <= item['quantity'] <= 20 or type(item.get('unit_amount_cents')) is not int
+                or not 0 <= item['unit_amount_cents'] <= 99_999_999):
+            raise ValueError('Invalid financial receipt item')
+    if sum(i['quantity'] * i['unit_amount_cents'] for i in items) != order['subtotal_cents']:
+        raise ValueError('Financial receipt subtotal mismatch')
+    if kind == 'payment_confirmed':
+        if refunded != 0 or order['payment_status'] != 'paid':
+            raise ValueError('Invalid payment receipt state')
+        return None
+    if refunded <= 0 or order['payment_status'] != ('refunded' if refunded == total else 'paid'):
+        raise ValueError('Invalid refund receipt state')
+    return refunded
 
 
 class OrderNotificationOutbox:
@@ -37,13 +83,14 @@ class OrderNotificationOutbox:
             try:
                 snapshot = row['event_snapshot']
                 order = snapshot['order']
-                if (snapshot.get('version') != 1 or row['email_type'] not in KINDS
+                if (snapshot.get('version') != 1 or row['email_type'] not in KINDS | FINANCIAL_KINDS
                         or str(uuid.UUID(order['id'])) != row.get('order_id')
                         or not isinstance(snapshot['items'], list)):
                     raise ValueError('Invalid frozen event')
                 recipient = self.service.normalize_email(row['recipient'])
+                amount = financial_amount(snapshot, row['email_type']) if row['email_type'] in FINANCIAL_KINDS else None
                 content = order_event(row['email_type'], order, snapshot['items'],
-                    f"{self.service.settings.frontend_url}/account/orders/{order['id']}")
+                    f"{self.service.settings.frontend_url}/account/orders/{order['id']}", amount_cents=amount)
                 ready = self.service.settings.email_enabled
             except (KeyError, TypeError, ValueError, AttributeError):
                 pass  # Invalid/missing snapshot is blocked before any transport.

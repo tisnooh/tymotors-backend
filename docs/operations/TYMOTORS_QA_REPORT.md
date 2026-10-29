@@ -1,5 +1,19 @@
 # PHOENIX — qualité et preuves
 
+## Notifications financières — lot local accepté,29 octobre
+
+- Python110 ciblés PASS indépendants ; Chef global2 578 PASS, un avertissement
+  Starlette/httpx préexistant. Rejet bypass retry_log_id corrigé et contre-testé.
+- SQL : rejet statut de remboursement incohérent corrigé. Chef puis auditeur
+  exécutent655 parcours +95 outbox PASS, sorties0 ; six contre-tests purs SQL
+  indépendants également PASS. Migration/probe gelés inchangés, ports fermés.
+- APPROVED LOCAL : intention atomique/rollback, snapshots, collisions legacy,
+  propriétaire, état financier, reprise/token/issue ambiguë, garde refund quoted.
+- Aucun email reçu ou SMTP réel prouvé. Livraison automatique non implémentée,
+  claim administrateur seulement. Pas de concurrence native multi-connexion ni
+  de garantie exactement une fois du prestataire. Production NON VALIDÉE.
+- Aucun changement frontend/style/photo/prix ; aucun déploiement ni achat.
+
 ## Reprise du 29 octobre — résultats actuels
 
 - Contrat Python : APPROVED LOCAL maintenu par l'auditeur ; code applicatif

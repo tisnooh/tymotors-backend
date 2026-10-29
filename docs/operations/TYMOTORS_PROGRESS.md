@@ -1,5 +1,51 @@
 # PHOENIX — journal de progression
 
+## Lot financier accepté localement — 29 octobre
+
+- Deux refus imposés et corrigés : bypass Python avec retry_log_id explicite et
+  incohérence SQL remboursement partiel/statut refunded. Propriétaire figé,
+  montants/devise et état financier contrôlés avant claim administrateur.
+- Chef :2 578 pytest PASS (34,17s), puis655 parcours +95 outbox financiers PASS.
+  Auditeur :110 tests Python et655+95 recette SQL PASS, plus6 contre-tests SQL.
+  APPROVED LOCAL uniquement ; empreintes figées et ports de recette fermés.
+- Même file email_logs, intention transactionnelle, snapshots immuables et clés
+  historiques ; pas de conversion des anciens logs, pas de renvoi sur issue ambiguë.
+- Gitleaks stagé et diff --check PASS. Aucun style, image, prix public, message
+  fournisseur, SMTP réel ou environnement hébergé modifié. Pas de push.
+- Reprise suivante : préparer l'exécution automatique autorisée de ces intentions
+  (ce lot livre queue + reprise administrateur seulement), puis le règlement à
+  devis production avec identité du compte authentifiée, réservations et ledger.
+  La confirmation order_confirmation legacy est encore hors de l'outbox durable.
+  Ne pas retirer les gardes live, activer de worker ou déployer sans validation.
+
+
+## Lot actif — notifications financières durables,29 octobre
+
+- Point de départ propre :510a69a et57f7552, aucun push/déploiement.
+- En cours : même email_logs/outbox pour payment_confirmed et refund_confirmed,
+  intention atomique avec la transition, destinataire et montants figés,
+  reprise administrateur ; aucune livraison automatique ni nouveau worker.
+- Python : variantes financières contrôlées (types, montants, devise, PI,
+  horodatage, articles) ; best-effort financier remplacé par observation du log.
+  Reprise des anciens emails financiers sans snapshot refusée, même lorsque
+  l'ancien transport était désactivé. Confirmation de commande legacy hors lot.
+- Chef :108 tests ciblés PASS, puis2 576 pytest PASS. Audit Python indépendant
+  en cours ; la migration SQL financière est encore en développement/non validée.
+- Nouvelle politique legacy expliquée dans les tests : le retry ancien sûr
+  reste testé sur order_confirmation ; payment/refund restent en revue manuelle.
+- Prochaine action : câbler la migration générée20261029001805, exécuter probe
+  atomique/rollback/collisions/reprise/état financier, corriger et contre-auditer.
+  Aucun résultat SQL ou mail réel n'est encore revendiqué pour ce nouveau lot.
+- Contre-audit Python : bypass interne retry_log_id trouvé puis fermé ; deux
+  tests ajoutés,110 tests ciblés PASS et APPROVED LOCAL indépendant. Les seuls
+  changements Python suivants sont des docstrings. La suite globale2 576 citée
+  ci-dessus précède cette ultime correction ; ne pas la présenter comme finale.
+- Bootstrap SQL initial avec nouvelle migration :66+115+66 contrôles PASS.
+  Auditeur a reproduit un remboursement partiel dont le statut courant refunded
+  restait accepté. SQL REJECTED en attendant règle statut/cumul exacte, contrôles
+  des montants/devise et propriétaire figé (sans copier de capacité invité).
+  Auteur corrige sa migration et termine son probe ; root ne doit pas la publier.
+
 ## Reprise du 29 octobre — compte figé et isolation des commandes
 
 - Disponibilité ordinaire rétablie et vérifiée, mêmes agents repris ; aucun

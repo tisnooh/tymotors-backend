@@ -28,7 +28,8 @@ export async function testOrderOutbox(db,admin,customer,product) {
   await rejects(transition,[admin,rollback.id,'processing',rollback.updated_at],/Injected outbox failure/);
   eq(await one('select * from orders where id=$1',[rollback.id]),rollback);
   eq((await one('select count(*) n from admin_audit where resource=$1',[rollback.id])).n,0);
-  eq((await one('select count(*) n from email_logs where order_id=$1',[rollback.id])).n,0);
+  eq((await one("select count(*) n from email_logs where order_id=$1 and email_type='order_processing'",[rollback.id])).n,0);
+  eq((await one("select count(*) n from email_logs where order_id=$1 and email_type='payment_confirmed'",[rollback.id])).n,1);
   await db.exec('drop trigger qa_outbox on email_logs; drop function public.qa_reject_outbox()');
 
   const o=await seed(), result=await queued(o), id=result.notification_log_id;
@@ -41,7 +42,7 @@ export async function testOrderOutbox(db,admin,customer,product) {
   eq('shipping_address' in frozen.event_snapshot.order,false);
   // Simulate stop after order COMMIT, before any transport: the event survives.
   eq((await one(transition,[admin,o.id,'processing',o.updated_at])).r.updated,false);
-  eq((await one('select count(*) n from email_logs where order_id=$1',[o.id])).n,1);
+  eq((await one("select count(*) n from email_logs where order_id=$1 and email_type='order_processing'",[o.id])).n,1);
   await db.query("update orders set customer_email='changed@example.test',total_cents=2000 where id=$1",[o.id]);
   await db.query("update order_items set product_name='Changed',sku='CHANGED' where order_id=$1",[o.id]);
   eq((await log(id)).recipient,'frozen@example.test');

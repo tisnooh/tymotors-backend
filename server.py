@@ -49,7 +49,7 @@ from app.schemas import (
     VehicleSelection, WelcomeEmailInput, WishlistInput, WithdrawalInput, LoginInput, WithdrawalStatusInput,
 )
 from app.services.email_service import EmailService
-from app.services.order_notification_outbox import OrderNotificationOutbox, KINDS as FULFILLMENT_EMAIL_KINDS
+from app.services.order_notification_outbox import OrderNotificationOutbox, FINANCIAL_KINDS, KINDS as FULFILLMENT_EMAIL_KINDS
 from app.services.email_templates import newsletter_confirmation, order_event, welcome
 from app.services.email_tokens import hash_confirmation_token, new_confirmation_token, verify_token
 from app.store import CatalogStore
@@ -237,8 +237,19 @@ def _address(value: Any) -> dict[str, Any]:
 
 async def _send_order_email(kind: str, order_id: str, *, amount_cents: int | None = None,
                             retry_log_id: str | None = None) -> dict[str, Any] | None:
-    """Best-effort delivery after the database transition has committed."""
+    """Observe durable financial receipts; legacy nonfinancial delivery only."""
     try:
+        if kind in FINANCIAL_KINDS:
+            if retry_log_id is not None:
+                return {'sent': False, 'status': 'financial_receipt_requires_review'}
+            # The financial transaction must have persisted its receipt. A
+            # webhook retry must never construct/send a second mutable message.
+            suffix = str(amount_cents) if kind == 'refund_confirmed' else 'once'
+            logs = await db.select('email_logs', params={'select': 'id,event_snapshot,delivery_state',
+                'idempotency_key': f'eq.order:{order_id}:{kind}:{suffix}', 'limit': 1})
+            if not logs or logs[0].get('event_snapshot') is None:
+                return {'sent': False, 'status': 'financial_receipt_requires_review'}
+            return {'sent': False, 'status': logs[0].get('delivery_state') or 'unknown'}
         rows = await db.select("orders", params={"select": "*", "id": f"eq.{order_id}", "limit": 1})
         if not rows or not rows[0].get("customer_email"):
             return
@@ -796,6 +807,8 @@ async def retry_email(log_id: str, admin: dict[str, Any] = Depends(require_admin
             raise HTTPException(409, 'Delivery outcome requires manual provider review; automatic resend refused')
         result = await _deliver_order_notification(log_id, admin['id'])
         return {'accepted': result.get('sent', False), 'delivery': result['status']}
+    if rows[0]['email_type'] in FINANCIAL_KINDS:
+        raise HTTPException(409, 'Legacy financial receipt requires manual provider review; immutable evidence unavailable')
     if rows[0]['email_type'] in FULFILLMENT_EMAIL_KINDS:
         raise HTTPException(409, 'Legacy delivery outcome requires manual provider review; automatic resend refused')
     # Age is not proof of non-delivery. A crashed queued claim or a provider/DB
