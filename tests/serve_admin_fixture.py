@@ -61,7 +61,13 @@ class Database:
             query+=" order by "+",".join(sorts)
         if "limit" in params: query+=" limit "+str(int(params["limit"]))
         if "offset" in params: query+=" offset "+str(int(params["offset"]))
-        rows=await self.query(query,values)
+        if table == 'commerce_fulfillment_tasks':
+            # PGlite's JS Date bridge truncates timestamptz microseconds. Match
+            # real PostgREST JSON precision so HTTP reload -> CAS is faithful.
+            records=await self.query('select to_jsonb(task) json_row from ('+query+') task',values)
+            rows=[row['json_row'] for row in records]
+        else:
+            rows=await self.query(query,values)
         if nested and table=="returns":
             for row in rows:
                 row["orders"]=(await self.select("orders",params={"id":"eq."+row["order_id"]}))[0]

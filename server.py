@@ -35,6 +35,7 @@ from app.commerce_attempt_api import create_checkout_attempt_router
 from app.commerce_payment_service import CommerceTestPayments
 from app.commerce_context_webhook_api import create_context_webhook_router
 from app.commerce_context_receipt import context_checkout_receipt_order, ContextReceiptError
+from app.commerce_context_dispatch_api import create_context_dispatch_router, customer_context_parcels
 from app.commerce_webhook_profiles import load_webhook_profiles, WebhookProfileError
 from app.commerce_refund_events import normalize_test_refund_event
 from app.commerce_fulfillment_api import create_test_fulfillment_router, load_test_fulfillment_summary
@@ -713,14 +714,16 @@ async def _orders_with_items(orders: list[dict[str, Any]]) -> list[dict[str, Any
     for event in events:
         if event.get("is_customer_visible"):
             grouped_events.setdefault(event["order_id"], []).append(event)
-    return [{**order, "items": grouped.get(order["id"], []), "tracking_events": grouped_events.get(order["id"], [])} for order in orders]
+    return [{**order, "items": grouped.get(order["id"], []), "tracking_events": grouped_events.get(order["id"], []),
+             **({'parcels': await customer_context_parcels(db, order)} if order.get('stripe_profile_ref') else {})}
+            for order in orders]
 
 
 @api.post("/order-tracking")
 async def order_tracking(payload: OrderTrackingLookupInput, request: Request):
     _rate_limit(tracking_attempts, _client_key(request), 10, 300)
     rows = await db.select("orders", params={
-        "select": "id,order_number,customer_email,payment_status,fulfillment_status,carrier,tracking_number,tracking_url,created_at,paid_at,shipped_at,delivered_at,is_test,commerce_quote_id,status,refunded_amount_cents,financial_review_required",
+        "select": "id,order_number,customer_email,payment_status,fulfillment_status,carrier,tracking_number,tracking_url,created_at,paid_at,shipped_at,delivered_at,is_test,commerce_quote_id,status,refunded_amount_cents,financial_review_required,stripe_profile_ref",
         "order_number": f"eq.{payload.order_number.upper()}",
         "limit": 1,
     })
@@ -736,10 +739,13 @@ async def order_tracking(payload: OrderTrackingLookupInput, request: Request):
         try: simulation = await load_test_fulfillment_summary(db,order)
         except FulfillmentPlanError:
             raise HTTPException(409,'Simulation tracking requires review') from None
-    for key in ('commerce_quote_id','status','refunded_amount_cents','is_test','financial_review_required'):
+    has_context = bool(order.get('stripe_profile_ref'))
+    parcels = await customer_context_parcels(db, order)
+    for key in ('commerce_quote_id','status','refunded_amount_cents','is_test','financial_review_required','stripe_profile_ref'):
         order.pop(key,None)
     order.pop("id", None)
-    return {**order, "tracking_events": public_events, **({'simulation':simulation} if simulation is not None else {})}
+    return {**order, "tracking_events": public_events, **({'parcels': parcels} if has_context else {}),
+            **({'simulation':simulation} if simulation is not None else {})}
 
 
 @api.get("/admin/orders")
@@ -974,7 +980,8 @@ async def checkout_session(stripe_session_id: str, x_session_id: str | None = He
         "order_reference": result["order_number"], "customer_email": result.get("customer_email"), "items": result["items"],
         "subtotal": result["subtotal_cents"] / 100, "shipping": result["shipping_amount_cents"] / 100,
         "tax": result["tax_amount_cents"] / 100, "total": result["total_cents"] / 100, "currency": result["currency"],
-        "shipping_address": result.get("shipping_address") or {}}
+        "shipping_address": result.get("shipping_address") or {},
+        **({'parcels': result['parcels']} if 'parcels' in result else {})}
 
 
 async def _complete_checkout_payment(obj: Any, *, expected_is_test: bool | None = None) -> str | None:
@@ -1143,6 +1150,7 @@ api.include_router(create_admin_router(
 ))
 app.include_router(api)
 app.include_router(create_context_webhook_router(db, lambda: settings))
+app.include_router(create_context_dispatch_router(db, require_admin, _deliver_order_notification))
 app.include_router(create_commerce_router(db, catalog, require_admin, settings.shipping_countries))
 app.include_router(create_public_variant_router(db, catalog, lambda: settings))
 app.include_router(create_customer_checkout_router(

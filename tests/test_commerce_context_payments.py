@@ -502,7 +502,8 @@ async def test_negative_or_refund_receipt_records_only_identity_for_review(wired
     assert rpc_names(db) == ['commerce_record_context_event']
     assert c['receipt_payload'] == {'p_event_id': 'evt_ContextReceipt', 'p_event_type': kind,
         'p_object_id': prefix + 'ContextReceipt', 'p_is_test': False,
-        'p_stripe_account_id': ACCOUNT, 'p_profile_ref': c['profile'].reference}
+        'p_stripe_account_id': ACCOUNT, 'p_profile_ref': c['profile'].reference,
+        **({'p_payment_intent_id': None} if kind.startswith('refund.') or kind == 'charge.refunded' else {})}
     db.select.assert_not_awaited()
     gateway.create.assert_not_awaited()
 
@@ -519,6 +520,32 @@ async def test_receipt_wrong_mode_or_object_kind_never_recorded(wired, kind, obj
     _, db, _, service = wired
     event = {'id': 'evt_ContextReceipt', 'type': kind, 'livemode': True,
              'data': {'object': obj}}
+    with pytest.raises(ValueError):
+        await service.accept_signed_event(event)
+    db.rpc.assert_not_awaited()
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize('intent', ['pi_ExactSynthetic',
+    {'id': 'pi_ExactSynthetic', 'object': 'payment_intent', 'livemode': True}])
+async def test_refund_receipt_passes_exact_signed_payment_identity_not_an_invented_amount(wired, intent):
+    c, db, _, service = wired
+    event = {'id': 'evt_ContextRefundIdentity', 'type': 'refund.updated', 'livemode': True,
+        'data': {'object': {'id': 're_ExactSynthetic', 'object': 'refund', 'payment_intent': intent,
+                            'amount': 9876, 'status': 'pending'}}}
+    await service.accept_signed_event(event)
+    assert c['receipt_payload']['p_payment_intent_id'] == 'pi_ExactSynthetic'
+    assert 'amount' not in str(c['receipt_payload']) and 'status' not in str(c['receipt_payload'])
+    db.select.assert_not_awaited()
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize('intent', [True, 'pi_unsafe\n', {}, {'id': 'pi_Valid', 'object': 'charge'},
+    {'id': 'pi_Valid', 'object': 'payment_intent', 'livemode': False}])
+async def test_refund_wrong_or_expanded_cross_mode_identity_is_refused(wired, intent):
+    _, db, _, service = wired
+    event = {'id': 'evt_ContextRefundIdentity', 'type': 'refund.updated', 'livemode': True,
+        'data': {'object': {'id': 're_ExactSynthetic', 'object': 'refund', 'payment_intent': intent}}}
     with pytest.raises(ValueError):
         await service.accept_signed_event(event)
     db.rpc.assert_not_awaited()

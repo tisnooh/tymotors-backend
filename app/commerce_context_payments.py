@@ -123,9 +123,24 @@ class ContextCheckoutPayments:
                     or not re.fullmatch(re.escape(prefix) + r'[A-Za-z0-9_]{1,240}', object_id)
                     or session.get('object') != object_type):
                 raise ValueError('Invalid financial event object')
+            refund_scope = {}
+            if kind.startswith('refund.') or kind == 'charge.refunded':
+                intent = session.get('payment_intent')
+                if isinstance(intent, dict):
+                    if (intent.get('object') != 'payment_intent'
+                            or ('livemode' in intent and intent['livemode'] is not
+                                (self.profile.context.mode == 'production'))):
+                        raise ValueError('Invalid refund payment identity')
+                    intent = intent.get('id')
+                if intent is not None and (not isinstance(intent, str)
+                        or not re.fullmatch(r'pi_[A-Za-z0-9_]{1,240}', intent)):
+                    raise ValueError('Invalid refund payment identity')
+                # No amount/status inference: a signed receipt places the exact
+                # associated order on review, including before settlement.
+                refund_scope = {'p_payment_intent_id': intent}
             return await self.db.rpc('commerce_record_context_event', {
                 'p_event_id': event['id'], 'p_event_type': kind, 'p_object_id': object_id,
-                'p_is_test': self.profile.context.mode == 'sandbox', **self.scope})
+                'p_is_test': self.profile.context.mode == 'sandbox', **self.scope, **refund_scope})
         metadata = session.get('metadata')
         if not isinstance(metadata, dict):
             raise ValueError('Missing checkout identity')

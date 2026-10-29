@@ -1,5 +1,32 @@
 # PHOENIX — blocages explicites
 
+## Après validation du traitement manuel —29octobre
+
+Les lots checkout et progression manuelle ont réussi leurs recettes et
+contre-audits locaux :2 881 pytest ;655+250+216 contrôles SQL/HTTP. La confirmation
+fournisseur humaine, les preuves, colis, timeline et incidents ont maintenant un
+parcours technique. Les mentions de développement manuel en cours plus bas sont
+historiques. Aucun design, image, tarif public ou stock catalogue changé.
+
+À distinguer de cette validation : accès Stripe actuellement refusés/réauth,
+offres et frais France réellement exploitables, acceptation logistique et version
+hébergée encore non déployée. L'immatriculation n'arrête pas les travaux techniques.
+La projection monétaire cumulative des remboursements nouveaux et la résolution
+administrative des revues restent non terminées ; les reçus conservés ne prouvent
+pas un SAV automatisé. Aucun fournisseur/transporteur/SMTP réel n'est validé ici.
+
+## Accès Stripe revérifiés —29octobre
+
+- Deux connexions du connecteur proposées explicitement : toutes deux refusées
+  avec UNAUTHORIZED/réauthentification nécessaire. Ne pas inventer un compte.
+- Ancien profil CLI de sandbox : compte lu via GET/v1/account refusé403
+  PermissionError, confirmé par diagnostic limité, aucune donnée secrète sortie.
+  La clé ne permet pas cette lecture ; sa date d'expiration n'est pas déduite.
+- Aucune nouvelle opération financière effectuée. Les tests et corrections
+  locales ne sont pas suspendus pour attendre cette reconnexion.
+- Action externe précise : reconnecter Stripe et configurer les secrets du
+  backend dans le coffre prévu. Aucun besoin de coller une clé au chat.
+
 ## Mise à jour —29octobre : ne pas attendre le SIRET pour les travaux techniques
 
 Les paragraphes plus bas sont historiques. Le parcours checkout par compte/profil

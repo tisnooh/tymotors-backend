@@ -7,9 +7,12 @@ Le checkout par compte/profil est désormais implémenté et APPROVED LOCAL :
 indépendante. Les descriptions « routes uniquement sandbox » ci-dessous décrivent
 le constat initial, pas le nouveau code. Aucun déploiement de ce code n'a eu lieu.
 Les comptes Stripe, offres et prestations réels ne sont pas validés par ces tests.
-La progression logistique manuelle et les remboursements nouveaux sont traités
-dans une tranche séparée. Voir les rapports CONTEXT_CHECKOUT_INDEPENDENT_AUDIT
-et CONTEXT_SQL_EXECUTION pour le périmètre exact.
+La progression logistique manuelle est également auditée localement : deux colis,
+timeline, preuves et incidents,2 881 pytest et655+250+216 SQL/HTTP. Les reçus de
+remboursement ne remplacent pas une projection monétaire cumulative complète.
+Voir les rapports CONTEXT_CHECKOUT_INDEPENDENT_AUDIT, CONTEXT_SQL_EXECUTION et
+CONTEXT_DISPATCH_INDEPENDENT_AUDIT pour le périmètre exact. Les accès Stripe
+actuels demandent réauthentification et la lecture du compte CLI est refusée403.
 
 ## Rectification après retour du propriétaire
 

@@ -1,5 +1,30 @@
 # PHOENIX — journal de progression
 
+## Traitement manuel et suivi —29octobre, APPROVED LOCAL
+
+- Premier lot déjà poussé :4b04154 ; SHA distant vérifié. Aucun déploiement.
+- Nouvelle tranche : dossiers fournisseur audités, confirmations techniques
+  manuelles par groupe, preuves de colis, agrégat multicolis et timeline existante.
+  Nouvelle migration20261029131412, sans modification de la précédente approuvée.
+- Première recette Chef655+250+172 contrôles PASS ; audit demande l'enregistrement
+  de la livraison physique après incident financier sans autoriser d'autre envoi.
+  Correctif et contre-tests ajoutés : recette finale655+250+216 PASS, sortie0.
+- Suite globale Chef2 881 pytest PASS ; contre-audit indépendant146 Python,
+  même recette655+250+216 et15 ACL privées PASS. Sources figées identiques,
+  ports fermés et frontend propre. Chef accepte cette tranche locale.
+- Rapprochement PI signé du remboursement et blocage de la préparation/expédition
+  si revue financière, sans inventer de total remboursé. Projection cumulative
+  et résolution administrative des revues restent distinctes/non terminées.
+- Raccord backend uniquement : un colis reprend le lien existant ; multicolis
+  numéros visibles en timeline et APIparcels, aucun bouton/écran nouveau.
+- Dernier accès réel testé : deux connexions Stripe nécessitent réauthentification ;
+  lecture du compte du sandbox historique refusée403 avec sa clé temporaire.
+  Aucun paiement/refund ajouté. Ne pas confondre ce refus avec un blocage SIRET.
+- Reprise après push : rétablir les accès Stripe via le coffre prévu, vérifier les
+  offres/livraisons réelles et préparer la version hébergée. Le cumul monétaire
+  des nouveaux remboursements et la résolution des revues restent distincts.
+  Aucun accès marchand, transporteur, message, SMTP, stock catalogue ou production modifié.
+
 ## Checkout par compte/profil —29octobre, APPROVED LOCAL
 
 - Remplace les limites techniques décrites dans les sections historiques : le

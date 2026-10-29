@@ -1,5 +1,24 @@
 # PHOENIX — qualité et preuves
 
+## Traitement manuel, colis et incidents —29octobre : APPROVED LOCAL
+
+- Chef :2 881 pytest PASS (46,06s),19 avertissements de dépendances ; recette
+  isolée655 historiques +250 contexte +216 traitement manuel PASS, sortie0.
+- Auditeur :146 Python PASS et contre-exécution du même parcours655+250+216 PASS,
+  plus15 vérifications ACL effectives sur5helpers. Sources figées inchangées.
+- Deux groupes/colis, GET vers CAS exact, répétitions, références immuables,
+  confirmations techniques partielles/complètes, timeline et données client
+  autorisées, notifications globales et blocages financiers contrôlés.
+- Livraison physique après remboursement/revue/annulation enregistrable sans
+  autoriser une autre expédition ni effacer un marqueur financier/compatibilité.
+- Source : CONTEXT_DISPATCH_INDEPENDENT_AUDIT_2026-10-29.md. Reçus de remboursement
+  rapprochés/placés en revue ; aucune inférence d'un montant cumulatif réel.
+- Bouton existant pour un colis ; multicolis numéros dans timeline et APIparcels,
+  aucun nouvel écran/bouton. Frontend propre, aucune photo/style/prix modifié.
+- Contrôle réel limité : GET/v1/account refusé403 pour la clé CLI temporaire ;
+  deux connexions du plugin nécessitent reconnexion. Aucun paiement/refund, SMTP,
+  commande fournisseur ou expédition réelle. Pas de déploiement.
+
 ## Exécution du checkout par compte/profil —29octobre : APPROVED LOCAL
 
 - Chef :2 842 pytest PASS ;655 historiques +250 nouveaux contrôles SQL/HTTP PASS.
