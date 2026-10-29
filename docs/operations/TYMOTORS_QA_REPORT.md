@@ -1,5 +1,18 @@
 # PHOENIX — qualité et preuves
 
+## Contrôle préparatoire du lancement —29octobre
+
+- Python pur16tests +4contre-vérifications indépendantes PASS. Global Chef2 616
+  pytest PASS, avertissement Starlette/httpx préexistant seulement.
+- Premier SQL655+233 PASS ; audit a rejeté les dates infinity. Correction
+  CHECK isfinite des deux colonnes, quatre contre-cas ajoutés sans ouverture.
+- Recette corrigée indépendante655+249 PASS, sortie0, APPROVED LOCAL. Index
+  identique aux fichiers testés, empreintes conservées et ports fermés.
+- Diagnostic service-only/read-only, sans valeur privée en sortie. Même des
+  déclarations complètes ne peuvent jamais ouvrir le checkout non implémenté.
+- Immatriculation en cours ; compte Stripe non authentifié dans ce lot.
+  Aucun changement du catalogue, prix, photos, design, flags ou site hébergé.
+
 ## Traitement système inactif — finalisation29octobre
 
 - APPROVED LOCAL après contre-exécution indépendante655+95+90 contrôles PASS.

@@ -1,5 +1,33 @@
 # PHOENIX — journal de progression
 
+## Préflight du lancement —29octobre, lot à pousser après audit
+
+- Contrôle Python pur : profil attendu typé, empreinte canonique des14champs
+  juridiques, approbation déclarative datée/expirante et codes sans données privées.
+  Auditeur16tests et4contre-vérifications PASS. Ne vérifie pas un registre légal.
+- Garde persistante commerce_live_enabled=false ; immatriculation pending,
+  références/empreintes/compte attendus sans secrets, RPC diagnostic service-only.
+  allowed reste false même si toutes les déclarations de test correspondent :
+  le vrai checkout production n'est pas encore implémenté ni autorisé.
+- Chef :655 parcours +233 préflight SQL PASS, puis suite globale2 616 pytest PASS.
+  Audit a refusé les dates infinies ; CHECK isfinite et quatre contre-cas ajoutés.
+  Contre-run corrigé indépendant655+249 PASS, sortie0, APPROVED LOCAL ; index et
+  sources identiques, empreintes stables et ports fermés. Chef accepte ce lot.
+  Aucun provider, paiement, approbation réelle ou migration distante.
+- Les conditions réelles de lancement restent celles du rapport
+  TYMOTORS_LAUNCH_REQUEST_2026-10-29.md. Aucun label public, stock, statut produit,
+  prix, design ou photographie modifié pour masquer l'état de test.
+
+## Demande de lancement — vérification29octobre
+
+- Propriétaire : immatriculation encore en cours, confirmé dans le chat.
+- Lecture site effectif : Stripe test, catalogue test activé,14champs légaux
+  vides ;40draft/test_purchase et aucun stock positif. Pas de lancement réel.
+- Rapport de reprise : TYMOTORS_LAUNCH_REQUEST_2026-10-29.md. Aucun flag, badge,
+  stock, statut, prix ou site hébergé modifié pour masquer ces blocages.
+- Reste une implémentation production substantielle ; le compte réel accessible
+  et les données commerciales vérifiables ne sont pas remplacés par des fixtures.
+
 ## Finalisation et push demandés — 29 octobre
 
 - Autorisation utilisateur : finaliser et pousser la branche de travail ; aucune
