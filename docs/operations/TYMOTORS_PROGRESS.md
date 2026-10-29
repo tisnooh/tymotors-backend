@@ -1,5 +1,26 @@
 # PHOENIX — journal de progression
 
+## Préparation de publication et conservation des données —29octobre
+
+- Registre distant lu sans mutation :24 migrations appliquées,21 nouvelles
+  migrations locales. Identifiants historiques différents : ne pas faire un
+  push global ni une réparation de registre fondés seulement sur les noms.
+- Manifeste des21 fichiers et SHA-256 enregistré dans
+  TYMOTORS_PENDING_MIGRATIONS_2026-10-29.json ; procédure détaillée dans
+  TYMOTORS_UPGRADE_PREPARATION_2026-10-29.md.
+- Nouveau test de mise à niveau d'un socle opérationnel peuplé :40 produits,
+  images et commande payée synthétiques conservés ;1 696 champs inchangés,
+ 21 migrations PASS, aucune offre/variante inventée, garde commerciale false.
+  Contrôle de couverture complète de la chaîne locale ajouté et relancé PASS.
+- Audit indépendant : contre-exécution finale PASS et21 empreintes du manifeste
+  vérifiées, APPROVED LOCAL. Rapport UPGRADE_INDEPENDENT_AUDIT_2026-10-29.
+  Limites explicites :13 migrations de socle reprises,11 anciennes omises,
+  comparaison de cinq tables ; aucune preuve de clone complet ou de rollback.
+- Ce socle PGlite n'est pas un clone du schéma hébergé. Prochaine étape :
+  rapprochement des définitions distantes, export vérifié et répétition sur copie
+  isolée, puis approbation du lot de publication. Aucun accès client exporté,
+  migration distante, prix, photographie ou présentation modifié.
+
 ## Connexion Stripe rétablie et contexte signé —29octobre
 
 - Nouvelle connexion du plugin vérifiée : sandbox TYMotors identifié et webhook
