@@ -1,5 +1,21 @@
 # PHOENIX — blocages explicites
 
+## Paiement réel : préparation technique distincte de l'activation — 29 octobre
+
+- Le contrat pur mode/compte est contre-audité (commit local510a69a). Il
+  n'authentifie pas un compte Stripe et n'ouvre aucune API ou passerelle live.
+- La persistance d'un compte attendu est préparée exclusivement sandbox ; les
+  dossiers liés ne peuvent pas être réclamés pour un appel fournisseur. Recette
+  transactionnelle et annulation en cours, aucun déploiement hébergé.
+- Restent techniques : adaptateur avec identité du compte authentifiée, règlement
+  production atomique, réservations réelles, réconciliation des événements,
+  remboursement et notifications financières transactionnelles. Les anciennes
+  fonctions legacy ne constituent pas un fallback pour les commandes à devis.
+- Restent externes : compte/configuration live autorisés, identité commerciale,
+  offres et tarifs de transport effectivement confirmés. Pas de somme ni preuve
+  inventée ; pas d'activation à partir d'un changement de variable d'environnement.
+
+
 ## Refus HyperSKU confirmé : sourcing ET expédition — 28 octobre 2026
 
 - Nouveau message WhatsApp, signé Lexi, affiché05:44 : refus du sourcing et de

@@ -1,5 +1,50 @@
 # PHOENIX — journal de progression
 
+## Reprise du 29 octobre — compte figé et isolation des commandes
+
+- Disponibilité ordinaire rétablie et vérifiée, mêmes agents repris ; aucun
+  crédit de reset consommé et aucun contournement de limite.
+- Contrat mode/compte committé localement :510a69a. Contre-audit approuvé après
+  correction des comptes NULL et des origines IPv4 ambiguës. La sentinelle de
+  test signalée par gitleaks a été remplacée, sans allowlist ni secret réel.
+- Chef :2 537 pytest PASS, avertissement Starlette/httpx préexistant seulement.
+- Isolation legacy :655 contrôles du parcours +30 contrôles SQL PASS, rejoués
+  indépendamment avant le lot de compte. Les commandes à devis ne passent plus
+  par l'ancien traitement fournisseur fondé sur des données produit mutables.
+- Persistance du compte sandbox : refus immuable de réattribution, héritage NULL,
+  copie commande vers tentative, nouveau RPC administrateur fermé au claim réseau.
+  Première recette rejetée : champ de tentative résolu sur une commande ; IF
+  imbriqué corrigé. Deuxième recette rejetée : test attendait « owner » alors que
+  la garde renvoyait « not owned » ; attente exacte corrigée sans modifier la garde.
+- Recette Chef finale :655 contrôles du parcours +150 contrôles compte PASS.
+  Contre-exécution indépendante :655+150 compte PASS et655+137 remboursement
+  PASS, APPROVED LOCAL pour préparation sandbox seulement. Empreintes inchangées,
+  ports8765/8766 fermés. Chef accepte le lot local, sans activation live.
+- Frontend propre, aucun style, photo, prix public, mail ou environnement distant
+  modifié. Cinq pilotes préparés mais zéro produit validé commercialement.
+- Reprise après ce lot : adapter le règlement/réconciliation et l'outbox financière
+  avant tout gateway account-aware. Préserver les gardes live et les refus connus
+  du prestataire ; aucun changement d'ENV ne suffit à rendre ce système vendable.
+
+## Phase active — séparation des contextes paiement,28octobre
+
+- Lots précédents enregistrés localement : backend2c22ec6, frontend90192b2.
+  Aucun push ni déploiement. Les cinq pilotes restent des brouillons incomplets.
+- Objectif actif : préparer le parcours à devis pour un mode/compte figés,
+  fermé par défaut ; ne pas confondre cette préparation avec un paiement live.
+- Contrat pur mode/compte implémenté ; deux passages indépendants ont refusé
+  null/null historique puis des formes IPv4 ambiguës (dont suffixe0x vide).
+  Corrections et814tests ciblés développeur PASS ; contre-audit en cours.
+- Isolation SQL en cours de recette : les fonctions legacy de paiement et
+  création fournisseur doivent refuser les commandes à devis avant tout effet.
+- Lot suivant en développement : compte Stripe nullable et immuable sur commande
+  et tentative, création sandbox explicite sans backfill de l'historique.
+  Ce contexte préparé ne prouve pas la propriété du compte et n'autorise aucun
+  appel fournisseur. Les tentatives liées resteront fermées au claim réseau.
+- Aucun mail, clé live, photo, style, prix public ou environnement hébergé modifié.
+  Reprise : terminer ces recettes, contre-audit indépendant, corriger les écarts,
+  puis revoir le règlement/réconciliation production et l'outbox financière.
+
 ## Contre-audits finaux repris et acceptés —28octobre
 
 - Disponibilité ordinaire officiellement vérifiée ; mêmes agents repris sans

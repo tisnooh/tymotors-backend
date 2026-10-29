@@ -22,7 +22,8 @@ def main():
     parser.add_argument('--probe-module',default='tests.commerce_pipeline_http_probe',
                         choices=['tests.commerce_pipeline_http_probe','tests.commerce_multigroup_http_probe',
                                  'tests.commerce_customer_http_probe','tests.order_dispatch_http_probe',
-                                 'tests.commerce_refund_http_probe','tests.commerce_failure_receipt_http_probe'])
+                                 'tests.commerce_refund_http_probe','tests.commerce_failure_receipt_http_probe',
+                                 'tests.commerce_legacy_isolation_http_probe','tests.commerce_account_context_http_probe'])
     args=parser.parse_args()
     for port in (8765,8766):
         with socket.socket() as sock:

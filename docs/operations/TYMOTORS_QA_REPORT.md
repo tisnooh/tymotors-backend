@@ -1,5 +1,35 @@
 # PHOENIX — qualité et preuves
 
+## Reprise du 29 octobre — résultats actuels
+
+- Contrat Python : APPROVED LOCAL maintenu par l'auditeur ; code applicatif
+  identique aux empreintes approuvées,54 contre-tests de comptes rejoués après
+  remplacement d'une sentinelle synthétique. Commit510a69a.
+- Ensemble Python :2 537 PASS,53,73 s ; un avertissement préexistant.
+- SQL legacy : APPROVED LOCAL,655 contrôles parcours +30 d'isolation par le Chef
+  puis revue et exécution indépendantes. Pas de fallback fournisseur pour quoted.
+- SQL compte : erreur42703 détectée puis corrigée (branches de trigger imbriquées).
+  Un libellé de test trop approximatif a été corrigé sans ouvrir la garde métier.
+  Chef final :655 contrôles parcours +150 compte PASS. Contre-exécution indépendante
+  :655+150 compte PASS et655+137 remboursement PASS. APPROVED LOCAL pour préparation
+  sandbox uniquement ; empreintes conservées et ports8765/8766 fermés.
+- Toutes les sommes, comptes, commandes, expéditions et transports de ces tests
+  sont synthétiques. Aucun nouvel appel Stripe distant, commande fournisseur,
+  déploiement, changement de photo/design ou de prix public.
+- Contrôle gitleaks du lot SQL stagé et diff --check : PASS, sans allowlist.
+
+## Nouveau lot fermé par défaut —28octobre, contrôles en cours
+
+- Contrat mode/compte : REJECTED lors des deux premiers passages indépendants
+  (comptesNULL hérités puis origines IPv4 ambiguës, notamment0x vide). Les
+  corrections ont814tests développeur PASS ; contre-audit final encore attendu.
+- Migration legacy/quoted : recette HTTP/SQL en cours ; premier probe a exposé
+  une fixture de devis incohérente (cart/source manquants), pas une ouverture
+  métier. Fixture corrigée sans désactiver aucun déclencheur de la base.
+- Compte persistant sandbox : développement séparé, non validé à ce stade.
+- Aucune de ces étapes n'autorise le live. Aucune preuve distante Stripe/SMTP,
+  fournisseur ou expédition ne doit être déduite des nouveaux tests locaux.
+
 ## Contre-audits finaux repris et acceptés —28octobre
 
 - Disponibilité ordinaire officiellement vérifiée ; mêmes agents repris sans

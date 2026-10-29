@@ -10,7 +10,7 @@ la généralisation du parcours sandbox vers la production reste un lot distinct
 |---|---|---|
 | API client | commerce_customer_checkout_api refuse le live | Autorisation de mise en service côté serveur, propriété panier/devis et idempotence maintenues |
 | Adaptateur | TestStripeGateway accepte seulement des clés et sessions test | Mode et identité du compte authentifié vérifiés, aucun mélange entre comptes ou environnements |
-| Paramètres/session | Builder et validator exigent is_test=true et livemode=false | Contrat de mode immuable dans commande, tentative, session et événement signé |
+| Paramètres/session | Défaut sandbox conservé ; contexte serveur explicite mode/compte ajouté et contre-audité (510a69a) | Fournir des snapshots persistés et une identité fournisseur authentifiée ; le contrat pur ne constitue pas cette preuve |
 | Commande SQL | order_from_quote refuse p_is_test=false | Transactions production et permissions revues sans réutiliser les garde-fous test comme autorisation live |
 | Réservations/tentatives | Contraintes CHECK(is_test), historique sandbox conservé | Consommation/libération transactionnelles justifiées, concurrence et crash testés |
 | Encaissement | commerce_settle_test_checkout et registres test | Règlement production unique par session/PI/commande, erreurs et événements hors ordre maîtrisés |
@@ -22,12 +22,15 @@ jamais la page de succès, une métadonnée client ou la présence d'une clé li
 Une signature valide ne justifie ni un autre compte, ni une autre variante,
 ni un montant ou un transport différent du dossier payé.
 
-## Premier lot technique suivant, avant toute activation
+## Contrat préparé, intégration transactionnelle encore à réaliser
 
-Définir un contrat de mode explicite sur les quatre niveaux : paramètres,
-validation, tentative et session. Les modes/comptes attendus doivent provenir
-du serveur et de preuves fournisseur authentifiées, pas de champs de formulaire.
-Le résultat reste fermé par défaut et ne crée aucun paiement live.
+Le contrat pur de paramètres/validation est implémenté et audité. Les comptes
+NULL hérités sont préservés ; un compte renseigné exige un contexte explicite.
+Les origines numériques ambiguës sont refusées. Aucun consommateur HTTP/gateway
+n'a été ouvert au live. La persistance du compte est un lot sandbox séparé en
+recette locale ; elle n'authentifie pas le compte et n'autorise pas sa création
+de session. Les modes/comptes attendus doivent toujours provenir du serveur et
+de preuves fournisseur authentifiées, jamais de champs de formulaire.
 
 Contre-tests d'acceptation :
 
