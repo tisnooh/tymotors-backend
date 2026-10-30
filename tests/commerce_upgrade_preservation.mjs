@@ -29,7 +29,9 @@ try {
     const source = await readFile(new URL('../supabase/migrations/' + file, import.meta.url), 'utf8');
     await db.exec(source.replace('create extension if not exists pgcrypto;', '-- built-in gen_random_uuid'));
   }
-  for (const file of files.slice(0, boundary + 1)) await apply(file);
+  const historicalFiles = (await readdir(new URL('../supabase/migrations/', import.meta.url)))
+    .filter(file => file.endsWith('.sql') && file <= files[boundary]).sort();
+  for (const file of historicalFiles) await apply(file);
   await db.exec(`insert into categories(slug,name) values('upgrade-fixture','Upgrade fixture');
     insert into products(slug,sku,name,description,category_id,price_cents,stock,status)
       select 'upgrade-'||n,'UPGRADE-'||n,'Synthetic historical product','Historical description',
@@ -71,7 +73,7 @@ try {
   for (const table of ['product_variants','supplier_offers','commerce_payment_sessions','commerce_fulfillment_tasks']) {
     assert.equal((await db.query(`select count(*)::int n from ${table}`)).rows[0].n,0,'Invented backfill: '+table);
   }
-  console.log(JSON.stringify({result:'PASS',pending_migrations:pending.length,
+  console.log(JSON.stringify({result:'PASS',historical_migrations:historicalFiles.length,pending_migrations:pending.length,
     preserved_fields:preserved,synthetic_products:40,historical_orders:1,
     live_enabled:false,remote_writes:0,limitations:'PGlite; not a hosted-schema clone or native concurrency test'}));
 } finally { await db.close(); }

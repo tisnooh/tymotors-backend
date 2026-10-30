@@ -1,0 +1,218 @@
+[
+  {
+    "version": "20260913131341",
+    "name": "migrate_202608240001_initial_ecommerce",
+    "statement_count": 1,
+    "normalized_md5": "8464c18a527e2cbfa754f6f3f016efe1",
+    "local_file": "202608240001_initial_ecommerce.sql",
+    "local_normalized_md5": "8464c18a527e2cbfa754f6f3f016efe1",
+    "text_equal": true
+  },
+  {
+    "version": "20260913131344",
+    "name": "migrate_202608240002_security_and_fk_indexes",
+    "statement_count": 1,
+    "normalized_md5": "bca5c2f61909cd5f66bdef962bc23202",
+    "local_file": "202608240002_security_and_fk_indexes.sql",
+    "local_normalized_md5": "bca5c2f61909cd5f66bdef962bc23202",
+    "text_equal": true
+  },
+  {
+    "version": "20260913131345",
+    "name": "migrate_202608240003_clear_broken_vehicle_images",
+    "statement_count": 1,
+    "normalized_md5": "c110bc663d6c3e113276cd1dd7a62582",
+    "local_file": "202608240003_clear_broken_vehicle_images.sql",
+    "local_normalized_md5": "c110bc663d6c3e113276cd1dd7a62582",
+    "text_equal": true
+  },
+  {
+    "version": "20260913131348",
+    "name": "migrate_202608240004_vehicle_image_rights",
+    "statement_count": 1,
+    "normalized_md5": "6f78371102057c43e9d317f6ef68b206",
+    "local_file": "202608240004_vehicle_image_rights.sql",
+    "local_normalized_md5": "6f78371102057c43e9d317f6ef68b206",
+    "text_equal": true
+  },
+  {
+    "version": "20260913131350",
+    "name": "migrate_202608240005_split_porsche_911_generations",
+    "statement_count": 1,
+    "normalized_md5": "1ccdb41bc761f7beb03d5b6f5b3563c5",
+    "local_file": "202608240005_split_porsche_911_generations.sql",
+    "local_normalized_md5": "1ccdb41bc761f7beb03d5b6f5b3563c5",
+    "text_equal": true
+  },
+  {
+    "version": "20260913131352",
+    "name": "migrate_202608240006_verify_audi_a3_8v_image",
+    "statement_count": 1,
+    "normalized_md5": "8c7724271d7c3dfaa162bccb02962cf7",
+    "local_file": "202608240006_verify_audi_a3_8v_image.sql",
+    "local_normalized_md5": "8c7724271d7c3dfaa162bccb02962cf7",
+    "text_equal": true
+  },
+  {
+    "version": "20260913131353",
+    "name": "migrate_202608240007_split_golf_7_trims",
+    "statement_count": 1,
+    "normalized_md5": "0aebe25d6c7419e7959be23ebedb4c00",
+    "local_file": "202608240007_split_golf_7_trims.sql",
+    "local_normalized_md5": "0aebe25d6c7419e7959be23ebedb4c00",
+    "text_equal": true
+  },
+  {
+    "version": "20260913131355",
+    "name": "migrate_202608240008_verify_golf_7_gti_image",
+    "statement_count": 1,
+    "normalized_md5": "59e7212c86b60076a01f78d35b0f7e63",
+    "local_file": "202608240008_verify_golf_7_gti_image.sql",
+    "local_normalized_md5": "59e7212c86b60076a01f78d35b0f7e63",
+    "text_equal": true
+  },
+  {
+    "version": "20260913131357",
+    "name": "migrate_202608240009_verify_remaining_vehicle_images",
+    "statement_count": 1,
+    "normalized_md5": "5ca4de32428783644b3dd5a886fa7fbb",
+    "local_file": "202608240009_verify_remaining_vehicle_images.sql",
+    "local_normalized_md5": "5ca4de32428783644b3dd5a886fa7fbb",
+    "text_equal": true
+  },
+  {
+    "version": "20260913131358",
+    "name": "migrate_202608240010_disclose_vehicle_image_crop",
+    "statement_count": 1,
+    "normalized_md5": "172aaa361cc60559b19b4752cd502439",
+    "local_file": "202608240010_disclose_vehicle_image_crop.sql",
+    "local_normalized_md5": "172aaa361cc60559b19b4752cd502439",
+    "text_equal": true
+  },
+  {
+    "version": "20260913131400",
+    "name": "migrate_202608250001_vehicle_image_workflow",
+    "statement_count": 1,
+    "normalized_md5": "e0c6f8b57a87442ca5c7e53678850f53",
+    "local_file": "202608250001_vehicle_image_workflow.sql",
+    "local_normalized_md5": "e0c6f8b57a87442ca5c7e53678850f53",
+    "text_equal": true
+  },
+  {
+    "version": "20260913131402",
+    "name": "migrate_202608250002_install_tymotors_vehicle_images",
+    "statement_count": 1,
+    "normalized_md5": "23efe26e3d5c71643590e59b1b273ed8",
+    "local_file": "202608250002_install_tymotors_vehicle_images.sql",
+    "local_normalized_md5": "23efe26e3d5c71643590e59b1b273ed8",
+    "text_equal": true
+  },
+  {
+    "version": "20260913131403",
+    "name": "migrate_20260911071309_admin_backoffice",
+    "statement_count": 1,
+    "normalized_md5": "0f64f1dfa5c6367239e282e8be86e1d3",
+    "local_file": "20260911071309_admin_backoffice.sql",
+    "local_normalized_md5": "0f64f1dfa5c6367239e282e8be86e1d3",
+    "text_equal": true
+  },
+  {
+    "version": "20260913131405",
+    "name": "migrate_20260911120652_admin_backoffice_hardening",
+    "statement_count": 1,
+    "normalized_md5": "2f24df063f3c1f611618e9210d375a88",
+    "local_file": "20260911120652_admin_backoffice_hardening.sql",
+    "local_normalized_md5": "2f24df063f3c1f611618e9210d375a88",
+    "text_equal": true
+  },
+  {
+    "version": "20260913131408",
+    "name": "migrate_20260912165642_complete_email_system",
+    "statement_count": 1,
+    "normalized_md5": "f41ea64ac92d05f36661303778c197e5",
+    "local_file": "20260912165642_complete_email_system.sql",
+    "local_normalized_md5": "f41ea64ac92d05f36661303778c197e5",
+    "text_equal": true
+  },
+  {
+    "version": "20260913131410",
+    "name": "migrate_20260912211934_email_advisor_hardening",
+    "statement_count": 1,
+    "normalized_md5": "42c54745b95aee24e7d4974be327aca2",
+    "local_file": "20260912211934_email_advisor_hardening.sql",
+    "local_normalized_md5": "42c54745b95aee24e7d4974be327aca2",
+    "text_equal": true
+  },
+  {
+    "version": "20261011221855",
+    "name": "supplier_fulfillment_workflow",
+    "statement_count": 1,
+    "normalized_md5": "7dfa402fb83d409e66a5c59d5b984ee7",
+    "local_file": "20261011221114_supplier_fulfillment_workflow.sql",
+    "local_normalized_md5": "7dfa402fb83d409e66a5c59d5b984ee7",
+    "text_equal": true
+  },
+  {
+    "version": "20261011222154",
+    "name": "supplier_fulfillment_indexes",
+    "statement_count": 1,
+    "normalized_md5": "6126cbe0a189a5e2a3081877f5e1d7ac",
+    "local_file": "20261011222034_supplier_fulfillment_indexes.sql",
+    "local_normalized_md5": "6126cbe0a189a5e2a3081877f5e1d7ac",
+    "text_equal": true
+  },
+  {
+    "version": "20261012053601",
+    "name": "supplier_link_refresh",
+    "statement_count": 1,
+    "normalized_md5": "65b2092da15ddbf9e8e88b9361532a16",
+    "local_file": "20261012042643_supplier_link_refresh.sql",
+    "local_normalized_md5": "65b2092da15ddbf9e8e88b9361532a16",
+    "text_equal": true
+  },
+  {
+    "version": "20261012120338",
+    "name": "checkout_customer_phone",
+    "statement_count": 1,
+    "normalized_md5": "6bae5bb90c9389b8f2cac4e19f5fc524",
+    "local_file": "20261012115851_checkout_customer_phone.sql",
+    "local_normalized_md5": "6bae5bb90c9389b8f2cac4e19f5fc524",
+    "text_equal": true
+  },
+  {
+    "version": "20261012120341",
+    "name": "supplier_directory",
+    "statement_count": 1,
+    "normalized_md5": "7110748eb1bfe736b58837966e16d49f",
+    "local_file": "20261012120138_supplier_directory.sql",
+    "local_normalized_md5": "7110748eb1bfe736b58837966e16d49f",
+    "text_equal": true
+  },
+  {
+    "version": "20261012164251",
+    "name": "withdrawal_receipts",
+    "statement_count": 1,
+    "normalized_md5": "acb16fdedfeade9f504edca2a6304694",
+    "local_file": "20261012163951_withdrawal_receipts.sql",
+    "local_normalized_md5": "71cc446f8a05e58c336f509affe2578a",
+    "text_equal": false
+  },
+  {
+    "version": "20261012185842",
+    "name": "enforce_active_auth_session",
+    "statement_count": 1,
+    "normalized_md5": "16dd4729d499d2ee14d423cc70009ddb",
+    "local_file": "20261012184823_enforce_active_auth_session.sql",
+    "local_normalized_md5": "d0ab55a4adeb1a753973340d290212b5",
+    "text_equal": false
+  },
+  {
+    "version": "20261013063630",
+    "name": "sandbox_catalog_orders",
+    "statement_count": 1,
+    "normalized_md5": "48aa5e1ca21350c099ae2156fc322c23",
+    "local_file": "20261013063630_sandbox_catalog_orders.sql",
+    "local_normalized_md5": "48aa5e1ca21350c099ae2156fc322c23",
+    "text_equal": true
+  }
+]

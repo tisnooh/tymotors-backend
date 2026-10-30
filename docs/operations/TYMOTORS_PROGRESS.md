@@ -1,5 +1,20 @@
 # PHOENIX — journal de progression
 
+## Rapprochement du registre et recette complète —30octobre
+
+- Registre des24 migrations de production comparé aux sources :22 textes concordants après CRLF/trim,
+  deux différences de commentaires/mise en forme examinées. Fonction de session
+  et ACL service-only, contrainte receipt vérifiées dans le schéma actuel.
+- Aucun repair/dbpush distant. Correspondances et empreintes conservées dans
+  REMOTE_MIGRATION_HASHES_2026-10-30.json, rapport MIGRATION_RECONCILIATION.
+- Test de conservation étendu de13 à24 migrations historiques : chaîne complète
+  24+21 PASS,1 696 champs conservés,40 produits et1 commande synthétiques, garde false.
+- Les limitations du test précédent sont historiques : toutes les migrations
+  locales sont couvertes, mais cela reste une reconstruction, pas un clone du
+  schéma actuel avec éventuelles modifications hors registre.
+- Prochaine tâche : schéma courant/export vérifié et restauration isolée avant
+  publication approuvée. Aucune production, photographie ou présentation changée.
+
 ## Préparation de publication et conservation des données —29octobre
 
 - Registre distant lu sans mutation :24 migrations appliquées,21 nouvelles
