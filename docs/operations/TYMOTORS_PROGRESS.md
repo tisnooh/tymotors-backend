@@ -1,5 +1,21 @@
 # PHOENIX — journal de progression
 
+## Inventaire du schéma courant —30octobre
+
+- SELECT de métadonnées distant exécuté,1 181 entrées sans données client.
+  Snapshot privé hors dépôt ; requête reproductible versionnée.
+- Reconstruction des24 historiques exportée avant les21 nouvelles migrations.
+  Recette24+21 PASS,1 696 champs conservés. Export interdit dans le dépôt ou
+  sur un fichier existant, aucun secret ni ligne client exporté.
+- Concordance des35 tables,415 colonnes,109 index,64 politiques et21 triggers
+  publics interrogés.307 écarts bruts à distinguer des anomalies :264 contraintes
+  NOT NULL de catalogue,16 entrées de fonctions (texte/ACL),27 grants service_role.
+- Rapport SCHEMA_COMPARISON_2026-10-30 ; aucun correctif distant automatique.
+  Contre-audit indépendant : inventaire identique et recette24+21/1696 PASS ;
+  écarts qualifiés, APPROVED descriptif et LOCAL. Rapport SCHEMA_INVENTORY_AUDIT.
+  Reste : objets privés/vues/types/extensions et export restaurable sur moteur
+  natif. Ce contrôle ne constitue pas un clone complet ni une ouverture commerciale.
+
 ## Rapprochement du registre et recette complète —30octobre
 
 - Registre des24 migrations de production comparé aux sources :22 textes concordants après CRLF/trim,

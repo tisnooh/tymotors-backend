@@ -1,5 +1,7 @@
 // Upgrade a populated historical schema, never a hosted database.
-import { readFile, access, readdir } from 'node:fs/promises';
+import { readFile, access, readdir, writeFile } from 'node:fs/promises';
+import { resolve, isAbsolute, relative, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 let runtime;
 for (const path of ['../tools/sql-tests/node_modules/@electric-sql/pglite/dist/index.js',
@@ -32,6 +34,16 @@ try {
   const historicalFiles = (await readdir(new URL('../supabase/migrations/', import.meta.url)))
     .filter(file => file.endsWith('.sql') && file <= files[boundary]).sort();
   for (const file of historicalFiles) await apply(file);
+  const inventoryIndex = process.argv.indexOf('--inventory-before-upgrade');
+  if (inventoryIndex !== -1) {
+    const destination = process.argv[inventoryIndex + 1];
+    assert.ok(destination && isAbsolute(destination), 'Absolute private inventory path required');
+    const repo = fileURLToPath(new URL('../', import.meta.url));
+    const rel = relative(repo, resolve(destination));
+    assert.ok(rel === '..' || rel.startsWith('..' + sep) || isAbsolute(rel), 'Keep schema exports outside repository');
+    const query = await readFile(new URL('./commerce_schema_inventory.sql', import.meta.url), 'utf8');
+    await writeFile(destination, JSON.stringify((await db.query(query)).rows, null, 2) + '\n', {flag:'wx'});
+  }
   await db.exec(`insert into categories(slug,name) values('upgrade-fixture','Upgrade fixture');
     insert into products(slug,sku,name,description,category_id,price_cents,stock,status)
       select 'upgrade-'||n,'UPGRADE-'||n,'Synthetic historical product','Historical description',
