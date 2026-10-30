@@ -1,5 +1,17 @@
 # PHOENIX — fournisseurs, prestataire et cinq pilotes
 
+## Réponse à CJ envoyée —30octobre
+
+- Accord propriétaire « Ok réponds » : réponse dans le fil existant CJ,
+  message1a18d5e410810f14, relu SENT ; destinataire/objet et nouveau corps
+  concordants, historique cité ajouté par Gmail.
+- Clarifications : circuit unitaire fournisseur→CJ Chine→France sans stock en
+  gros/minimum mensuel, modèle de dossier SKU et devis détaillé, conditions
+  logistiques/retours, sandbox officiel sans effet OMS réel, agent responsable.
+- Poids/dimensions restent à obtenir ; aucun chiffre ou volume inventé.
+  Aucun achat, frais, dépôt, contrat, commande ou expédition accepté.
+  Réponse fournisseur attendue ; aucune intégration CJ déclarée opérationnelle.
+
 ## Contrôle des messages —30octobre
 
 - CJ a répondu après le contrôle précédent : message1a181df142bb7351 du28octobre
