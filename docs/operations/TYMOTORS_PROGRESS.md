@@ -1,5 +1,22 @@
 # PHOENIX — journal de progression
 
+## Sauvegarde/restauration sur PostgreSQL natif —30octobre
+
+- PostgreSQL17.11 portable officiel EDB téléchargé hors dépôt, SHA-256 éditeur
+  vérifié avant exécution. Aucun service global ou pare-feu modifié.
+- Runner natif créé : cluster privé loopback/SCRAM,24 migrations historiques,
+  données synthétiques, pg_dump custom, pg_restore dans une seconde base,
+  comparaison puis21 migrations nouvelles :PASS,1 696 champs conservés,
+  garde commerciale false, cluster arrêté. Aucun paiement/écriture distante.
+- Corrigés : pipe Windows hérité bloquant le démarrage, propriétaire postgres
+  attendu, tri stable des snapshots et état FAILED sur échec de nettoyage.
+- Rapport NATIVE_UPGRADE_2026-10-30 ; ce test dépasse la limite PGlite précédente
+  pour la restauration, mais ne constitue pas un clone de production actuelle
+  ni une preuve de concurrence ou de livraison réelle.
+- Contre-run indépendant natif identique PASS, cinq contre-tests de lifecycle
+  PASS ; arrêt, absence de fichier de mot de passe et checksum de distribution
+  vérifiés. Rapport NATIVE_UPGRADE_AUDIT_2026-10-30, APPROVED LOCAL.
+
 ## Inventaire du schéma courant —30octobre
 
 - SELECT de métadonnées distant exécuté,1 181 entrées sans données client.
