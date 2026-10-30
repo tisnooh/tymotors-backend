@@ -1037,3 +1037,15 @@ Prochaine action de reprise : journal durable des observations/rapprochement et 
   HyperSKU réelles et canal/API/import officiellement confirmé. Toute transmission
   de commande ou paiement réel reste soumis à autorisation humaine explicite.
   Aucun achat pour forcer la clôture ; les40dossiers restent commercialementbloqués.
+
+## Point de reprise — 30 octobre 2026, lot checkout et comptes
+
+Voir TYMOTORS_CHECKOUT_COMPLETION_2026-10-30.md et TYMOTORS_ACCOUNTS_2026-10-30.md.
+Backend3007pytestPASS ; frontend724testsPASS, lint/buildPASS, frontendpush a682e50.
+SQL/HTTP96checksrefund +93claimsfinanciers PASS avec socles655/252/95 ; transport factice.
+Aucun design/photo/prix public changé. Aucun paiement réel ni activation commerciale.
+Profils : Leboncoin nom+bio(enmodération), CJ nomentreprise, WhatsApp logo+description+site+catégorie,
+Alibaba présentationEN enregistrée. Conditions commerciales Alibaba laissées au propriétaire.
+Nouveau lot autorisé : champs admin preuvesfournisseur et suivi colis, styles existants ; agentfrontend.
+Prochaine action : terminer ce lotadmin, contre-audit ettests, push ; déploiement frontend/backend
+à coordonner avec23migrations. Stripe accessiblecharges_enabledfalse ; ne pas masquer lestests.

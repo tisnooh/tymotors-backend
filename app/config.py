@@ -60,6 +60,8 @@ class Settings:
     # The historical receiver keeps its own mode after new checkout switches.
     stripe_legacy_webhook_mode: str = 'test'
     stripe_legacy_account_id: str = ''
+    financial_notifications_enabled: bool = False
+    financial_notifications_interval_seconds: int = 30
 
     @property
     def stripe_test_mode(self) -> bool:
@@ -71,6 +73,12 @@ class Settings:
         return self.stripe_test_mode and self.test_catalog_enabled
 
     def validate(self) -> None:
+        if (type(self.financial_notifications_enabled) is not bool
+                or type(self.financial_notifications_interval_seconds) is not int
+                or not 5 <= self.financial_notifications_interval_seconds <= 3600):
+            raise RuntimeError('Invalid financial notification runtime configuration')
+        if self.financial_notifications_enabled and not self.email_enabled:
+            raise RuntimeError('Financial notifications require configured email delivery')
         project = urlsplit(self.supabase_url)
         if (project.scheme != 'https' or not re.fullmatch(r'[a-z0-9-]+\.supabase\.co', project.hostname or '')
                 or project.username or project.password or project.port not in (None, 443)
@@ -190,5 +198,7 @@ def get_settings() -> Settings:
         stripe_checkout_profile=os.getenv('STRIPE_CHECKOUT_PROFILE', ''),
         stripe_legacy_webhook_mode=os.getenv('STRIPE_LEGACY_WEBHOOK_MODE', 'test').strip().lower(),
         stripe_legacy_account_id=os.getenv('STRIPE_LEGACY_ACCOUNT_ID', ''),
+        financial_notifications_enabled=os.getenv('FINANCIAL_NOTIFICATIONS_ENABLED', 'false').strip().lower() in {'true', '1'},
+        financial_notifications_interval_seconds=int(os.getenv('FINANCIAL_NOTIFICATIONS_INTERVAL_SECONDS', '30')),
     )
     return settings

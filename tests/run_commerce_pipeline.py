@@ -26,7 +26,7 @@ def main():
                                  'tests.commerce_legacy_isolation_http_probe','tests.commerce_account_context_http_probe',
                                  'tests.commerce_financial_outbox_http_probe','tests.commerce_financial_notification_system_http_probe',
                                  'tests.commerce_launch_policy_http_probe','tests.commerce_production_http_probe',
-                                 'tests.commerce_context_dispatch_probe'])
+                                 'tests.commerce_context_dispatch_probe', 'tests.commerce_context_refund_probe'])
     args=parser.parse_args()
     for port in (8765,8766):
         with socket.socket() as sock:
@@ -40,8 +40,10 @@ def main():
          'STRIPE_MODE':'test','STRIPE_SECRET_KEY':'','EMAIL_ENABLED':'false',
          'STRIPE_WEBHOOK_PROFILES_JSON':'','STRIPE_CHECKOUT_PROFILE':'','STRIPE_LEGACY_WEBHOOK_MODE':'test',
          'STRIPE_LEGACY_ACCOUNT_ID':'',
+         'FINANCIAL_NOTIFICATIONS_ENABLED':'false',
          'TYMOTORS_CONTEXT_FIXTURE':'1' if args.probe_module in (
-             'tests.commerce_production_http_probe', 'tests.commerce_context_dispatch_probe') else '',
+             'tests.commerce_production_http_probe', 'tests.commerce_context_dispatch_probe',
+             'tests.commerce_context_refund_probe') else '',
          'BREVO_API_KEY':'','SMTP_PASSWORD':'','CLOUDINARY_URL':'','CLOUDINARY_API_KEY':'','CLOUDINARY_API_SECRET':''}
     processes=[]
     with tempfile.TemporaryFile(mode='w+b') as log:

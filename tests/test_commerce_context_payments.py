@@ -126,7 +126,7 @@ def wired(snapshot, request):
             c['settled_payload'] = deepcopy(payload)
             return {'received': True, 'is_test': is_test,
                     'held': payload['p_destination_matches'] is not True}
-        if name == 'commerce_record_context_event':
+        if name in ('commerce_record_context_event', 'commerce_record_context_refund'):
             c['receipt_payload'] = deepcopy(payload)
             return {'received': True, 'requires_reconciliation': True, 'is_test': is_test}
         raise AssertionError(name)
@@ -494,10 +494,8 @@ async def test_paid_webhook_during_provider_read_returns_paid_without_second_pay
     ('checkout.session.expired', 'checkout.session', 'cs_live_'),
     ('checkout.session.async_payment_failed', 'checkout.session', 'cs_live_'),
     ('payment_intent.payment_failed', 'payment_intent', 'pi_'),
-    ('refund.created', 'refund', 're_'), ('refund.updated', 'refund', 're_'),
-    ('refund.failed', 'refund', 're_'), ('charge.refunded', 'charge', 'ch_'),
 ])
-async def test_negative_or_refund_receipt_records_only_identity_for_review(wired, kind, object_type, prefix):
+async def test_negative_payment_receipt_records_only_identity_for_review(wired, kind, object_type, prefix):
     c, db, gateway, service = wired
     event = {'id': 'evt_ContextReceipt', 'type': kind, 'livemode': True,
         'data': {'object': {'id': prefix + 'ContextReceipt', 'object': object_type,
@@ -507,8 +505,7 @@ async def test_negative_or_refund_receipt_records_only_identity_for_review(wired
     assert rpc_names(db) == ['commerce_record_context_event']
     assert c['receipt_payload'] == {'p_event_id': 'evt_ContextReceipt', 'p_event_type': kind,
         'p_object_id': prefix + 'ContextReceipt', 'p_is_test': False,
-        'p_stripe_account_id': ACCOUNT, 'p_profile_ref': c['profile'].reference,
-        **({'p_payment_intent_id': None} if kind.startswith('refund.') or kind == 'charge.refunded' else {})}
+        'p_stripe_account_id': ACCOUNT, 'p_profile_ref': c['profile'].reference}
     db.select.assert_not_awaited()
     gateway.create.assert_not_awaited()
 
@@ -533,14 +530,18 @@ async def test_receipt_wrong_mode_or_object_kind_never_recorded(wired, kind, obj
 @pytest.mark.anyio
 @pytest.mark.parametrize('intent', ['pi_ExactSynthetic',
     {'id': 'pi_ExactSynthetic', 'object': 'payment_intent', 'livemode': True}])
-async def test_refund_receipt_passes_exact_signed_payment_identity_not_an_invented_amount(wired, intent):
+async def test_refund_receipt_passes_exact_signed_financial_observation_without_customer_data(wired, intent):
     c, db, _, service = wired
-    event = {'id': 'evt_ContextRefundIdentity', 'type': 'refund.updated', 'livemode': True,
+    event = {'object': 'event', 'id': 'evt_ContextRefundIdentity', 'type': 'refund.updated', 'livemode': True, 'created': 1700000000,
         'data': {'object': {'id': 're_ExactSynthetic', 'object': 'refund', 'payment_intent': intent,
-                            'amount': 9876, 'status': 'pending'}}}
+                            'amount': 9876, 'status': 'pending', 'currency': 'eur',
+                            'private_email': 'private@example.test'}}}
     await service.accept_signed_event(event)
-    assert c['receipt_payload']['p_payment_intent_id'] == 'pi_ExactSynthetic'
-    assert 'amount' not in str(c['receipt_payload']) and 'status' not in str(c['receipt_payload'])
+    assert rpc_names(db) == ['commerce_record_context_refund']
+    assert c['receipt_payload']['p_event']['payment_intent_id'] == 'pi_ExactSynthetic'
+    assert c['receipt_payload']['p_event']['amount_cents'] == 9876
+    assert c['receipt_payload']['p_event']['refund_status'] == 'pending'
+    assert 'private@example.test' not in str(c['receipt_payload'])
     db.select.assert_not_awaited()
 
 

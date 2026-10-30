@@ -13,6 +13,7 @@ from app.commerce_checkout_mode import checkout_mode
 from app.commerce_checkout_params import build_checkout_params
 from app.commerce_customer_checkout import CustomerCheckoutError
 from app.commerce_quote_service import CartQuoteService
+from app.commerce_context_refunds import record_signed_context_refund
 from app.commerce_webhook_profiles import StripeWebhookProfile, direct_account_context_matches
 
 _ORDER_SNAPSHOT_FIELDS = ('id', 'commerce_quote_id', 'cart_id', 'user_id', 'guest_session_id',
@@ -108,13 +109,14 @@ class ContextCheckoutPayments:
             raise ValueError('Webhook profile mismatch')
         kind = event['type']
         session = event['data']['object']
+        if kind in ('refund.created', 'refund.updated', 'refund.failed', 'charge.refunded'):
+            return await record_signed_context_refund(self.db, self.profile, event)
         if kind not in ('checkout.session.completed', 'checkout.session.async_payment_succeeded'):
             object_id = session.get('id')
             checkout_prefix = 'cs_test_' if self.profile.context.mode == 'sandbox' else 'cs_live_'
             identities = {'checkout.session.expired': (checkout_prefix, 'checkout.session'),
                 'checkout.session.async_payment_failed': (checkout_prefix, 'checkout.session'),
-                'payment_intent.payment_failed': ('pi_', 'payment_intent'), 'refund.created': ('re_', 'refund'),
-                'refund.updated': ('re_', 'refund'), 'refund.failed': ('re_', 'refund'), 'charge.refunded': ('ch_', 'charge')}
+                'payment_intent.payment_failed': ('pi_', 'payment_intent')}
             identity = identities.get(kind)
             if identity is None:
                 return {'received': True, 'ignored': True}
@@ -123,24 +125,9 @@ class ContextCheckoutPayments:
                     or not re.fullmatch(re.escape(prefix) + r'[A-Za-z0-9_]{1,240}', object_id)
                     or session.get('object') != object_type):
                 raise ValueError('Invalid financial event object')
-            refund_scope = {}
-            if kind.startswith('refund.') or kind == 'charge.refunded':
-                intent = session.get('payment_intent')
-                if isinstance(intent, dict):
-                    if (intent.get('object') != 'payment_intent'
-                            or ('livemode' in intent and intent['livemode'] is not
-                                (self.profile.context.mode == 'production'))):
-                        raise ValueError('Invalid refund payment identity')
-                    intent = intent.get('id')
-                if intent is not None and (not isinstance(intent, str)
-                        or not re.fullmatch(r'pi_[A-Za-z0-9_]{1,240}', intent)):
-                    raise ValueError('Invalid refund payment identity')
-                # No amount/status inference: a signed receipt places the exact
-                # associated order on review, including before settlement.
-                refund_scope = {'p_payment_intent_id': intent}
             return await self.db.rpc('commerce_record_context_event', {
                 'p_event_id': event['id'], 'p_event_type': kind, 'p_object_id': object_id,
-                'p_is_test': self.profile.context.mode == 'sandbox', **self.scope, **refund_scope})
+                'p_is_test': self.profile.context.mode == 'sandbox', **self.scope})
         metadata = session.get('metadata')
         if not isinstance(metadata, dict):
             raise ValueError('Missing checkout identity')

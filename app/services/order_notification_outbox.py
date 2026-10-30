@@ -71,7 +71,7 @@ class OrderNotificationOutbox:
         return await self._deliver(log_id, actor)
 
     async def deliver_financial(self, log_id: str, *, enabled=False) -> dict[str, Any]:
-        """Dormant system entry; SQL separately checks its persistent stop gate."""
+        """Opt-in system entry; SQL separately checks its persistent stop gate."""
         if enabled is not True:
             return {'log_id': log_id, 'sent': False, 'status': 'disabled'}
         return await self._deliver(log_id, None, system_financial=True)
@@ -84,6 +84,8 @@ class OrderNotificationOutbox:
             if not rows:
                 return {**result, 'status': 'not_found'}
             row = rows[0]
+            if system_financial and row.get('delivery_state') != 'pending':
+                return {**result, 'status': row.get('delivery_state') or 'unknown'}
             if system_financial and (row.get('email_type') not in FINANCIAL_KINDS
                     or (row.get('metadata') or {}).get('source') != 'atomic_financial_transition'):
                 return {**result, 'status': 'ineligible'}

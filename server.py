@@ -36,6 +36,7 @@ from app.commerce_payment_service import CommerceTestPayments
 from app.commerce_context_webhook_api import create_context_webhook_router
 from app.commerce_context_receipt import context_checkout_receipt_order, ContextReceiptError
 from app.commerce_context_dispatch_api import create_context_dispatch_router, customer_context_parcels
+from app.commerce_context_refunds import create_context_refund_router
 from app.commerce_webhook_profiles import load_webhook_profiles, WebhookProfileError, direct_account_context_matches
 from app.commerce_refund_events import normalize_test_refund_event
 from app.commerce_fulfillment_api import create_test_fulfillment_router, load_test_fulfillment_summary
@@ -54,6 +55,7 @@ from app.schemas import (
 )
 from app.services.email_service import EmailService
 from app.services.order_notification_outbox import OrderNotificationOutbox, FINANCIAL_KINDS, KINDS as FULFILLMENT_EMAIL_KINDS
+from app.services.financial_notification_runtime import financial_notification_runtime
 from app.services.email_templates import newsletter_confirmation, order_event, welcome
 from app.services.email_tokens import hash_confirmation_token, new_confirmation_token, verify_token
 from app.store import CatalogStore
@@ -102,8 +104,13 @@ async def lifespan(_: FastAPI):
     await db.open()
     if settings.stripe_secret_key:
         stripe_client = StripeClient(settings.stripe_secret_key, http_client=stripe.HTTPXClient())
-    yield
-    await db.close()
+    try:
+        async with financial_notification_runtime(OrderNotificationOutbox(email_service),
+                enabled=settings.financial_notifications_enabled,
+                interval_seconds=settings.financial_notifications_interval_seconds):
+            yield
+    finally:
+        await db.close()
 
 
 app = FastAPI(title="TYMotors API", version="2.0.0", lifespan=lifespan)
@@ -1151,6 +1158,7 @@ api.include_router(create_admin_router(
 app.include_router(api)
 app.include_router(create_context_webhook_router(db, lambda: settings))
 app.include_router(create_context_dispatch_router(db, require_admin, _deliver_order_notification))
+app.include_router(create_context_refund_router(db, require_admin))
 app.include_router(create_commerce_router(db, catalog, require_admin, settings.shipping_countries))
 app.include_router(create_public_variant_router(db, catalog, lambda: settings))
 app.include_router(create_customer_checkout_router(

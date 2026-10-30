@@ -1,7 +1,6 @@
-"""Bounded, opt-in tick, NOT a running service or scheduler.
+"""Bounded, opt-in tick owned by the optional application lifecycle.
 
-No instance is registered at application startup. A future authorized runner
-must explicitly enable this and the separate SQL gate. No automatic retry of
+The runtime must explicitly enable this and the separate SQL gate. No automatic retry of
 claimed/unknown/sent outcomes and no historical backfill. Stop is checked before
 each log; it cannot recall a transport already accepted by a provider.
 """
@@ -32,7 +31,8 @@ class FinancialNotificationWorker:
             rows = await self.outbox.db.select('email_logs', params={
                 'select': 'id,email_type,delivery_state',
                 'email_type': 'in.(payment_confirmed,refund_confirmed)',
-                'delivery_state': 'in.(pending,blocked)', 'order': 'created_at.asc,id.asc', 'limit': self.batch_size})
+                'delivery_state': 'eq.pending', 'metadata->>source': 'eq.atomic_financial_transition',
+                'event_snapshot': 'not.is.null', 'order': 'created_at.asc,id.asc', 'limit': self.batch_size})
             if not isinstance(rows, list) or len(rows) > self.batch_size:
                 raise ValueError('Invalid batch response')
             seen = set()

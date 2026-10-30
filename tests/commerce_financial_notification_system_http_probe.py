@@ -105,6 +105,11 @@ def main():
         settings(False)
         unchanged(payment, 'disabled')
         settings(True)
+        # Configuration recovery never silently reclaims a blocked send.
+        unchanged(payment, 'blocked')
+        eq(financial.claim(payment)[0], {'claimed': True, 'state': 'claimed'})
+        # A fresh pending receipt remains eligible for the automatic path.
+        order, payment = seed()
         result, token = system(payment)
         eq(result, {'claimed': True, 'state': 'claimed'})
         audit = one("select admin_user_id,metadata from admin_audit where resource=$1 and action='email.outbox_claim'", [payment['id']])

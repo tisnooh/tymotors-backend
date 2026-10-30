@@ -537,3 +537,12 @@ qui importait un deuxième serveur reste enregistré. Politique extraite puremen
 pour éviter ce deuxième import mutateur, sans augmenter le délai30s. Ce dernier
 refactor du harness est postérieur à la recette réseau ; pas de deuxième paiement
 créé pour le masquer. Aucun fichier applicatif/migration/frontend modifié.
+
+## Recette du 30 octobre 2026
+
+3007pytestPASS ;724JestPASS/47suites ;lint+buildPASS. SQLrefund96PASS, notificationoutbox95PASS,
+claimsystème93PASS, transportsFAKE et0opérationréelle. Auditsindépendants sources/frontend/refund/locks acquis.
+Erreurs de ressources des premiers runs corrigées par exécution séquentielle sans augmenter lestimeouts.
+Une classification legacyunknown vsnot_eligible du wrapperSQL détectée parprobe puis corrigée et retestée.
+Pas de concurrence PostgreSQL native prouvée pour le dernierwrapper ni d'encaissement réel dans celot.
+Nouveaux champsadmin autorisés ensuite : résultats à ajouter après leur propre recette.
