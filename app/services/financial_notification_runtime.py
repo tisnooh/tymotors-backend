@@ -50,4 +50,3 @@ async def financial_notification_runtime(outbox, *, enabled=False, interval_seco
             # Cancellation cannot recall a sync provider request already accepted.
             # The persisted claim remains non-retryable and must be reconciled.
             logger.warning('Financial notification shutdown requires reconciliation')
-
