@@ -891,6 +891,8 @@ async def create_checkout_session(request: Request, promotion_code: str | None =
         compatibility_result = check_compatibility(item, VehicleSelection.model_validate(vehicle_facts)) if vehicle_facts else {"status": "unknown", "reason": "No vehicle selected"}
         if compatibility_result["status"] == "incompatible":
             raise HTTPException(status_code=409, detail=f"Produit incompatible avec le véhicule sélectionné : {item['name']}")
+        if not settings.stripe_test_mode and compatibility_result["status"] != "compatible":
+            raise HTTPException(status_code=409, detail=f"Compatibilité non confirmée avant paiement : {item['name']}")
         requires_review = requires_review or compatibility_result["status"] != "compatible"
         # Integer cents come from the hydrated database product, never the browser.
         unit_amount = item["price_cents"]; subtotal_cents += unit_amount * quantity
