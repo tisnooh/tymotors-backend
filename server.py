@@ -355,9 +355,8 @@ async def list_products(category: str | None = None, brand: str | None = None, m
                         has_camera: bool | None = None, has_parking_sensors: bool | None = None,
                         sort: str = Query(default="newest", pattern="^(relevance|newest|price_asc|price_desc|name)$"),
                         page: int = Query(default=1, ge=1), limit: int = Query(default=24, ge=1, le=100)):
-    products = await catalog.hydrate_products(await catalog.product_rows(public_only=not (preview or settings.test_catalog_available)))
-    if preview or settings.test_catalog_available:
-        products = [product for product in products if product.get("status") != "archived"]
+    products = await catalog.hydrate_products(await catalog.product_rows(public_only=False))
+    products = [product for product in products if product.get("status") != "archived"]
     products = [purchase_availability(product, settings) for product in products]
     category = {"performance": "exterior", "technology": "multimedia-technology"}.get(category, category)
     if category: products = [p for p in products if p["category_slug"] == category]
@@ -393,7 +392,7 @@ async def list_products(category: str | None = None, brand: str | None = None, m
 
 @api.get("/products/{slug}")
 async def get_product(slug: str, preview: bool = False):
-    product = await catalog.product_by("slug", slug, public_only=not (preview or settings.test_catalog_available))
+    product = await catalog.product_by("slug", slug, public_only=False)
     if product and product.get("status") == "archived":
         product = None
     if not product: raise HTTPException(status_code=404, detail="Product not found")

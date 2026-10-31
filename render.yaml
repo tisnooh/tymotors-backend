@@ -21,6 +21,8 @@ services:
         sync: false
       - key: STRIPE_MODE
         value: test
+      - key: PUBLIC_TEST_CHECKOUT_ENABLED
+        value: "false"
       - key: STRIPE_AUTOMATIC_TAX
         value: "false"
       - key: FREE_SHIPPING_THRESHOLD_CENTS

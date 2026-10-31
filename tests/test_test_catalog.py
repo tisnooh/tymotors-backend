@@ -17,9 +17,26 @@ def draft(**overrides):
             'is_verified': False, **overrides}
 
 
+def test_public_catalogue_stays_visible_without_demo_checkout(monkeypatch):
+    monkeypatch.setattr(server, 'settings', replace(server.settings, stripe_mode='test',
+                                                   test_catalog_enabled=True, public_test_checkout_enabled=False))
+    monkeypatch.setattr(server.catalog, 'product_rows', AsyncMock(return_value=[draft()]))
+    monkeypatch.setattr(server.catalog, 'hydrate_products', AsyncMock(return_value=[draft()]))
+    monkeypatch.setattr(server.catalog, 'product_by', AsyncMock(return_value=draft()))
+    client = TestClient(server.app)
+    listed = client.get('/api/products').json()['items'][0]
+    detail = client.get('/api/products/fixture').json()
+    for product in (listed, detail):
+        assert product['status'] == 'draft'
+        assert product['test_purchase'] is False
+        assert product['purchase_available'] is False
+        assert product['max_order_quantity'] == 0
+    assert not purchasable(draft(), server.settings)
+
+
 @pytest.mark.parametrize('mode,enabled,allowed', [('test', True, True), ('test', False, False), ('live', True, False)])
 def test_test_availability_cannot_publish_or_fake_inventory(mode, enabled, allowed):
-    config = replace(server.settings, stripe_mode=mode, test_catalog_enabled=enabled)
+    config = replace(server.settings, stripe_mode=mode, test_catalog_enabled=enabled, public_test_checkout_enabled=True)
     original = draft()
     view = purchase_availability(original, config)
     assert view['purchase_available'] is allowed
@@ -32,14 +49,14 @@ def test_test_availability_cannot_publish_or_fake_inventory(mode, enabled, allow
 
 
 def test_archived_products_never_become_test_purchases():
-    config = replace(server.settings, stripe_mode='test', test_catalog_enabled=True)
+    config = replace(server.settings, stripe_mode='test', test_catalog_enabled=True, public_test_checkout_enabled=True)
     assert not purchasable(draft(status='archived', test_purchase=True), config)
     assert not purchasable(draft(), config, 21)
     assert not purchasable(draft(), config, 0)
 
 
 def test_active_inventory_limits_are_unchanged():
-    config = replace(server.settings, stripe_mode='test', test_catalog_enabled=True)
+    config = replace(server.settings, stripe_mode='test', test_catalog_enabled=True, public_test_checkout_enabled=True)
     assert not purchasable(draft(status='active', stock=0), config)
     assert purchasable(draft(status='active', stock=3), config, 3)
     assert not purchasable(draft(status='active', stock=3), config, 4)
@@ -47,7 +64,7 @@ def test_active_inventory_limits_are_unchanged():
 
 @pytest.mark.parametrize('mode,expected', [('test', 200), ('live', 404)])
 def test_draft_cart_server_gate_not_browser_flag(monkeypatch, mode, expected):
-    monkeypatch.setattr(server, 'settings', replace(server.settings, stripe_mode=mode, test_catalog_enabled=True))
+    monkeypatch.setattr(server, 'settings', replace(server.settings, stripe_mode=mode, test_catalog_enabled=True, public_test_checkout_enabled=True))
     monkeypatch.setattr(server.catalog, 'product_by', AsyncMock(return_value=draft()))
     monkeypatch.setattr(server, '_cart_for', AsyncMock(return_value={'id': 'cart'}))
     monkeypatch.setattr(server, '_cart_response', AsyncMock(return_value={'items': [draft()]}))
@@ -62,7 +79,7 @@ def test_draft_cart_server_gate_not_browser_flag(monkeypatch, mode, expected):
 
 @pytest.mark.parametrize('enabled,expected', [(True, 200), (False, 409)])
 def test_checkout_recomputes_test_gate_and_prices(monkeypatch, enabled, expected):
-    monkeypatch.setattr(server, 'settings', replace(server.settings, stripe_mode='test', test_catalog_enabled=enabled))
+    monkeypatch.setattr(server, 'settings', replace(server.settings, stripe_mode='test', test_catalog_enabled=enabled, public_test_checkout_enabled=True))
     monkeypatch.setattr(server, 'checkout_attempts', {})
     create = AsyncMock(return_value=SimpleNamespace(id='cs_test_fixture', url='https://checkout.stripe.com/test'))
     monkeypatch.setattr(server, 'stripe_client', SimpleNamespace(v1=SimpleNamespace(checkout=SimpleNamespace(sessions=SimpleNamespace(create_async=create)))))
@@ -83,7 +100,7 @@ def test_checkout_recomputes_test_gate_and_prices(monkeypatch, enabled, expected
 
 
 def test_test_purchase_does_not_bypass_incompatible_vehicle(monkeypatch):
-    monkeypatch.setattr(server, 'settings', replace(server.settings, stripe_mode='test', test_catalog_enabled=True))
+    monkeypatch.setattr(server, 'settings', replace(server.settings, stripe_mode='test', test_catalog_enabled=True, public_test_checkout_enabled=True))
     monkeypatch.setattr(server, 'checkout_attempts', {})
     monkeypatch.setattr(server, 'stripe_client', object())
     monkeypatch.setattr(server, '_cart_for', AsyncMock(return_value={'id': 'cart'}))
