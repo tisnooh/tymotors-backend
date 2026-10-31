@@ -893,6 +893,15 @@ async def create_checkout_session(request: Request, promotion_code: str | None =
             raise HTTPException(status_code=409, detail=f"Produit incompatible avec le véhicule sélectionné : {item['name']}")
         if not settings.stripe_test_mode and compatibility_result["status"] != "compatible":
             raise HTTPException(status_code=409, detail=f"Compatibilité non confirmée avant paiement : {item['name']}")
+        if not settings.stripe_test_mode:
+            offers = await db.select("product_supplier_data", params={
+                "select": "supplier_name,supplier_reference,cost_price_cents,shipping_cost_cents,supplier_verified",
+                "product_id": f"eq.{item['id']}", "limit": 1})
+            offer = offers[0] if offers else {}
+            if (not offer.get("supplier_verified") or not (offer.get("supplier_name") or "").strip()
+                    or not (offer.get("supplier_reference") or "").strip()
+                    or offer.get("cost_price_cents") is None or offer.get("shipping_cost_cents") is None):
+                raise HTTPException(status_code=409, detail=f"Offre fournisseur ou livraison non confirmée : {item['name']}")
         requires_review = requires_review or compatibility_result["status"] != "compatible"
         # Integer cents come from the hydrated database product, never the browser.
         unit_amount = item["price_cents"]; subtotal_cents += unit_amount * quantity

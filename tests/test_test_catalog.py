@@ -66,6 +66,30 @@ def test_live_checkout_rejects_unconfirmed_vehicle_before_payment(monkeypatch):
     insert.assert_not_called()
 
 
+def test_live_checkout_requires_confirmed_supplier_offer_and_shipping(monkeypatch):
+    monkeypatch.setattr(server, 'settings', replace(server.settings, stripe_mode='live', public_test_checkout_enabled=False))
+    monkeypatch.setattr(server, 'legal_ready', lambda: True)
+    monkeypatch.setattr(server, 'check_compatibility', lambda *_: {'status': 'compatible', 'reason': 'verified fixture'})
+    create = AsyncMock()
+    monkeypatch.setattr(server, 'stripe_client', SimpleNamespace(v1=SimpleNamespace(checkout=SimpleNamespace(
+        sessions=SimpleNamespace(create_async=create)))))
+    monkeypatch.setattr(server, '_cart_for', AsyncMock(return_value={'id': 'cart'}))
+    monkeypatch.setattr(server, '_cart_response', AsyncMock(return_value={'currency': 'EUR', 'items': [
+        draft(status='active', stock=1, quantity=1, test_purchase=False,
+              selected_vehicle={'brand_slug': 'bmw'})]}))
+    monkeypatch.setattr(server.db, 'select', AsyncMock(return_value=[{
+        'supplier_name': 'Supplier', 'supplier_reference': 'SKU', 'cost_price_cents': 1000,
+        'shipping_cost_cents': None, 'supplier_verified': True}]))
+    insert = AsyncMock()
+    monkeypatch.setattr(server.db, 'insert', insert)
+    response = TestClient(server.app).post('/api/create-checkout-session',
+                                           headers={'X-Session-Id': 'isolated_live_supplier_gate'})
+    assert response.status_code == 409
+    assert 'Offre fournisseur ou livraison non confirmée' in response.json()['detail']
+    create.assert_not_called()
+    insert.assert_not_called()
+
+
 @pytest.mark.parametrize('mode,enabled,allowed', [('test', True, True), ('test', False, False), ('live', True, False)])
 def test_test_availability_cannot_publish_or_fake_inventory(mode, enabled, allowed):
     config = replace(server.settings, stripe_mode=mode, test_catalog_enabled=enabled, public_test_checkout_enabled=True)
