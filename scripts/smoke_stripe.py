@@ -65,7 +65,7 @@ class MemoryDatabase:
 def run_http_smoke():
     database = MemoryDatabase()
     secret = 'whsec_' + secrets.token_urlsafe(32)  # Ephemeral, never a provider credential.
-    config = replace(server.settings, stripe_mode='test', environment='test',
+    config = replace(server.settings, stripe_mode='test', environment='test', public_test_checkout_enabled=True,
         stripe_secret_key='rk_test_' + secrets.token_urlsafe(24), stripe_webhook_secret=secret,
         email_enabled=False, shipping_rate_cents=1500, free_shipping_threshold_cents=35000,
         shipping_countries=('FR',), frontend_url='http://localhost:3000', cors_origins=['http://localhost:3000'])

@@ -34,6 +34,19 @@ def test_public_catalogue_stays_visible_without_demo_checkout(monkeypatch):
     assert not purchasable(draft(), server.settings)
 
 
+def test_public_checkout_cannot_open_test_stripe_even_with_active_inventory(monkeypatch):
+    monkeypatch.setattr(server, 'settings', replace(server.settings, stripe_mode='test',
+                                                   test_catalog_enabled=True, public_test_checkout_enabled=False))
+    active = draft(status='active', stock=3)
+    assert not purchasable(active, server.settings)
+    insert = AsyncMock()
+    monkeypatch.setattr(server.db, 'insert', insert)
+    response = TestClient(server.app).post('/api/create-checkout-session',
+                                           headers={'X-Session-Id': 'isolated_public_checkout_gate'})
+    assert response.status_code == 503
+    insert.assert_not_called()
+
+
 @pytest.mark.parametrize('mode,enabled,allowed', [('test', True, True), ('test', False, False), ('live', True, False)])
 def test_test_availability_cannot_publish_or_fake_inventory(mode, enabled, allowed):
     config = replace(server.settings, stripe_mode=mode, test_catalog_enabled=enabled, public_test_checkout_enabled=True)

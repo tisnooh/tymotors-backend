@@ -115,7 +115,7 @@ def test_real_sdk_recursively_converts_paid_checkout_data(monkeypatch, event_typ
 def test_checkout_uses_database_cents_and_separate_shipping(monkeypatch):
     create = AsyncMock(return_value=SimpleNamespace(id="cs_test_fixture", url="https://checkout.stripe.com/test"))
     monkeypatch.setattr(server, "stripe_client", SimpleNamespace(v1=SimpleNamespace(checkout=SimpleNamespace(sessions=SimpleNamespace(create_async=create)))))
-    monkeypatch.setattr(server, "settings", replace(server.settings, shipping_rate_cents=1500, free_shipping_threshold_cents=35000, shipping_countries=("FR",)))
+    monkeypatch.setattr(server, "settings", replace(server.settings, shipping_rate_cents=1500, free_shipping_threshold_cents=35000, shipping_countries=("FR",), public_test_checkout_enabled=True))
     monkeypatch.setattr(server, "_cart_for", AsyncMock(return_value={"id": "cart_fixture"}))
     monkeypatch.setattr(server, "_cart_response", AsyncMock(return_value={"currency": "EUR", "items": [{
         "id": "product_fixture", "slug": "fixture", "sku": "FIX", "name": "Test", "quantity": 2,

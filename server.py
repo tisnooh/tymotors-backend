@@ -872,7 +872,9 @@ async def update_order(order_id: str, payload: AdminOrderUpdateInput, admin: dic
 @api.post("/create-checkout-session")
 async def create_checkout_session(request: Request, promotion_code: str | None = Query(None, max_length=40),
                                   x_session_id: str | None = Header(default=None), user: dict[str, Any] | None = Depends(optional_user)):
-    if stripe_client is None: raise HTTPException(status_code=503, detail="Stripe test checkout is not configured")
+    if settings.stripe_test_mode and not settings.public_test_checkout_enabled:
+        raise HTTPException(status_code=503, detail="Checkout is not open")
+    if stripe_client is None: raise HTTPException(status_code=503, detail="Checkout is not configured")
     if not settings.stripe_test_mode and not legal_ready():
         raise HTTPException(503, 'Legal identity must be completed before live checkout')
     _rate_limit(checkout_attempts, 'ip:'+_client_key(request), 8, 60)
