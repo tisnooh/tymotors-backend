@@ -1049,3 +1049,11 @@ Alibaba présentationEN enregistrée. Conditions commerciales Alibaba laissées 
 Nouveau lot autorisé : champs admin preuvesfournisseur et suivi colis, styles existants ; agentfrontend.
 Prochaine action : terminer ce lotadmin, contre-audit ettests, push ; déploiement frontend/backend
 à coordonner avec23migrations. Stripe accessiblecharges_enabledfalse ; ne pas masquer lestests.
+
+## Point de reprise — 31 octobre 2026, administration et recette
+
+- Le lot administrateur autorisé est terminé sur la branche frontend `codex/commerce-workflows`, commit poussé `7f850a0` : champs de preuve fournisseur et suivi distinct par colis, version CAS, brouillon sans envoi, blocage des commandes sandbox. Cinq tests ciblés, lint et build passent. Le design et les photos sont inchangés. Il n'est pas déployé en production.
+- Revue source du contrat `ContextDispatchInput`, de la réponse RPC et des protections SQL faite par le chef. La revue indépendante n'a pas abouti : l'agent a atteint sa limite d'utilisation. Ne pas la présenter comme approuvée.
+- Supabase production `dzdcaloewimekvddvdlo` : liste des migrations lisible, 24 migrations appliquées dans la réponse, dernière `20261013063630_sandbox_catalog_orders`. Les 23 migrations locales suivantes restent à coordonner ; aucune écriture hébergée.
+- Supabase staging `enckmnyapgovkkzsnyca` : projet déclaré `ACTIVE_HEALTHY` mais `list_migrations` et `execute_sql` échouent avec PostgreSQL `28P01` (authentification de `postgres`). Après deux échecs, arrêt des tentatives ; aucune migration n'a été appliquée. Vérifier l'accès du connecteur ou les identifiants de base par canal sécurisé avant une nouvelle tentative.
+- Aucun vrai paiement, achat fournisseur, envoi HyperSKU ou activation commerciale effectué. Ne pas promouvoir le frontend seul : il dépend des services backend et des migrations non déployés.
