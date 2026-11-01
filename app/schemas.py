@@ -123,8 +123,10 @@ class ProductInput(BaseModel):
         if not self.package_contents: missing.append("package_contents")
         if not self.installation_difficulty: missing.append("installation_difficulty")
         if not self.delivery_estimate: missing.append("delivery_estimate")
-        if not self.admin.supplier_name or not self.admin.supplier_verified: missing.append("verified supplier")
+        if not (self.admin.supplier_name or "").strip() or not self.admin.supplier_verified: missing.append("verified supplier")
+        if not self.admin.supplier_reference or not self.admin.supplier_reference.strip(): missing.append("supplier_reference")
         if self.admin.cost_price is None: missing.append("cost_price")
+        if self.admin.shipping_cost is None: missing.append("shipping_cost")
         if missing:
             raise ValueError("Active products require: " + ", ".join(missing))
         return self

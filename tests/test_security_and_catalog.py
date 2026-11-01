@@ -31,12 +31,21 @@ def active_product_payload():
         "delivery_estimate": "5 à 8 jours ouvrés",
         "status": "active",
         "is_verified": True,
-        "admin": {"supplier_name": "Test Supplier", "supplier_verified": True, "cost_price": 35},
+        "admin": {"supplier_name": "Test Supplier", "supplier_reference": "TEST-F30", "supplier_verified": True,
+                  "cost_price": 35, "shipping_cost": 8},
     }
 
 
 def test_active_product_requires_verified_commercial_data():
     payload = active_product_payload(); payload["admin"]["supplier_verified"] = False
+    with pytest.raises(ValidationError):
+        ProductInput.model_validate(payload)
+
+
+@pytest.mark.parametrize("missing_field", ["supplier_name", "supplier_reference", "cost_price", "shipping_cost"])
+def test_active_product_requires_complete_supplier_offer(missing_field):
+    payload = active_product_payload()
+    payload["admin"][missing_field] = None
     with pytest.raises(ValidationError):
         ProductInput.model_validate(payload)
 
