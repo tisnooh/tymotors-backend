@@ -29,6 +29,7 @@ await db.exec(await readFile(new URL('../supabase/migrations/20261012163951_with
 let checks = 0;
 await db.exec(await readFile(new URL('../supabase/migrations/20261012184823_enforce_active_auth_session.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../supabase/migrations/20261013063630_sandbox_catalog_orders.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../supabase/migrations/20261101041200_admin_dashboard_exclude_test_orders.sql',import.meta.url),'utf8'));
 const sessionUser='10000000-0000-4000-8000-000000000098', sessionId='10000000-0000-4000-8000-000000000099';
 await db.query('insert into auth.sessions values($1,$2,null)',[sessionId,sessionUser]);
 assert.equal((await db.query('select is_auth_session_active($1,$2) active',[sessionId,sessionUser])).rows[0].active,true);checks++;
@@ -75,6 +76,12 @@ assert.equal((await one('select stock from products where id=$1',[product])).sto
 assert.equal((await one('select stock_applied_at from orders where id=$1',[sandbox.id])).stock_applied_at,null);checks++;
 assert.equal((await one('select count(*) n from supplier_orders where order_id=$1',[sandbox.id])).n,0);checks++;
 assert.equal((await one("select count(*) n from admin_audit where action='order.paid' and resource=$1",[sandbox.id])).n,1);checks++;
+const sandboxDashboard=(await one('select admin_dashboard($1) as data',[admin])).data;
+assert.equal(sandboxDashboard.revenue.today.net,0);
+assert.equal(sandboxDashboard.order_count,1);
+assert.equal(sandboxDashboard.to_process,0);
+assert.equal(sandboxDashboard.top_products.length,0);
+assert.equal(sandboxDashboard.recent_orders[0].is_test,true);checks++;
 assert.match((await one("select description from order_tracking_events where order_id=$1",[sandbox.id])).description,/aucun débit réel/);checks++;
 await rejects('select private.ensure_supplier_order($1)',[sandbox.id],/Test orders cannot enter supplier fulfillment/);
 const testLine=await one('select id from order_items where order_id=$1',[sandbox.id]);
