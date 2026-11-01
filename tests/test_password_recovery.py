@@ -1,4 +1,5 @@
 import asyncio
+import json
 
 import httpx
 import pytest
@@ -26,10 +27,10 @@ def test_recovery_link_generation_uses_server_key_without_exposing_provider_erro
         assert request.headers["apikey"] == "private_fixture"
         assert request.headers["authorization"] == "Bearer private_fixture"
         assert request.headers["content-type"] == "application/json"
-        assert request.read() == (
-            b'{"type":"recovery","email":"owner@example.com",'
-            b'"redirect_to":"https://tymotors.vercel.app/auth/confirm"}'
-        )
+        assert json.loads(request.read()) == {
+            "type": "recovery", "email": "owner@example.com",
+            "redirect_to": "https://tymotors.vercel.app/auth/confirm",
+        }
         return httpx.Response(provider_status, json=payload)
 
     db = SupabaseRest("https://example.supabase.co", "private_fixture", "public_fixture")

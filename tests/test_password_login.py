@@ -1,4 +1,5 @@
 import asyncio
+import json
 
 import httpx
 import pytest
@@ -20,7 +21,7 @@ def test_password_login_distinguishes_credentials_from_invalid_server_key(provid
         assert request.url.path == '/auth/v1/token'
         assert request.url.params['grant_type'] == 'password'
         assert request.headers['apikey'] == 'public-fixture'
-        assert request.read() == b'{"email":"owner@example.com","password":"password-fixture"}'
+        assert json.loads(request.read()) == {'email': 'owner@example.com', 'password': 'password-fixture'}
         return httpx.Response(provider_status, json=provider_body)
 
     db = SupabaseRest('https://example.supabase.co', 'server-fixture', 'public-fixture')

@@ -1,5 +1,7 @@
 # TYMotors — état de préparation au lancement
 
+> Ce document est une photographie du 12 octobre. Pour l'état vérifié au 1er novembre et les déploiements actuels, consulter [TYMOTORS_PROGRESS.md](operations/TYMOTORS_PROGRESS.md). Le checkout réel reste fermé : Stripe est en test, les 40 produits sont en brouillon sans stock et les offres fournisseur ne sont pas vérifiées.
+
 Vérifié le 12 octobre 2026. Verdict : vitrine publiée, mais **ouverture aux commandes réelles non validée**. Stripe reste en test et aucun achat fournisseur n'a été effectué.
 
 ## Parcours attendu

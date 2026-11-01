@@ -1,4 +1,5 @@
 import asyncio
+import json
 
 import httpx
 
@@ -9,7 +10,7 @@ def test_cj_auth_probe_never_returns_tokens_or_key():
     def handler(request):
         assert str(request.url) == TOKEN_URL
         assert request.method == "POST"
-        assert request.read() == b'{"apiKey":"private-key"}'
+        assert json.loads(request.read()) == {"apiKey": "private-key"}
         return httpx.Response(200, json={"code": 200, "data": {"accessToken": "private-token"}})
 
     result = asyncio.run(probe_cj_auth("private-key", httpx.MockTransport(handler)))
