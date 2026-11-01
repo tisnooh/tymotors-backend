@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
+import asyncio
 import logging
 import os
 from pathlib import Path
-import random
 import re
-import string
 import time
 from urllib.parse import quote
 import secrets
@@ -85,8 +84,17 @@ async def lifespan(_: FastAPI):
     await db.open()
     if settings.stripe_secret_key:
         stripe_client = StripeClient(settings.stripe_secret_key, http_client=stripe.HTTPXClient())
-    yield
-    await db.close()
+    reconcile_task = asyncio.create_task(_checkout_reconcile_loop()) if not settings.stripe_test_mode else None
+    try:
+        yield
+    finally:
+        if reconcile_task:
+            reconcile_task.cancel()
+            try:
+                await reconcile_task
+            except asyncio.CancelledError:
+                pass
+        await db.close()
 
 
 app = FastAPI(title="TYMotors API", version="2.0.0", lifespan=lifespan)
@@ -273,7 +281,9 @@ async def _send_order_email(kind: str, order_id: str, *, amount_cents: int | Non
             return
         order = rows[0]
         items = await db.select("order_items", params={"select": "*", "order_id": f"eq.{order_id}", "order": "created_at.asc"})
-        content = order_event(kind, order, items, f"{settings.frontend_url}/account/orders/{order_id}", amount_cents=amount_cents)
+        order_url = (f"{settings.frontend_url}/account/orders/{order_id}" if order.get("user_id")
+                     else f"{settings.frontend_url}/support/track?order={quote(str(order.get('order_number') or ''), safe='')}")
+        content = order_event(kind, order, items, order_url, amount_cents=amount_cents)
         suffix = str(amount_cents) if kind == "refund_confirmed" else "once"
         if retry_log_id:
             return await email_service.retry(retry_log_id, order["customer_email"], content)
@@ -936,13 +946,50 @@ async def create_checkout_session(request: Request, promotion_code: str | None =
     if user:
         profiles = await db.select("profiles", params={"select": "email,full_name,stripe_customer_id", "id": f"eq.{user['id']}", "limit": 1})
         if profiles: order_payload.update(customer_email=profiles[0].get("email"), customer_name=profiles[0].get("full_name"))
-    order = (await db.insert("orders", order_payload))[0]
-    await db.insert("order_items", [{**item, "order_id": order["id"]} for item in order_items])
-    promotion = None
-    if promotion_code:
-        promotion = await db.rpc("apply_order_promotion", {"p_order_id": order["id"], "p_code": promotion_code.upper()})
+    expires_at = int(time.time()) + 3600
+    if settings.stripe_test_mode:
+        order = (await db.insert("orders", order_payload))[0]
+        await db.insert("order_items", [{**item, "order_id": order["id"]} for item in order_items])
+        promotion = None
+        if promotion_code:
+            promotion = await db.rpc("apply_order_promotion", {"p_order_id": order["id"], "p_code": promotion_code.upper()})
+    else:
+        # The database inserts the order and every line, then reserves the full
+        # basket atomically. A second checkout request for this cart reuses it.
+        try:
+            reserved = await db.rpc("create_reserved_checkout_order", {
+                "p_attempt_key": str(uuid.uuid4()), "p_order": order_payload,
+                "p_items": order_items,
+                "p_expires_at": datetime.fromtimestamp(expires_at, timezone.utc).isoformat(),
+                "p_promotion_code": promotion_code.upper() if promotion_code else None,
+            })
+        except SupabaseError as error:
+            if "Insufficient stock" in error.detail or "Active checkout for cart" in error.detail:
+                raise HTTPException(status_code=409, detail="Stock or cart changed; please review your basket") from None
+            logger.error("Unable to reserve checkout order: %s", error.status_code)
+            raise HTTPException(status_code=503, detail="Checkout is temporarily unavailable") from None
+        order = {"id": reserved["order_id"], "order_number": reserved["order_number"]}
+        discount_cents = int(reserved.get("discount_cents") or 0)
+        promotion = {"discount_cents": discount_cents} if discount_cents else None
+        expires_at = int(datetime.fromisoformat(reserved["expires_at"].replace("Z", "+00:00")).timestamp())
+        if reserved.get("stripe_session_id"):
+            try:
+                current = await stripe_client.v1.checkout.sessions.retrieve_async(reserved["stripe_session_id"])
+            except stripe.StripeError:
+                raise HTTPException(status_code=503, detail="Checkout status is temporarily unavailable") from None
+            if current.status == "open" and current.url:
+                return {"url": current.url, "order_reference": order["order_number"]}
+            if current.status == "expired":
+                await db.rpc("release_checkout_stock", {"p_order_id": order["id"], "p_reason": "stripe_expired"})
+                await db.update("orders", {"status": "payment_failed", "payment_status": "failed"}, params={"id": f"eq.{order['id']}"})
+                raise HTTPException(status_code=409, detail="Checkout expired; please try again")
+            raise HTTPException(status_code=409, detail="Payment is being confirmed; please wait")
+        if expires_at - int(time.time()) < 1800:
+            # A timed-out Stripe creation might still have created a session.
+            # Wait for its original expiry rather than releasing stock early.
+            raise HTTPException(status_code=503, detail="Checkout is being reconciled; please try again later")
     if shipping: line_items.append({"quantity": 1, "price_data": {"currency": cart_view["currency"].lower(), "unit_amount": shipping, "product_data": {"name": "Livraison suivie"}}})
-    suffix = "".join(random.choice(string.ascii_lowercase) for _ in range(8))
+    suffix = str(order["id"]).replace("-", "")[:16]
     frontend_url = _checkout_frontend_url(request)
     params: dict[str, Any] = {"mode": "payment", "line_items": line_items,
         "success_url": f"{frontend_url}/order-success?session_id={{CHECKOUT_SESSION_ID}}", "cancel_url": f"{frontend_url}/cart?checkout=cancelled",
@@ -952,7 +999,7 @@ async def create_checkout_session(request: Request, promotion_code: str | None =
         "shipping_address_collection": {"allowed_countries": list(settings.shipping_countries)},
         "billing_address_collection": "required", "phone_number_collection": {"enabled": True}}
     if order_payload.get("customer_email"): params["customer_email"] = order_payload["customer_email"]
-    params["expires_at"] = int(time.time()) + 1800
+    params["expires_at"] = expires_at
     if os.getenv("STRIPE_AUTOMATIC_TAX", "false").lower() == "true": params["automatic_tax"] = {"enabled": True}
     try:
         if promotion:
@@ -962,12 +1009,35 @@ async def create_checkout_session(request: Request, promotion_code: str | None =
                 options={"idempotency_key": f"coupon_{order['id']}"})
             params["discounts"] = [{"coupon": coupon.id}]
         session = await stripe_client.v1.checkout.sessions.create_async(params=params, options={"idempotency_key": f"checkout_{order['id']}"})
-    except stripe.StripeError:
-        await db.update("orders", {"status": "payment_failed", "payment_status": "failed"}, params={"id": f"eq.{order['id']}"})
+    except stripe.StripeError as error:
+        # A network/server failure can leave a created session whose response
+        # was lost. Keep its reservation for an idempotent retry or expiry scan.
+        if settings.stripe_test_mode or isinstance(error, stripe.InvalidRequestError):
+            if not settings.stripe_test_mode:
+                await db.rpc("release_checkout_stock", {"p_order_id": order["id"], "p_reason": "stripe_creation_failed"})
+            await db.update("orders", {"status": "payment_failed", "payment_status": "failed"}, params={"id": f"eq.{order['id']}"})
         logger.error("Stripe Checkout creation failed"); raise HTTPException(status_code=502, detail="Unable to create secure checkout")
-    await db.update("orders", {"stripe_session_id": session.id}, params={"id": f"eq.{order['id']}"})
-    if order_payload.get("customer_email"):
-        await _send_order_email("order_confirmation", order["id"])
+    try:
+        saved = await db.update("orders", {"stripe_session_id": session.id}, params={"id": f"eq.{order['id']}"})
+        if not saved:
+            raise RuntimeError("Checkout session was not stored")
+    except Exception:
+        # A session without its database link cannot be fulfilled safely.
+        # Stripe expiration is best effort; the URL is never returned to the client.
+        expired = False
+        try:
+            await stripe_client.v1.checkout.sessions.expire_async(session.id)
+            expired = True
+        except Exception:
+            logger.error("Unable to expire an unlinked Stripe Checkout session")
+        if expired or settings.stripe_test_mode:
+            try:
+                if expired and not settings.stripe_test_mode:
+                    await db.rpc("release_checkout_stock", {"p_order_id": order["id"], "p_reason": "stripe_expired"})
+                await db.update("orders", {"status": "payment_failed", "payment_status": "failed"}, params={"id": f"eq.{order['id']}"})
+            except Exception:
+                logger.error("Unable to close an unlinked checkout attempt")
+        raise HTTPException(status_code=503, detail="Checkout is temporarily unavailable") from None
     return {"url": session.url, "order_reference": order["order_number"]}
 
 
@@ -1022,10 +1092,58 @@ async def _complete_checkout_payment(obj: Any) -> str | None:
     orders = await db.select("orders", params={"select": "user_id,customer_email", "id": f"eq.{order_id}", "limit": 1})
     if orders and orders[0].get("user_id") and obj.get("customer"):
         await db.update("profiles", {"stripe_customer_id": obj.get("customer")}, params={"id": f"eq.{orders[0]['user_id']}"})
-    if orders and not order_rows[0].get("customer_email"):
-        await _send_order_email("order_confirmation", order_id)
+    await _send_order_email("order_confirmation", order_id)
     await _send_order_email("payment_confirmed", order_id)
     return order_id
+
+
+async def _reconcile_expired_checkouts() -> int:
+    """Check Stripe before releasing expired reservations after a missed webhook."""
+    if settings.stripe_test_mode or stripe_client is None:
+        return 0
+    rows = await db.select("orders", params={
+        "select": "id,stripe_session_id", "is_test": "eq.false",
+        "stock_reserved_at": "not.is.null", "stock_released_at": "is.null",
+        "stock_applied_at": "is.null", "payment_status": "in.(unpaid,failed)",
+        "stock_reservation_expires_at": f"lt.{datetime.now(timezone.utc).isoformat()}",
+        "order": "stock_reservation_expires_at.asc", "limit": 20,
+    })
+    settled = 0
+    for order in rows:
+        try:
+            session_id = order.get("stripe_session_id")
+            if not session_id:
+                reason = "stripe_creation_failed"
+            else:
+                session = await stripe_client.v1.checkout.sessions.retrieve_async(session_id)
+                if session.status == "complete" and session.payment_status in {"paid", "no_payment_required"}:
+                    await _complete_checkout_payment(session.to_dict())
+                    settled += 1
+                    continue
+                if session.status == "open":
+                    await stripe_client.v1.checkout.sessions.expire_async(session_id)
+                    reason = "stripe_expired"
+                elif session.status == "expired":
+                    reason = "stripe_expired"
+                else:
+                    # An asynchronous payment may still settle after Checkout closes.
+                    continue
+            await db.rpc("release_checkout_stock", {"p_order_id": order["id"], "p_reason": reason})
+            await db.update("orders", {"status": "payment_failed", "payment_status": "failed"},
+                            params={"id": f"eq.{order['id']}", "stock_applied_at": "is.null"})
+            settled += 1
+        except Exception:
+            logger.exception("Unable to reconcile an expired checkout reservation")
+    return settled
+
+
+async def _checkout_reconcile_loop() -> None:
+    while True:
+        try:
+            await _reconcile_expired_checkouts()
+        except Exception:
+            logger.exception("Checkout reservation reconciliation failed")
+        await asyncio.sleep(300)
 
 
 @api.post("/stripe/webhook", include_in_schema=False)
@@ -1049,13 +1167,20 @@ async def stripe_webhook(request: Request, stripe_signature: str | None = Header
         if event_type in {"checkout.session.completed", "checkout.session.async_payment_succeeded"} and obj.get("payment_status") in {"paid", "no_payment_required"}:
             await _complete_checkout_payment(obj)
         elif event_type == "payment_intent.payment_failed":
-            order_id = (obj.get("metadata") or {}).get("order_id")
-            if order_id: await db.update("orders", {"status": "payment_failed", "payment_status": "failed"}, params={"id": f"eq.{order_id}", "payment_status": "in.(unpaid,failed)", "stock_applied_at": "is.null"})
+            # Checkout may remain open so the buyer can retry another card.
+            # Only the final Checkout failure/expiration releases inventory.
+            pass
         elif event_type in {"charge.refunded", "refund.created", "refund.updated", "refund.failed"} and obj.get("payment_intent"):
             await _sync_refunds(obj["payment_intent"])
         elif event_type in {"checkout.session.expired", "checkout.session.async_payment_failed"}:
             order_id = (obj.get("metadata") or {}).get("order_id")
             if order_id:
+                linked = await db.select("orders", params={"select": "stripe_session_id,is_test", "id": f"eq.{order_id}", "limit": 1})
+                if not linked or linked[0].get("stripe_session_id") != obj.get("id"):
+                    raise RuntimeError("Stripe failure event does not match a stored Checkout session")
+                if not linked[0].get("is_test"):
+                    reason = "stripe_expired" if event_type == "checkout.session.expired" else "stripe_async_failed"
+                    await db.rpc("release_checkout_stock", {"p_order_id": order_id, "p_reason": reason})
                 await db.update("orders", {"status": "payment_failed", "payment_status": "failed"},
                     params={"id": f"eq.{order_id}", "stock_applied_at": "is.null", "payment_status": "in.(unpaid,failed)"})
         await db.update("stripe_events", {"status": "completed", "completed_at": datetime.now(timezone.utc).isoformat()}, params={"event_id": f"eq.{event_id}"})

@@ -48,9 +48,12 @@ class MemoryDatabase:
         return deepcopy(records)
 
     async def update(self, table, payload, *, params):
+        changed = []
         for row in self.tables[table]:
-            if all(str(row.get(key)) == value[3:] for key, value in params.items()): row.update(deepcopy(payload))
-        return []
+            if all(str(row.get(key)) == value[3:] for key, value in params.items()):
+                row.update(deepcopy(payload))
+                changed.append(deepcopy(row))
+        return changed
 
     async def rpc(self, function, payload):
         assert function == 'complete_paid_order'

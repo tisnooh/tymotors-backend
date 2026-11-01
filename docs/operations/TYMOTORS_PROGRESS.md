@@ -1,5 +1,13 @@
 # TYMotors — point de reprise du 31 octobre 2026
 
+## Mise à jour du 1er novembre 2026 — checkout et administration
+
+- Production Supabase : le tableau de bord et la vue clients excluent désormais les commandes Stripe de test. La commande de recette historique mal classée a été reclassée avec trace d'audit. Contrôle SQL : aucun client ni commande commerciale.
+- Production Supabase : le garde `guard_supplier_claims_before_write` refuse un statut d'agent « connected » déclaré manuellement et les étapes fournisseur avancées sans commande réelle payée, compatibilité et offre vérifiées. Aucun dossier fournisseur existant n'utilise ces statuts ; 72 contrôles PostgreSQL isolés passent.
+- Correctifs locaux en préparation : e-mail de commande invité vers `/support/track?order=…`, confirmation de commande seulement après paiement, expiration d'une session Stripe dont le lien ne peut pas être enregistré, panier public désactivant le paiement tant que la configuration et les articles ne sont pas réellement prêts. 431 tests backend et 21 tests frontend ciblés passent ; la compilation frontend réussit.
+- Audit indépendant : une session Stripe pouvait être payée après épuisement du dernier stock. La migration `checkout_stock_reservations` est appliquée en production : commande, lignes et réservation atomiques, une tentative ouverte par panier, libération idempotente et traitement des paiements tardifs sans stock négatif ni envoi fournisseur automatique. 93 contrôles PostgreSQL isolés passent. Le backend qui utilise cette RPC et réconcilie les sessions Stripe expirées est encore local à cet instant ; aucun paiement réel n'a été exécuté. L'intégration Stripe réelle, les offres fournisseur vérifiées et les devis de livraison restent absents. Ne pas ouvrir le checkout réel sur cette base.
+- La vue d'inventaire de l'administration affiche désormais le stock réservé réel ; 95 contrôles PostgreSQL isolés passent après ce correctif. En production, la vue retourne 41 fiches (dont la recette archivée) et 0 unité réservée, conformément à l'absence de checkout réel.
+
 Objectif actif : ouvrir de vraies commandes avec Stripe en mode réel et une offre fournisseur vérifiée. Le design et les photographies ne sont pas modifiés.
 
 ## Vérifié en production

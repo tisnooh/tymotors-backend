@@ -31,6 +31,9 @@ await db.exec(await readFile(new URL('../supabase/migrations/20261012184823_enfo
 await db.exec(await readFile(new URL('../supabase/migrations/20261013063630_sandbox_catalog_orders.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../supabase/migrations/20261101041200_admin_dashboard_exclude_test_orders.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../supabase/migrations/20261101044000_admin_customers_exclude_test_orders.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../supabase/migrations/20261101050000_guard_supplier_claims.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../supabase/migrations/20261101052000_checkout_stock_reservations.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../supabase/migrations/20261101053000_admin_inventory_reserved_stock.sql',import.meta.url),'utf8'));
 const sessionUser='10000000-0000-4000-8000-000000000098', sessionId='10000000-0000-4000-8000-000000000099';
 await db.query('insert into auth.sessions values($1,$2,null)',[sessionId,sessionUser]);
 assert.equal((await db.query('select is_auth_session_active($1,$2) active',[sessionId,sessionUser])).rows[0].active,true);checks++;
@@ -49,7 +52,7 @@ await db.query("update public.profiles set role='admin' where id=$1",[admin]);
 const cat=(await one("insert into categories(slug,name) values('test','Test') returning id")).id;
 const brand=(await one("insert into brands(slug,name) values('bmw','BMW') returning id")).id;
 const base = {slug:'test-product',sku:'TEST-001',name:'Test product',subtitle:'',description:'A complete test product description',category_id:cat,subcategory:'',price_cents:1000,compare_at_price_cents:null,currency:'EUR',stock:10,status:'active',is_verified:true,featured:false,badges:[],rating:null,review_count:0,specs:{},package_contents:['Product'],installation_difficulty:'easy',installation_minutes:null,tools_required:[],warranty_months:null,delivery_estimate:'5 days',legacy_compatible_brands:['bmw'],low_stock_threshold:3,tags:[]};
-const supplier={supplier_name:'Fixture supplier',supplier_reference:'SUP-TEST',supplier_url:'https://supplier.example.test',exact_source_url:'https://www.alibaba.com/product-detail/test_123.html',supplier_verified:true,cost_price_cents:300};
+const supplier={supplier_name:'Fixture supplier',supplier_reference:'SUP-TEST',supplier_url:'https://supplier.example.test',exact_source_url:'https://www.alibaba.com/product-detail/test_123.html',supplier_verified:true,cost_price_cents:300,shipping_cost_cents:0};
 const rules=[{brand_id:brand,model_name:'Series 3',chassis:'F30',year_from:2012,year_to:2019,body_types:[],facelift:'unknown',required_trims:[],excluded_trims:[],verification_state:'verified'}];
 const images=[{url:'https://example.test/product.png',display_order:0,image_type:'main'}];
 const saveSQL='select admin_save_product($1,$2,$3,$4,$5,$6,$7) as id';
@@ -65,7 +68,7 @@ await one("select admin_adjust_stock($1,$2,10,2,'supplier_receipt')",[admin,prod
 assert.equal((await one('select stock from products where id=$1',[product])).stock,12);
 async function order(quantity=2){
   const o=await one("insert into orders(order_number,subtotal_cents,total_cents,customer_email,currency) values(gen_random_uuid()::text,$1,$1,'client@example.test','EUR') returning *",[quantity*1000]);
-  await db.query("insert into order_items(order_id,product_id,product_name,product_slug,sku,quantity,unit_amount_cents) values($1,$2,'Test product','test-product','TEST-001',$3,1000)",[o.id,product,quantity]);
+  await db.query("insert into order_items(order_id,product_id,product_name,product_slug,sku,quantity,unit_amount_cents,compatibility_result) values($1,$2,'Test product','test-product','TEST-001',$3,1000,'{\"status\":\"compatible\"}')",[o.id,product,quantity]);
   return o;
 }
 const paid=await order();
@@ -104,11 +107,19 @@ let supplierOrder=await one('select * from supplier_orders where order_id=$1',[p
 assert.equal(supplierOrder.status,'pending_validation');
 assert.equal((await one('select exact_source_url from supplier_order_items where supplier_order_id=$1',[supplierOrder.id])).exact_source_url,supplier.exact_source_url);
 assert.equal((await one("select count(*) n from order_tracking_events where order_id=$1 and event_key='payment_confirmed'",[paid.id])).n,1);checks++;
+await rejects("select admin_update_supplier_order($1,$2,'approved',null,null,'CJdropshipping','connected',null,$3)",[admin,paid.id,supplierOrder.updated_at],/Agent API connection requires a verified integration mapping/);
+await rejects("update supplier_orders set agent_connection_status='connected' where id=$1",[supplierOrder.id],/Agent API connection requires a verified integration mapping/);
+await db.query('update product_supplier_data set shipping_cost_cents=null where product_id=$1',[product]);
+await rejects("select admin_update_supplier_order($1,$2,'approved',null,null,'CJdropshipping','not_connected',null,$3)",[admin,paid.id,supplierOrder.updated_at],/Supplier reference, price, shipping and fitment evidence required before approval/);
+await db.query('update product_supplier_data set shipping_cost_cents=0 where product_id=$1',[product]);
+await db.query("update supplier_order_items set supplier_reference='WRONG-SKU' where supplier_order_id=$1",[supplierOrder.id]);
+await rejects("select admin_update_supplier_order($1,$2,'approved',null,null,'CJdropshipping','not_connected',null,$3)",[admin,paid.id,supplierOrder.updated_at],/Supplier reference, price, shipping and fitment evidence required before approval/);
+await db.query('update supplier_order_items set supplier_reference=$2 where supplier_order_id=$1',[supplierOrder.id,supplier.supplier_reference]);
 await db.query("select admin_update_supplier_order($1,$2,'approved',null,null,'CJdropshipping','not_connected',null,$3)",[admin,paid.id,supplierOrder.updated_at]);
 supplierOrder=await one('select * from supplier_orders where order_id=$1',[paid.id]);
 await db.query("select admin_update_supplier_order($1,$2,'ordered','ALI-123',null,'CJdropshipping','onboarding',null,$3)",[admin,paid.id,supplierOrder.updated_at]);
 supplierOrder=await one('select * from supplier_orders where order_id=$1',[paid.id]);
-await db.query("select admin_update_supplier_order($1,$2,'received_by_agent','ALI-123','CJ-456','CJdropshipping','connected',null,$3)",[admin,paid.id,supplierOrder.updated_at]);
+await db.query("select admin_update_supplier_order($1,$2,'received_by_agent','ALI-123','CJ-456','CJdropshipping','onboarding',null,$3)",[admin,paid.id,supplierOrder.updated_at]);
 assert.equal((await one('select fulfillment_status from orders where id=$1',[paid.id])).fulfillment_status,'processing');
 assert.equal((await one("select count(*) n from order_tracking_events where order_id=$1 and is_customer_visible=true",[paid.id])).n,4);checks++;
 let dash=(await one('select admin_dashboard($1) as data',[admin])).data;
@@ -125,8 +136,13 @@ await db.query("select record_order_refund('pi_fixture',2000)");
 await db.query(complete,[paid.id]);
 assert.equal((await one('select stock from products where id=$1',[product])).stock,10);checks++;
 const oversized=await order(20);
-await rejects(complete,[oversized.id],/Insufficient stock/);
-assert.equal((await one('select payment_status from orders where id=$1',[oversized.id])).payment_status,'unpaid');checks++;
+await db.query("select complete_paid_order($1,'pi_oversized','client@example.test','Client','{}','{}')",[oversized.id]);
+const oversizedState=await one('select payment_status,fulfillment_status,stock_shortfall_at,stock_applied_at from orders where id=$1',[oversized.id]);
+assert.equal(oversizedState.payment_status,'paid');
+assert.equal(oversizedState.fulfillment_status,'requires_review');
+assert.ok(oversizedState.stock_shortfall_at);
+assert.equal(oversizedState.stock_applied_at,null);
+assert.equal((await one('select count(*) n from supplier_orders where order_id=$1',[oversized.id])).n,0);checks++;
 const item=(await one('select id from order_items where order_id=$1',[paid.id])).id;
 const ret=(await one("select admin_return_action($1,null,$2) as id",[admin,{order_item_id:item,quantity:1,reason:'Test return'}])).id;
 await rejects("select admin_return_action($1,$2,$3)",[admin,ret,{restock:true}],/Receive and inspect/);
@@ -161,7 +177,7 @@ assert.equal((await one('select status from products where id=$1',[product])).st
 // Repair legacy missing snapshots without rewriting links, costs or customer events.
 await db.query('update product_supplier_data set exact_source_url=null where product_id=$1',[product]);
 const repair=await order(1);
-await db.query("insert into order_items(order_id,product_id,product_name,product_slug,sku,quantity,unit_amount_cents) values($1,$2,'Preserved reference','test-product','TEST-KEEP',1,1000)",[repair.id,product]);
+await db.query("insert into order_items(order_id,product_id,product_name,product_slug,sku,quantity,unit_amount_cents,compatibility_result) values($1,$2,'Preserved reference','test-product','TEST-KEEP',1,1000,'{\"status\":\"compatible\"}')",[repair.id,product]);
 await db.query("update orders set payment_status='paid' where id=$1",[repair.id]);
 let repairSupplier=await one('select * from supplier_orders where order_id=$1',[repair.id]);
 await db.query("update supplier_order_items set exact_source_url='https://www.alibaba.com/product-detail/original_456.html' where supplier_order_id=$1 and sku='TEST-KEEP'",[repairSupplier.id]);
@@ -211,6 +227,82 @@ await db.query('select admin_save_supplier($1,$2,$3,$4)',[admin,directory.id,{..
 assert.equal((await one('select count(*) n from supplier_products where supplier_id=$1',[directory.id])).n,0);checks++;
 await db.exec('begin; set local role anon;');
 await rejects('select * from suppliers',[],/permission denied/);await db.exec('rollback');
+// Atomic inventory reservation: two buyers compete for the final unit.
+let reserveSequence=0;
+const reserveExpiry=new Date(Date.now()+30*60*1000).toISOString();
+const reserveProduct=(await one(saveSQL,[admin,null,null,{...base,slug:'reserve-one',sku:'RES-ONE',stock:1},images,rules,supplier])).id;
+const reserveItem=(id,sku)=>({product_id:id,product_name:sku,product_slug:sku.toLowerCase(),sku,quantity:1,unit_amount_cents:1000,currency:'EUR',compatibility_result:{status:'compatible'}});
+async function reservePayload(subtotal,is_test=false){
+  const guest=`res-buyer-${++reserveSequence}`;
+  const cart=(await one('insert into carts(guest_session_id) values($1) returning id',[guest])).id;
+  return {order_number:`RES-${reserveSequence}`,cart_id:cart,guest_session_id:guest,subtotal_cents:subtotal,shipping_amount_cents:0,tax_amount_cents:0,total_cents:subtotal,currency:'EUR',is_test,requires_compatibility_review:false,customer_email:'buyer@example.test'};
+}
+const createReserved=(key,payload,items,promo=null)=>one('select create_reserved_checkout_order($1,$2,$3,$4,$5) data',[key,payload,items,reserveExpiry,promo]);
+const buyerA=await reservePayload(1000), buyerB=await reservePayload(1000), oneItem=[reserveItem(reserveProduct,'RES-ONE')];
+const a=(await createReserved('buyer-a-attempt-1',buyerA,oneItem)).data;
+assert.equal(a.reused,false);
+assert.equal((await one('select stock from products where id=$1',[reserveProduct])).stock,0);checks++;
+assert.equal((await one('select reserved_stock from admin_inventory where id=$1',[reserveProduct])).reserved_stock,1);checks++;
+await rejects('select create_reserved_checkout_order($1,$2,$3,$4,$5)', ['buyer-b-attempt-1',buyerB,oneItem,reserveExpiry,null],/Insufficient stock while reserving checkout/);
+assert.equal((await one('select count(*) n from orders where checkout_attempt_key=$1',['buyer-b-attempt-1'])).n,0);checks++;
+const repeated=(await createReserved('buyer-a-attempt-1',{...buyerA,order_number:'RES-RETRY'},oneItem)).data;
+assert.equal(repeated.order_id,a.order_id);
+assert.equal(repeated.reused,true);
+assert.equal((await one('select stock from products where id=$1',[reserveProduct])).stock,0);checks++;
+const otherKeySameCart=(await createReserved('buyer-a-other-tab',{...buyerA,order_number:'RES-OTHER-TAB'},oneItem)).data;
+assert.equal(otherKeySameCart.order_id,a.order_id);
+assert.equal((await one('select count(*) n from orders where cart_id=$1',[buyerA.cart_id])).n,1);checks++;
+await rejects('select create_reserved_checkout_order($1,$2,$3,$4,$5)', ['buyer-a-changed-cart',{...buyerA,order_number:'RES-CHANGED',total_cents:1001},oneItem,reserveExpiry,null],/Active checkout for cart has changed/);
+await rejects('select create_reserved_checkout_order($1,$2,$3,$4,$5)', ['buyer-a-attempt-1',buyerA,[{...oneItem[0],quantity:2}],reserveExpiry,null],/Checkout attempt payload changed/);
+await db.query("update orders set stripe_session_id='cs_live_buyer_a',payment_status='failed' where id=$1",[a.order_id]);
+await rejects("select release_checkout_stock($1,'stripe_payment_failed')",[a.order_id],/Invalid reservation release reason/);
+await rejects("select release_checkout_stock($1,'stripe_creation_failed')",[a.order_id],/Open Checkout session must be expired before release/);
+await rejects('select create_reserved_checkout_order($1,$2,$3,$4,$5)', ['buyer-a-new-key',buyerA,oneItem,reserveExpiry,null],/Checkout session must be reconciled before retry/);
+assert.equal((await one("select release_checkout_stock($1,'stripe_expired') released",[a.order_id])).released,true);
+assert.equal((await one("select release_checkout_stock($1,'stripe_expired') released",[a.order_id])).released,false);
+assert.equal((await one('select stock from products where id=$1',[reserveProduct])).stock,1);checks++;
+assert.equal((await one('select reserved_stock from admin_inventory where id=$1',[reserveProduct])).reserved_stock,0);checks++;
+await rejects('select create_reserved_checkout_order($1,$2,$3,$4,$5)', ['buyer-a-attempt-1',buyerA,oneItem,reserveExpiry,null],/Checkout attempt already closed/);
+const b=(await createReserved('buyer-b-attempt-2',buyerB,oneItem)).data;
+assert.equal((await one('select stock from products where id=$1',[reserveProduct])).stock,0);checks++;
+// A delayed successful Stripe event must be recorded but cannot steal B's unit.
+await db.query("select complete_paid_order($1,'pi_late_a','buyer@example.test','Buyer','{}','{}')",[a.order_id]);
+const lateA=await one('select payment_status,fulfillment_status,stock_shortfall_at,stock_applied_at from orders where id=$1',[a.order_id]);
+assert.equal(lateA.payment_status,'paid');assert.equal(lateA.fulfillment_status,'requires_review');
+assert.ok(lateA.stock_shortfall_at);assert.equal(lateA.stock_applied_at,null);
+assert.equal((await one('select count(*) n from supplier_orders where order_id=$1',[a.order_id])).n,0);
+assert.equal((await one('select stock from products where id=$1',[reserveProduct])).stock,0);checks++;
+await db.query("select complete_paid_order($1,'pi_buyer_b','buyer@example.test','Buyer','{}','{}')",[b.order_id]);
+await db.query("select complete_paid_order($1,'pi_buyer_b','buyer@example.test','Buyer','{}','{}')",[b.order_id]);
+assert.equal((await one('select stock from products where id=$1',[reserveProduct])).stock,0);
+assert.ok((await one('select stock_applied_at from orders where id=$1',[b.order_id])).stock_applied_at);
+assert.equal((await one('select count(*) n from supplier_orders where order_id=$1',[b.order_id])).n,1);checks++;
+// A missing second line must roll back the order and the first line's stock.
+const multiA=(await one(saveSQL,[admin,null,null,{...base,slug:'reserve-multi-a',sku:'RES-MA',stock:2},images,rules,supplier])).id;
+const multiB=(await one(saveSQL,[admin,null,null,{...base,slug:'reserve-multi-b',sku:'RES-MB',stock:0},images,rules,supplier])).id;
+const multiItems=[reserveItem(multiA,'RES-MA'),reserveItem(multiB,'RES-MB')];
+const multiPayload=await reservePayload(2000);
+await rejects('select create_reserved_checkout_order($1,$2,$3,$4,$5)', ['multi-attempt-1',multiPayload,multiItems,reserveExpiry,null],/Insufficient stock while reserving checkout/);
+assert.equal((await one('select stock from products where id=$1',[multiA])).stock,2);
+assert.equal((await one('select count(*) n from orders where checkout_attempt_key=$1',['multi-attempt-1'])).n,0);checks++;
+await db.query("select admin_adjust_stock($1,$2,0,1,'supplier_receipt')",[admin,multiB]);
+const multi=(await createReserved('multi-attempt-1',multiPayload,multiItems)).data;
+assert.equal((await one('select stock from products where id=$1',[multiA])).stock,1);
+assert.equal((await one('select stock from products where id=$1',[multiB])).stock,0);checks++;
+assert.equal((await one("select release_checkout_stock($1,'stripe_creation_failed') released",[multi.order_id])).released,true);
+assert.equal((await one('select stock from products where id=$1',[multiA])).stock,2);
+assert.equal((await one('select stock from products where id=$1',[multiB])).stock,1);checks++;
+// A late payment can still consume stock once when it is available again.
+await db.query("select complete_paid_order($1,'pi_late_multi','buyer@example.test','Buyer','{}','{}')",[multi.order_id]);
+assert.ok((await one('select stock_applied_at from orders where id=$1',[multi.order_id])).stock_applied_at);
+assert.equal((await one('select stock from products where id=$1',[multiA])).stock,1);
+assert.equal((await one('select stock from products where id=$1',[multiB])).stock,0);checks++;
+const testPayload=await reservePayload(1000,true);
+const testReservation=(await createReserved('sandbox-reservation',testPayload,[reserveItem(reserveProduct,'RES-ONE')])).data;
+assert.equal((await one('select stock from products where id=$1',[reserveProduct])).stock,0);
+assert.equal((await one('select stock_reserved_at from orders where id=$1',[testReservation.order_id])).stock_reserved_at,null);checks++;
+const reservationPerms=(await db.query("select rolname,has_function_privilege(rolname,'public.create_reserved_checkout_order(text,jsonb,jsonb,timestamptz,text)','EXECUTE') allowed from pg_roles where rolname in ('anon','authenticated','service_role')")).rows;
+assert.equal(reservationPerms.every(r=>r.allowed===(r.rolname==='service_role')),true);checks++;
 console.log(JSON.stringify({checks,engine:'PostgreSQL/PGlite',result:'passed'}));
 if (process.argv.includes('--serve')) {
   // Restore an obvious disposable product for browser journeys after RPC tests.

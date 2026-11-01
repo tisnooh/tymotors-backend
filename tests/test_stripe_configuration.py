@@ -1,10 +1,12 @@
 from dataclasses import replace
+from datetime import datetime, timedelta, timezone
+import asyncio
 import hashlib
 import hmac
 import json
 import time
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, call
 
 import pytest
 from fastapi.testclient import TestClient
@@ -108,7 +110,7 @@ def test_real_sdk_recursively_converts_paid_checkout_data(monkeypatch, event_typ
     assert rpc.call_args.args[1]["p_order_id"] == order_id
     assert rpc.call_args.args[1]["p_shipping_address"]["city"] == "Paris"
     assert rpc.call_args.args[1]["p_billing_address"]["country"] == "FR"
-    email.assert_awaited_once_with("payment_confirmed", order_id)
+    assert email.await_args_list == [call("order_confirmation", order_id), call("payment_confirmed", order_id)]
     assert any(call.args[0] == "orders" and call.args[1].get("customer_phone") == "+33123456789" for call in server.db.update.call_args_list)
 
 
@@ -137,6 +139,147 @@ def test_checkout_uses_database_cents_and_separate_shipping(monkeypatch):
     assert params["billing_address_collection"] == "required"
     assert "payment_method_types" not in params
     assert server.db.insert.call_args_list[0].args[1]['requires_compatibility_review'] is True
+
+
+def test_unlinked_checkout_session_is_expired_and_never_returned(monkeypatch):
+    create = AsyncMock(return_value=SimpleNamespace(id="cs_test_unlinked", url="https://checkout.stripe.com/test"))
+    expire = AsyncMock()
+    sessions = SimpleNamespace(create_async=create, expire_async=expire)
+    monkeypatch.setattr(server, "stripe_client", SimpleNamespace(v1=SimpleNamespace(checkout=SimpleNamespace(sessions=sessions))))
+    monkeypatch.setattr(server, "settings", replace(server.settings, public_test_checkout_enabled=True))
+    monkeypatch.setattr(server, "_cart_for", AsyncMock(return_value={"id": "cart_fixture"}))
+    monkeypatch.setattr(server, "_cart_response", AsyncMock(return_value={"currency": "EUR", "items": [{
+        "id": "product_fixture", "slug": "fixture", "sku": "FIX", "name": "Test", "quantity": 1,
+        "status": "active", "stock": 5, "price": 19.99, "price_cents": 1999, "currency": "EUR", "images": [],
+        "selected_vehicle": {"brand_slug": "bmw"}, "compatible_brands": ["bmw"],
+    }]}))
+    monkeypatch.setattr(server.db, "insert", AsyncMock(side_effect=[[{"id": "order_fixture", "order_number": "TY-TEST"}], []]))
+    monkeypatch.setattr(server.db, "update", AsyncMock(side_effect=[[], [{"id": "order_fixture"}]]))
+    server.checkout_attempts.clear()
+    response = TestClient(server.app).post("/api/create-checkout-session", headers={"X-Session-Id": "guest_unlinked_qa"})
+    assert response.status_code == 503
+    assert "checkout.stripe.com" not in response.text
+    expire.assert_awaited_once_with("cs_test_unlinked")
+    assert server.db.update.call_args_list[-1].args[1] == {"status": "payment_failed", "payment_status": "failed"}
+
+
+def test_order_email_uses_public_tracking_for_guest_and_account_for_member(monkeypatch):
+    order = {"id": "order_fixture", "order_number": "TY-20261101-ABC12345", "customer_email": "guest@example.test",
+             "total_cents": 1999, "currency": "EUR", "user_id": None}
+    monkeypatch.setattr(server.db, "select", AsyncMock(side_effect=[[order], []]))
+    send = AsyncMock()
+    monkeypatch.setattr(server.email_service, "send", send)
+    asyncio.run(server._send_order_email("order_confirmation", order["id"]))
+    assert "/support/track?order=TY-20261101-ABC12345" in send.call_args.kwargs["content"].text
+    assert "/account/orders/" not in send.call_args.kwargs["content"].text
+    order["user_id"] = "user_fixture"
+    monkeypatch.setattr(server.db, "select", AsyncMock(side_effect=[[order], []]))
+    asyncio.run(server._send_order_email("order_confirmation", order["id"]))
+    assert "/account/orders/order_fixture" in send.call_args.kwargs["content"].text
+
+
+def test_live_checkout_reserves_atomically_and_reuses_open_session(monkeypatch):
+    create = AsyncMock(return_value=SimpleNamespace(id="cs_live_fixture", url="https://checkout.stripe.com/live"))
+    retrieve = AsyncMock(return_value=SimpleNamespace(id="cs_live_fixture", status="open", url="https://checkout.stripe.com/live"))
+    sessions = SimpleNamespace(create_async=create, retrieve_async=retrieve)
+    monkeypatch.setattr(server, "stripe_client", SimpleNamespace(v1=SimpleNamespace(checkout=SimpleNamespace(sessions=sessions))))
+    monkeypatch.setattr(server, "settings", replace(server.settings, stripe_mode="live", environment="production",
+        stripe_secret_key="sk_live_synthetic_fixture", shipping_countries=("FR",)))
+    monkeypatch.setattr(server, "legal_ready", lambda: True)
+    monkeypatch.setattr(server, "check_compatibility", lambda *_: {"status": "compatible", "reason": "fixture"})
+    monkeypatch.setattr(server, "_cart_for", AsyncMock(return_value={"id": "cart_fixture"}))
+    monkeypatch.setattr(server, "_cart_response", AsyncMock(return_value={"currency": "EUR", "items": [{
+        "id": "product_fixture", "slug": "fixture", "sku": "FIX", "name": "Test", "quantity": 1,
+        "status": "active", "stock": 5, "price": 19.99, "price_cents": 1999, "currency": "EUR", "images": [],
+        "selected_vehicle": {"brand_slug": "bmw"},
+    }]}))
+    monkeypatch.setattr(server.db, "select", AsyncMock(return_value=[{
+        "supplier_name": "Verified supplier", "supplier_reference": "EXACT-1", "cost_price_cents": 500,
+        "shipping_cost_cents": 200, "supplier_verified": True,
+    }]))
+    future = (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
+    rpc = AsyncMock(side_effect=[
+        {"order_id": "10000000-0000-4000-8000-000000000009", "order_number": "TY-LIVE-1",
+         "discount_cents": 0, "stripe_session_id": None, "expires_at": future, "reused": False},
+        {"order_id": "10000000-0000-4000-8000-000000000009", "order_number": "TY-LIVE-1",
+         "discount_cents": 0, "stripe_session_id": "cs_live_fixture", "expires_at": future, "reused": True},
+    ])
+    monkeypatch.setattr(server.db, "rpc", rpc)
+    monkeypatch.setattr(server.db, "insert", AsyncMock())
+    monkeypatch.setattr(server.db, "update", AsyncMock(return_value=[{"id": "10000000-0000-4000-8000-000000000009"}]))
+    server.checkout_attempts.clear()
+    client = TestClient(server.app)
+    first = client.post("/api/create-checkout-session", headers={"X-Session-Id": "guest_live_fixture"})
+    second = client.post("/api/create-checkout-session", headers={"X-Session-Id": "guest_live_fixture"})
+    assert first.status_code == second.status_code == 200
+    assert first.json()["url"] == second.json()["url"]
+    assert create.await_count == retrieve.await_count == 1
+    server.db.insert.assert_not_called()
+    assert rpc.await_args_list[0].args[0] == "create_reserved_checkout_order"
+
+
+def test_live_expired_checkout_releases_reserved_stock(monkeypatch):
+    monkeypatch.setattr(server, "settings", replace(server.settings, stripe_mode="live", environment="production",
+        stripe_secret_key="sk_live_synthetic_fixture", stripe_webhook_secret=SIGNING_SECRET))
+    monkeypatch.setattr(server.db, "select", AsyncMock(side_effect=[[], [{"stripe_session_id": "cs_live_fixture", "is_test": False}]]))
+    monkeypatch.setattr(server.db, "insert", AsyncMock())
+    monkeypatch.setattr(server.db, "update", AsyncMock())
+    rpc = AsyncMock(return_value=True)
+    monkeypatch.setattr(server.db, "rpc", rpc)
+    order_id = "10000000-0000-4000-8000-000000000009"
+    payload, headers = signed_payload({"id": "evt_live_expired", "object": "event", "livemode": True,
+        "type": "checkout.session.expired", "data": {"object": {"id": "cs_live_fixture",
+        "metadata": {"order_id": order_id}}}})
+    response = TestClient(server.app).post("/api/stripe/webhook", content=payload, headers=headers)
+    assert response.status_code == 200
+    rpc.assert_awaited_once_with("release_checkout_stock", {"p_order_id": order_id, "p_reason": "stripe_expired"})
+
+
+def test_failed_payment_intent_keeps_checkout_stock_reserved(monkeypatch):
+    monkeypatch.setattr(server, "settings", replace(server.settings, stripe_mode="live", environment="production",
+        stripe_secret_key="sk_live_synthetic_fixture", stripe_webhook_secret=SIGNING_SECRET))
+    monkeypatch.setattr(server.db, "select", AsyncMock(return_value=[]))
+    monkeypatch.setattr(server.db, "insert", AsyncMock())
+    update, rpc = AsyncMock(), AsyncMock()
+    monkeypatch.setattr(server.db, "update", update)
+    monkeypatch.setattr(server.db, "rpc", rpc)
+    payload, headers = signed_payload({"id": "evt_live_failed_card", "object": "event", "livemode": True,
+        "type": "payment_intent.payment_failed", "data": {"object": {"metadata": {"order_id": "fixture"}}}})
+    response = TestClient(server.app).post("/api/stripe/webhook", content=payload, headers=headers)
+    assert response.status_code == 200
+    rpc.assert_not_called()
+    assert all(call.args[0] == "stripe_events" for call in update.call_args_list)
+
+
+def test_reconciliation_releases_only_stripe_expired_reservation(monkeypatch):
+    monkeypatch.setattr(server, "settings", replace(server.settings, stripe_mode="live", environment="production",
+        stripe_secret_key="sk_live_synthetic_fixture"))
+    retrieve = AsyncMock(return_value=SimpleNamespace(status="expired", payment_status="unpaid"))
+    sessions = SimpleNamespace(retrieve_async=retrieve, expire_async=AsyncMock())
+    monkeypatch.setattr(server, "stripe_client", SimpleNamespace(v1=SimpleNamespace(checkout=SimpleNamespace(sessions=sessions))))
+    monkeypatch.setattr(server.db, "select", AsyncMock(return_value=[{"id": "order_fixture", "stripe_session_id": "cs_live_expired"}]))
+    rpc, update = AsyncMock(return_value=True), AsyncMock()
+    monkeypatch.setattr(server.db, "rpc", rpc)
+    monkeypatch.setattr(server.db, "update", update)
+    assert asyncio.run(server._reconcile_expired_checkouts()) == 1
+    rpc.assert_awaited_once_with("release_checkout_stock", {"p_order_id": "order_fixture", "p_reason": "stripe_expired"})
+    assert update.call_args.args[1]["payment_status"] == "failed"
+
+
+def test_reconciliation_completes_paid_session_without_releasing_stock(monkeypatch):
+    monkeypatch.setattr(server, "settings", replace(server.settings, stripe_mode="live", environment="production",
+        stripe_secret_key="sk_live_synthetic_fixture"))
+    session = SimpleNamespace(status="complete", payment_status="paid", to_dict=lambda: {"id": "cs_live_paid"})
+    sessions = SimpleNamespace(retrieve_async=AsyncMock(return_value=session), expire_async=AsyncMock())
+    monkeypatch.setattr(server, "stripe_client", SimpleNamespace(v1=SimpleNamespace(checkout=SimpleNamespace(sessions=sessions))))
+    monkeypatch.setattr(server.db, "select", AsyncMock(return_value=[{"id": "order_fixture", "stripe_session_id": "cs_live_paid"}]))
+    complete = AsyncMock(return_value="order_fixture")
+    monkeypatch.setattr(server, "_complete_checkout_payment", complete)
+    rpc = AsyncMock()
+    monkeypatch.setattr(server.db, "rpc", rpc)
+    assert asyncio.run(server._reconcile_expired_checkouts()) == 1
+    complete.assert_awaited_once_with({"id": "cs_live_paid"})
+    rpc.assert_not_called()
 
 
 def test_explicit_live_mode_requires_production_and_live_key():
