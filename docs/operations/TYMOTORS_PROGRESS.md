@@ -1,5 +1,13 @@
 # TYMotors — point de reprise du 31 octobre 2026
 
+## Contrôle du 1er novembre 2026 — état de lancement actualisé
+
+- Le compte Stripe réel TYMotors `acct_1Tc9tvJB6441TWWo` est accessible en lecture seule via le connecteur : `charges_enabled=true`, `payouts_enabled=true`, aucune exigence actuellement due. Les affirmations ci-dessous selon lesquelles aucun compte réel n'était visible décrivent un contrôle antérieur et sont dépassées.
+- Dans Render, `tymotors-backend-eu` utilise encore une clé `sk_test_…` ; `STRIPE_MODE` est absent et sa valeur par défaut est `test`. Le secret du webhook réel et une clé réelle doivent être installés dans les secrets de Render avant de passer `STRIPE_MODE=live`, puis le backend doit être redéployé et testé. Aucune valeur secrète n'a été copiée dans ce document.
+- La base Supabase de production compte 40 produits non archivés, tous en brouillon, aucun stock positif. Aucune offre fournisseur complète (référence, prix et livraison) n'est vérifiée pour ces produits. L'unique offre marquée vérifiée est une fixture de recette archivée, sans livraison ; elle ne constitue pas une preuve commerciale.
+- Les fils Soyintech et GZTM/Leju contiennent des catalogues incomplets et des demandes de correction/devis envoyées jusqu'au 28 octobre ; aucune réponse fournisseur plus récente n'a été trouvée au contrôle du 1er novembre. Le courriel CJ du 31 octobre annonce seulement une vérification interne. Le ticket CJ `T202610311023101331` affiche toujours « Awaiting CJ Reply » et n'apporte ni tarif par commande ni accord de traitement à l'unité.
+- Conséquence : zéro produit commercial activable sur les preuves disponibles. Le paiement réel, le stock et la livraison restent bloqués jusqu'aux secrets Stripe réels, aux informations légales exigées par l'application et à au moins une offre fournisseur/compatibilité vérifiée. Ne pas forcer les gardes du checkout pour masquer ces dépendances.
+
 ## Mise à jour du 1er novembre 2026 — checkout et administration
 
 - L'édition administrateur du produit permet désormais de saisir le coût de livraison fournisseur et le MOQ. Elle affiche le coût d'achat et de livraison connu sans présenter cet écart comme une marge nette. Le modèle produit et la fonction SQL de publication exigent désormais une référence fournisseur et un coût de livraison, comme le checkout réel. La migration `require_complete_supplier_offer_for_publication` est appliquée en production ; contrôle SQL : les deux conditions sont actives et aucun produit n'est actif. Vérifications locales : 439 tests backend, 487 tests frontend, lint et compilation réussis. Les deux connexions Stripe TYMotors restent en mode test au dernier contrôle ; aucune fiche n'a été activée.
