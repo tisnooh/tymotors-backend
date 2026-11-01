@@ -597,7 +597,12 @@ async def update_email_preferences(payload: EmailPreferencesInput, request: Requ
 async def forgot_password(payload: AuthEmailInput, request: Request):
     _rate_limit(auth_email_attempts, f'forgot-ip:{_client_key(request)}', 10, 3600)
     _rate_limit(auth_email_attempts, f"forgot:{_client_key(request)}:{str(payload.email).lower()}", 4, 3600)
-    await db.send_password_recovery(str(payload.email).lower(), f"{settings.frontend_url}/reset-password")
+    try:
+        await db.send_password_recovery(str(payload.email).lower(), f"{settings.frontend_url}/reset-password")
+    except SupabaseError as error:
+        if error.status_code == 429:
+            raise HTTPException(429, "Trop de demandes. Réessayez dans quelques minutes.") from None
+        raise HTTPException(503, "L'envoi du lien a échoué. Réessayez plus tard.") from None
     return {"accepted": True}
 
 

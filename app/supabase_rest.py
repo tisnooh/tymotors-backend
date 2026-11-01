@@ -153,9 +153,12 @@ class SupabaseRest:
             json={"email": email},
             headers={"apikey": self.publishable_key, "Content-Type": "application/json"},
         )
-        # Keep the public response non-enumerating; only surface provider outages.
-        if response.status_code >= 500:
-            raise SupabaseError(response.status_code, self._detail(response))
+        # Supabase returns 200 for an unknown address. A provider rejection must
+        # never be shown as "email sent"; keep its detail private to avoid leaks.
+        if response.status_code == 429:
+            raise SupabaseError(429, "Recovery rate limit")
+        if response.status_code >= 400:
+            raise SupabaseError(503, "Recovery provider rejected request")
 
     async def sign_in_password(self, email: str, password: str) -> dict[str, Any]:
         response = await self.client.post(
