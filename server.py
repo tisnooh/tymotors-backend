@@ -9,6 +9,8 @@ import random
 import re
 import string
 import time
+from urllib.parse import quote
+import secrets
 from typing import Any, Literal
 import uuid
 
@@ -36,7 +38,7 @@ from app.schemas import (
     VehicleSelection, WelcomeEmailInput, WishlistInput, WithdrawalInput, LoginInput, WithdrawalStatusInput,
 )
 from app.services.email_service import EmailService
-from app.services.email_templates import newsletter_confirmation, order_event, welcome
+from app.services.email_templates import newsletter_confirmation, order_event, password_recovery, welcome
 from app.services.email_tokens import hash_confirmation_token, new_confirmation_token, verify_token
 from app.store import CatalogStore
 from app.site_config import public_site_configuration, order_document, legal_ready
@@ -598,7 +600,17 @@ async def forgot_password(payload: AuthEmailInput, request: Request):
     _rate_limit(auth_email_attempts, f'forgot-ip:{_client_key(request)}', 10, 3600)
     _rate_limit(auth_email_attempts, f"forgot:{_client_key(request)}:{str(payload.email).lower()}", 4, 3600)
     try:
-        await db.send_password_recovery(str(payload.email).lower(), f"{settings.frontend_url}/reset-password")
+        email = str(payload.email).lower()
+        token = await db.generate_password_recovery_token(email, f"{settings.frontend_url}/auth/confirm")
+        if token is None:
+            return {"accepted": True}
+        confirm_url = f"{settings.frontend_url}/auth/confirm?token_hash={quote(token, safe='')}&type=recovery"
+        delivery = await email_service.send(
+            recipient=email, email_type="password_reset", content=password_recovery(confirm_url),
+            idempotency_key=f"password-recovery:{secrets.token_hex(16)}",
+        )
+        if not delivery.get("sent"):
+            raise HTTPException(503, "L'envoi du lien a échoué. Réessayez plus tard.")
     except SupabaseError as error:
         if error.status_code == 429:
             raise HTTPException(429, "Trop de demandes. Réessayez dans quelques minutes.") from None

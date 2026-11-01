@@ -68,6 +68,20 @@ def welcome(first_name: str | None, account_url: str) -> EmailContent:
     return EmailContent("Bienvenue chez TYMotors", html, text)
 
 
+def password_recovery(confirm_url: str) -> EmailContent:
+    body = (
+        '<p style="color:#d5d8df;font:16px/1.7 Arial,sans-serif">Vous avez demandé à réinitialiser le mot de passe de votre compte TYMotors.</p>'
+        f'<p style="margin:28px 0">{_button("CHOISIR UN NOUVEAU MOT DE PASSE", confirm_url)}</p>'
+        '<p style="color:#8e94a3;font:13px/1.6 Arial,sans-serif">Ce lien est temporaire et ne fonctionne qu’une fois. Si vous n’êtes pas à l’origine de cette demande, ignorez cet e-mail.</p>'
+    )
+    html, text = _layout(
+        "Réinitialisez votre mot de passe",
+        body,
+        f"Choisissez un nouveau mot de passe TYMotors : {confirm_url}\n\nSi vous n’êtes pas à l’origine de cette demande, ignorez cet e-mail.",
+    )
+    return EmailContent("TYMotors — réinitialisation du mot de passe", html, text)
+
+
 def newsletter_confirmation(confirm_url: str) -> EmailContent:
     body = (
         '<p style="color:#d5d8df;font:16px/1.7 Arial,sans-serif">Une dernière étape.</p>'

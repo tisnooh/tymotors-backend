@@ -146,19 +146,24 @@ class SupabaseRest:
         active = await self.rpc('is_auth_session_active', {'p_session_id': session_id, 'p_user_id': user_id})
         return user if active is True else None
 
-    async def send_password_recovery(self, email: str, redirect_to: str) -> None:
+    async def generate_password_recovery_token(self, email: str, redirect_to: str) -> str | None:
         response = await self.client.post(
-            f"{self.url}/auth/v1/recover",
-            params={"redirect_to": redirect_to},
-            json={"email": email},
-            headers={"apikey": self.publishable_key, "Content-Type": "application/json"},
+            f"{self.url}/auth/v1/admin/generate_link",
+            json={"type": "recovery", "email": email, "redirect_to": redirect_to},
+            headers=self._headers(),
         )
-        # Supabase returns 200 for an unknown address. A provider rejection must
-        # never be shown as "email sent"; keep its detail private to avoid leaks.
+        # Admin link generation does not send Supabase's limited, unbranded mail.
+        # Never return the token to the public API or include it in an error log.
+        if response.status_code == 404:
+            return None
         if response.status_code == 429:
             raise SupabaseError(429, "Recovery rate limit")
         if response.status_code >= 400:
             raise SupabaseError(503, "Recovery provider rejected request")
+        token = response.json().get("hashed_token")
+        if not isinstance(token, str) or not token:
+            raise SupabaseError(503, "Recovery provider returned no token")
+        return token
 
     async def sign_in_password(self, email: str, password: str) -> dict[str, Any]:
         response = await self.client.post(
