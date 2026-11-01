@@ -31,9 +31,10 @@ Objectif actif : ouvrir de vraies commandes avec Stripe en mode réel et une off
 ## Administration — vérification du 1er novembre 2026
 
 - La connexion administrateur est rétablie. Dans **Paramètres → Tester la connexion CJ**, le site en production affiche « Clé CJ authentifiée. Produits et expédition à relier. » Ce test confirme uniquement l'authentification API : aucun SKU CJ, devis ou traitement automatique n'est validé.
-- Le tableau de bord additionnait les commandes Stripe de test au CA, aux commandes à traiter et aux produits vendus. La fonction `admin_dashboard` a été corrigée en base pour exclure `is_test=true` des indicateurs commerciaux tout en conservant ces lignes visibles et marquées TEST dans les commandes récentes. Le test PostgreSQL isolé passe : **67 contrôles**.
+- Le tableau de bord additionnait les commandes Stripe de test au CA, aux commandes à traiter et aux produits vendus. La fonction `admin_dashboard` a été corrigée en base pour exclure `is_test=true` des indicateurs commerciaux tout en conservant ces lignes visibles et marquées TEST dans les commandes récentes.
 - Une commande ancienne `TY-20260824-DED3D8E4` précédait la colonne `is_test`, mais sa session `cs_test_…` et son article `[TEST STAGING] Validation Stripe` prouvent qu'il s'agit d'un essai. Elle a été reclassée en test ; son dossier fournisseur sans référence Alibaba ni agent a été annulé. Une entrée d'audit `order.test_reclassified` garde la trace.
-- Après correction, le tableau de bord de production affiche **0 € de CA**, **0 commande commerciale** et **0 commande à traiter**. La base compte 14 commandes de test et aucune commande non test. Les 3 comptes clients affichés ne sont pas une preuve de ventes réelles.
+- Après correction, le tableau de bord de production affiche **0 € de CA**, **0 commande commerciale** et **0 commande à traiter**. La base compte 14 commandes de test et aucune commande non test.
+- La vue `admin_customers` additionnait également les essais comme achats clients. Elle exclut désormais les commandes de test et le profil administrateur sans achat commercial. Le contrôle SQL de production retourne **0 client commercial**, **0 commande commerciale**, **0 € dépensé** ; la vérification visuelle après cette dernière correction reste à faire. Le test PostgreSQL isolé passe : **68 contrôles**.
 
 ## Reprise
 
