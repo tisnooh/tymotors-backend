@@ -172,6 +172,11 @@ class SupabaseRest:
         )
         if response.status_code == 429:
             raise SupabaseError(429, 'Too many login attempts')
+        # The Supabase gateway returns 401 for a revoked/wrong publishable key.
+        # Credential mistakes from Auth itself use 400. Do not blame the user
+        # for a server configuration failure.
+        if response.status_code == 401:
+            raise SupabaseError(503, 'Authentication service unavailable')
         if response.status_code >= 500:
             raise SupabaseError(502, 'Authentication service unavailable')
         if response.status_code >= 400:
