@@ -8,6 +8,7 @@
 - Audit indépendant : une session Stripe pouvait être payée après épuisement du dernier stock. La migration `checkout_stock_reservations` est appliquée en production : commande, lignes et réservation atomiques, une tentative ouverte par panier, libération idempotente et traitement des paiements tardifs sans stock négatif ni envoi fournisseur automatique. 95 contrôles PostgreSQL isolés et 436 tests backend passent. Le backend publié utilise la RPC et réconcilie les sessions Stripe expirées. Aucun paiement réel n'a été exécuté ; l'intégration Stripe réelle, les offres fournisseur vérifiées et les devis de livraison restent absents. Ne pas ouvrir le checkout réel sur cette base.
 - La vue d'inventaire de l'administration affiche désormais le stock réservé réel ; 95 contrôles PostgreSQL isolés passent après ce correctif. En production, la vue retourne 41 fiches (dont la recette archivée) et 0 unité réservée, conformément à l'absence de checkout réel.
 - Contrôle public après déploiement : `/api/health`, `/api/site-config` et `/api/products?limit=1` répondent `200` ; le catalogue retourne 40 articles, 0 actif, 0 achetable et 0 stock positif. La page `/support/track?order=TY-CHECK` répond `200`. Le connecteur Stripe ne montre que des comptes TYMotors `livemode=false` ; aucune recette de paiement réel ni d'expédition n'est possible à ce stade.
+- Contrôle CI final : backend `37786a3` vert sur GitHub (436 tests locaux), frontend `1fc21a5` vert sur GitHub (487 tests locaux, lint, build et audit des dépendances). Les correctifs frontend éliminent les avis hauts/critique ; deux avis résiduels des outils de compilation (`minimatch`, `deepmerge`) sont suivis par des exceptions explicites expirant le 13 novembre. Le frontend `1fc21a5` est `READY` en production Vercel ; le backend `37786a3` est `Live` sur Render. Aucun fichier visuel ou photo n'a changé.
 
 Objectif actif : ouvrir de vraies commandes avec Stripe en mode réel et une offre fournisseur vérifiée. Le design et les photographies ne sont pas modifiés.
 
@@ -24,7 +25,7 @@ Objectif actif : ouvrir de vraies commandes avec Stripe en mode réel et une off
 - Les brouillons restent visibles, sans panier ni paiement de démonstration.
 - Le checkout public refuse toute tentative tant que Stripe réel n'est pas configuré ; un produit actif sans disponibilité serveur reste non achetable dans l'interface.
 - Le checkout réel exige une compatibilité confirmée et une offre fournisseur vérifiée avec référence, coût d'achat et coût de livraison avant de créer une session de paiement.
-- Backend : 411 tests réussis pour le dernier correctif. Frontend : tests ciblés réussis et compilation locale réussie. Les derniers contrôles CI frontend échouent à l'audit de dépendances nouvellement signalées ; ne pas déclarer ce contrôle vert.
+- Backend : 436 tests locaux réussis et CI verte au `37786a3`. Frontend : 487 tests locaux réussis, compilation et CI vertes au `1fc21a5`. L'audit des dépendances est vert avec deux exceptions transitoires explicites et datées pour les outils de compilation.
 
 ## CJdropshipping — vérification du 31 octobre 2026
 
