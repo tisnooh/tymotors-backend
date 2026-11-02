@@ -1,4 +1,13 @@
-# TYMotors — point de reprise du 31 octobre 2026
+# TYMotors — point de reprise du 2 novembre 2026
+
+## Contrôle du 2 novembre 2026 — Stripe réel démarré, ventes encore fermées
+
+- Render `tymotors-backend-eu` dispose maintenant de `STRIPE_MODE=live` et `ENVIRONMENT=production` ; le déploiement du 2 novembre a réussi après correction de deux échecs de démarrage dus à une clé réelle associée aux anciens modes `test`. Les noms `STRIPE_SECRET_KEY` et `STRIPE_WEBHOOK_SECRET` sont présents dans l'environnement Render ; aucune valeur n'est enregistrée ici. L'API publique `/api/site-config` renvoie `stripe_mode=live`, `legal_ready=false` et `test_catalog_available=false`.
+- Le compte Stripe réel TYMotors `acct_1Tc9tvJB6441TWWo` a un endpoint actif `we_1UX4EXJB6441TWWoMPE56uMv` vers `https://tymotors-backend-eu.onrender.com/api/stripe/webhook`. Stripe affiche zéro événement envoyé à cet endpoint. Un POST avec une signature volontairement invalide renvoie `400 Invalid webhook signature` : le rejet fonctionne, mais ni la correspondance du secret ni un paiement de bout en bout ne sont encore prouvés.
+- Contrôle Supabase du catalogue non archivé : 40 produits, 0 actif, 0 stock positif, 0 offre fournisseur complète et vérifiée (référence, coût d'achat, coût de livraison), 0 commande fournisseur réelle. Le checkout reste correctement fermé malgré Stripe réel : la configuration légale est incomplète et aucun article ne satisfait les gardes commerciaux.
+- CJ : le ticket `T202610311023101331` attend toujours une réponse ; « Produits de la boutique » indique zéro produit connecté. La clé CJ authentifiée et l'agent affecté ne constituent donc pas une attribution automatique de commande ni une capacité d'expédition démontrée.
+- Aucun nouveau retour de Soyintech ou de GZTM/Leju n'a été reçu depuis le 28 octobre. Relances courtes envoyées le 2 novembre dans les fils existants : Gmail `1a19add9d1d5dda1` (Soyintech) et `1a19addc317064bf` (GZTM/Leju). Elles demandent les variantes exactes, la compatibilité, le prix, le stock et un devis de livraison France pour les pilotes, sans commande ni engagement.
+- Aucune fiche, image, prix public ou page visuelle n'a été modifiée. Aucun paiement réel ni achat fournisseur n'a été effectué. Prochaine preuve nécessaire avant activation d'un pilote : offre fournisseur exacte, compatibilité et livraison vérifiées, stock disponible, configuration légale complète, puis paiement contrôlé et événement webhook effectivement livré.
 
 ## Contrôle du 1er novembre 2026 — état de lancement actualisé
 
