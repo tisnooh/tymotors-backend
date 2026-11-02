@@ -1,5 +1,9 @@
 # TYMotors — point de reprise du 2 novembre 2026
 
+## Vérification des cinq liens pilotes — 2 novembre 2026
+
+- Le classeur Soyintech distingue « Identification URL » et « Our URL ». Les trois annonces « Our URL » renseignées pour `MR3BF2021`, `EXBWB3022` et `MR3DGF703` ont été ouvertes directement et affichent **Guangzhou Yooyi Auto Technology Co., Ltd.** comme vendeur ; les deux autres pilotes n'ont pas de lien « Our URL ». L'identification du spoiler F30 renvoie séparément à **Leju/GZTM**, à un autre SKU et à une matière différente. Les poids du classeur et de la page Yooyi divergent pour les coques BMW ; la page Yooyi Golf 7 a un tableau d'adaptation Golf VIII contradictoire. Demande de clarification envoyée à Soyintech dans le fil existant (`1a19ce015042fe62`, `SENT`). Cinq notes fournisseur privées enregistrées et revérifiées dans Supabase, zéro offre vérifiée ; associations, prix publics, photos et design préservés. Tableau de preuves : `PILOTS_SOURCE_RECONCILIATION_2026-11-02.md`.
+
 ## Vérification directe du pilote F30 — 2 novembre 2026
 
 - La page Alibaba exacte liée par le classeur Soyintech pour `EXBWB3022` a été ouverte. Elle affiche comme vendeur **Guangzhou Yooyi Auto Technology Co., Ltd.**, une pièce PP noir brillant, un colis 130 × 30 × 10 cm / 3,0 kg et une annonce F30 2013–2018. Son tableau de compatibilité contient une plage différente (« 2011- »). Les images TYMotors montrent une texture carbone et un visuel marqué « CETU ». Un second lien candidat, `MR3BF2021`, renvoie lui aussi à une annonce de Yooyi. La correspondance vendeur/variante/image n'est donc pas établie et les liens du classeur ne prouvent pas que Soyintech est le vendeur. Détails et liens : `PILOT_F30_SUPPLIER_EVIDENCE_2026-11-02.md`. Pilote maintenu non validé ; aucune image, fiche commerciale ou prix public modifié.
