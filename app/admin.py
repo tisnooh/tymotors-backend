@@ -8,7 +8,7 @@ import re
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, Field, HttpUrl, field_validator, model_validator
 
-from .cj_api import probe_cj_auth
+from .cj_api import probe_cj_connections
 from .config import get_settings
 
 
@@ -118,8 +118,7 @@ def create_admin_router(db, catalog, require_admin, audit, stripe_test_mode: boo
 
     @router.get("/integrations/cj/status")
     async def cj_status():
-        # Authentication is a separate milestone from 3PL product mapping and fulfillment.
-        return await probe_cj_auth(get_settings().cj_api_key)
+        return await probe_cj_connections(get_settings().cj_api_key)
 
     @router.get("/suppliers")
     async def suppliers(page: int = Query(1, ge=1), limit: int = Query(25, ge=1, le=100)):
