@@ -1,5 +1,9 @@
 # TYMotors — point de reprise du 2 novembre 2026
 
+## Vérification directe du pilote F30 — 2 novembre 2026
+
+- La page Alibaba exacte liée par le classeur Soyintech pour `EXBWB3022` a été ouverte. Elle affiche comme vendeur **Guangzhou Yooyi Auto Technology Co., Ltd.**, une pièce PP noir brillant, un colis 130 × 30 × 10 cm / 3,0 kg et une annonce F30 2013–2018. Son tableau de compatibilité contient une plage différente (« 2011- »). Les images TYMotors montrent une texture carbone et un visuel marqué « CETU ». Un second lien candidat, `MR3BF2021`, renvoie lui aussi à une annonce de Yooyi. La correspondance vendeur/variante/image n'est donc pas établie et les liens du classeur ne prouvent pas que Soyintech est le vendeur. Détails et liens : `PILOT_F30_SUPPLIER_EVIDENCE_2026-11-02.md`. Pilote maintenu non validé ; aucune image, fiche commerciale ou prix public modifié.
+
 ## Contrôle du 2 novembre 2026 — Stripe réel démarré, ventes encore fermées
 
 - Nouveau courriel CJ du 2 novembre (`1a19ca51b24ba561`) : les entrepôts Chine et États-Unis n'imposent pas de MOQ, mais prélèvent des frais de service ; les entrepôts Royaume-Uni/Europe exigent normalement au moins 10 unités par SKU et 100 unités au total. Aucun tarif de traitement ou de transport France à l'unité n'est fourni. CJ prévient qu'un compte configuré en sandbox ne peut plus revenir en compte normal ; **ne pas convertir le compte de production en sandbox**. Réponse ciblée envoyée dans le même fil (`1a19cd58e2ba8f85`) pour un pilote `EXBWB3022` : réception d'une pièce Soyintech dans un entrepôt chinois CJ, contrôle, emballage et expédition unitaire vers la France, avec coûts et étapes de liaison SKU demandés ; aucun achat ou travail payant autorisé.
