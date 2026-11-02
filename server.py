@@ -1205,6 +1205,28 @@ async def _sync_refunds(payment_intent: str) -> None:
         await _send_order_email("refund_confirmed", before[0]["id"], amount_cents=succeeded)
 
 
+@api.get('/admin/integrations/stripe/status')
+async def stripe_integration_status(_admin=Depends(require_admin)):
+    """Probe the configured server key without exposing credentials or creating a charge."""
+    if stripe_client is None:
+        return {'status': 'not_configured', 'mode': settings.stripe_mode}
+    try:
+        account = await stripe_client.v1.accounts.retrieve_current_async()
+    except stripe.StripeError:
+        return {'status': 'unavailable', 'mode': settings.stripe_mode}
+    # This TYMotors account ID is public metadata, not an API credential.
+    expected_account_id = os.getenv('STRIPE_EXPECTED_ACCOUNT_ID', '').strip() or 'acct_1Tc9tvJB6441TWWo'
+    matches = account.id == expected_account_id
+    return {
+        'status': 'api_authenticated' if matches else 'wrong_account',
+        'mode': settings.stripe_mode,
+        'account_id': account.id,
+        'charges_enabled': bool(account.charges_enabled),
+        'payouts_enabled': bool(account.payouts_enabled),
+        'account_matches_expected': matches,
+    }
+
+
 api.include_router(create_admin_router(
     db,
     catalog,

@@ -53,6 +53,31 @@ def test_admin_is_verified_from_current_profile(client):
     assert client.get("/api/admin/verify", headers={"Authorization": "Bearer admin-test-token"}).json()["authenticated"] is True
 
 
+def test_stripe_status_checks_server_key_and_expected_account_without_exposing_secrets(client, monkeypatch):
+    account = SimpleNamespace(id="acct_expected", charges_enabled=True, payouts_enabled=True)
+    probe = AsyncMock(return_value=account)
+    monkeypatch.setattr(server, "stripe_client", SimpleNamespace(v1=SimpleNamespace(accounts=SimpleNamespace(retrieve_current_async=probe))))
+    monkeypatch.setenv("STRIPE_EXPECTED_ACCOUNT_ID", "acct_expected")
+    response = client.get("/api/admin/integrations/stripe/status", headers={"Authorization": "Bearer admin-test-token"})
+    assert response.status_code == 200
+    assert response.json()["status"] == "api_authenticated"
+    assert response.json()["account_matches_expected"] is True
+    assert response.json()["charges_enabled"] is True
+    assert "key" not in response.text.lower()
+    probe.assert_awaited_once()
+
+
+def test_stripe_status_rejects_wrong_account_and_uses_tymotors_fallback(client, monkeypatch):
+    probe = AsyncMock(return_value=SimpleNamespace(id="acct_other", charges_enabled=True, payouts_enabled=True))
+    monkeypatch.setattr(server, "stripe_client", SimpleNamespace(v1=SimpleNamespace(accounts=SimpleNamespace(retrieve_current_async=probe))))
+    monkeypatch.setenv("STRIPE_EXPECTED_ACCOUNT_ID", "acct_expected")
+    response = client.get("/api/admin/integrations/stripe/status", headers={"Authorization": "Bearer admin-test-token"})
+    assert response.json()["status"] == "wrong_account"
+    assert response.json()["account_matches_expected"] is False
+    monkeypatch.delenv("STRIPE_EXPECTED_ACCOUNT_ID")
+    assert client.get("/api/admin/integrations/stripe/status", headers={"Authorization": "Bearer admin-test-token"}).json()["status"] == "wrong_account"
+
+
 def test_products_are_paginated_on_server(client, monkeypatch):
     mock = AsyncMock(return_value={"items": [], "page": 2, "limit": 25, "total": 75, "pages": 3})
     monkeypatch.setattr(server.db, "page", mock)
