@@ -8,7 +8,8 @@ import re
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, Field, HttpUrl, field_validator, model_validator
 
-from .cj_api import probe_cj_connections
+from .cj_api import probe_cj_connections, resolve_cj_variants
+from .cj_fulfillment import prepare_cj_dossier
 from .config import get_settings
 
 
@@ -118,7 +119,38 @@ def create_admin_router(db, catalog, require_admin, audit, stripe_test_mode: boo
 
     @router.get("/integrations/cj/status")
     async def cj_status():
-        return await probe_cj_connections(get_settings().cj_api_key)
+        cfg = get_settings()
+        return await probe_cj_connections(cfg.cj_api_key, shop_id=cfg.cj_shop_id or None)
+
+    @router.get("/products/{product_id}/cj-connection")
+    async def cj_product_connection(product_id: UUID):
+        products = await db.select("products", params={"id": f"eq.{product_id}", "select": "id,sku", "limit": 1})
+        if not products:
+            raise HTTPException(404, "Produit introuvable")
+        cfg = get_settings()
+        result = await resolve_cj_variants(cfg.cj_api_key, [str(product_id)], shop_id=cfg.cj_shop_id)
+        connection = (result.get("products", {}).get(str(product_id)) or {}).get("connection") or {}
+        return {**result, "expected_platform_product_id": str(product_id),
+                "expected_platform_variant_id": products[0]["sku"],
+                "sku_matches": bool(connection and connection.get("platformVariantId") == products[0]["sku"]),
+                "commercially_verified": False}
+
+    @router.get("/orders/{order_id}/cj-readiness")
+    async def cj_order_readiness(order_id: UUID):
+        orders = await db.select("orders", params={"id": f"eq.{order_id}", "limit": 1})
+        if not orders:
+            raise HTTPException(404, "Commande introuvable")
+        items = await db.select("order_items", params={"order_id": f"eq.{order_id}", "order": "id.asc", "limit": 21})
+        suppliers = await db.select("supplier_orders", params={"order_id": f"eq.{order_id}", "limit": 1})
+        supplier = suppliers[0] if suppliers else None
+        supplier_items = await db.select("supplier_order_items", params={"supplier_order_id": f"eq.{supplier['id']}", "limit": 21}) if supplier else []
+        cfg = get_settings()
+        # A diagnostic/free internal order must never reach provider mapping or
+        # order APIs. The paid-order/webhook and supplier workflow stay intact.
+        excluded = orders[0].get("is_test") is not False or orders[0].get("sales_channel") == "diagnostic"
+        cj = {"status": "test_order_excluded", "products": {}} if excluded else await resolve_cj_variants(
+            cfg.cj_api_key, list(dict.fromkeys(str(i["product_id"]) for i in items if i.get("product_id"))), shop_id=cfg.cj_shop_id)
+        return prepare_cj_dossier(orders[0], items, supplier, supplier_items, cj)
 
     @router.get("/suppliers")
     async def suppliers(page: int = Query(1, ge=1), limit: int = Query(25, ge=1, le=100)):

@@ -1,5 +1,13 @@
 # TYMotors — point de reprise du 3 novembre 2026
 
+## Lot CJ — correspondances par SKU et préparation du dossier
+
+- Lecture ciblée du magasin/produit/variante ajoutée, routes administrateur produit et commande connectées au dossier fournisseur existant. Aucun changement frontend/design/photo/prix ni migration. Les commandes de diagnostic restent hors des appels CJ.
+- La sonde ne peut plus compter les connexions d'autres magasins comme celles de TYMotors. `CJ_SHOP_ID` est désormais requis pour la lecture ciblée ; le contrôle général permet d'identifier les magasins autorisés sans exposer de secrets.
+- Les blocages de devise d'achat, devis unitaire, approbation financière et transmission sont explicites. Aucun achat, commande CJ ou test de réception CJ effectué.
+- Audit indépendant favorable pour la lecture/préparation uniquement. Rapport, contrat UUID/SKU du premier candidat et reprise : `CJ_ORDER_READINESS_2026-11-03.md`. Les sections plus anciennes ci-dessous sont historiques ; elles ne remplacent pas les vérifications datées les plus récentes.
+- Validation finale de ce lot :494 tests Python réussis,13 tests CJ revérifiés indépendamment, diff sans erreur. Les limites API sont respectées par processus (1/s, budget30s, arrêt complet sur429). Branche `codex/cj-order-readiness`, aucune commande CJ transmise ni publication production.
+
 ## Nouveaux messages fournisseurs — après-midi du 3 novembre
 
 - Suite exécutée : demande ciblée envoyée à Nicy sur **MR3BF2021 à16 USD/paire** (`1a1a1c71ffc6b8d2`, SENT), et nouveau lien/prix/données manquantes transmis à Wazza dans `T202610311023101331`. Le ticket indique désormais **Awaiting CJ Reply** et affiche notre nouvelle réponse. Nouveau lien Soyintech testé directement : Product Not Available pour notre région, aucune spécification complémentaire obtenue ni contournement. Aucun achat, changement d'article commercial ou déclaration de validation.

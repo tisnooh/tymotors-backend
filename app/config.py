@@ -58,6 +58,7 @@ class Settings:
     public_test_checkout_enabled: bool = False
     shipping_countries: tuple[str, ...] = ("FR",)
     cj_api_key: str = ""
+    cj_shop_id: str = ""
 
     @property
     def stripe_test_mode(self) -> bool:
@@ -174,5 +175,6 @@ def get_settings() -> Settings:
         public_test_checkout_enabled=os.getenv("PUBLIC_TEST_CHECKOUT_ENABLED", "false").lower() in {"1", "true", "yes"},
         shipping_countries=tuple(_csv("SHIPPING_COUNTRIES", "FR")),
         cj_api_key=os.getenv("CJ_API_KEY", "").strip(),
+        cj_shop_id=os.getenv("CJ_SHOP_ID", "").strip(),
     )
     return settings

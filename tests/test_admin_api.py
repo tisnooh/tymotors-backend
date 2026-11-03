@@ -53,6 +53,46 @@ def test_admin_is_verified_from_current_profile(client):
     assert client.get("/api/admin/verify", headers={"Authorization": "Bearer admin-test-token"}).json()["authenticated"] is True
 
 
+def test_cj_diagnostic_readiness_never_calls_provider_or_writes(client, monkeypatch):
+    import app.admin as admin_module
+    original = server.db.select
+    async def select(table, *, params=None):
+        if table == "profiles": return await original(table, params=params)
+        if table == "orders": return [{"id": ADMIN, "is_test": True, "sales_channel": "diagnostic", "payment_status": "paid"}]
+        return []
+    monkeypatch.setattr(server.db, "select", select)
+    resolver = AsyncMock()
+    monkeypatch.setattr(admin_module, "resolve_cj_variants", resolver)
+    insert, rpc = AsyncMock(), AsyncMock()
+    monkeypatch.setattr(server.db, "insert", insert)
+    monkeypatch.setattr(server.db, "rpc", rpc)
+    response = client.get(f"/api/admin/orders/{ADMIN}/cj-readiness", headers={"Authorization": "Bearer admin-test-token"})
+    assert response.status_code == 200
+    assert response.json()["can_transmit"] is False
+    assert "test_order_excluded" in {b["code"] for b in response.json()["blockers"]}
+    resolver.assert_not_awaited()
+    insert.assert_not_awaited()
+    rpc.assert_not_awaited()
+
+
+def test_cj_product_connection_requires_exact_sku_and_does_not_validate_sale(client, monkeypatch):
+    import app.admin as admin_module
+    original = server.db.select
+    async def select(table, *, params=None):
+        if table == "profiles": return await original(table, params=params)
+        if table == "products": return [{"id": ADMIN, "sku": "TY-EXACT"}]
+        return []
+    monkeypatch.setattr(server.db, "select", select)
+    resolver = AsyncMock(return_value={"status": "api_authenticated", "products": {
+        ADMIN: {"status": "mapped", "connection": {"platformVariantId": "TY-OTHER"}}}})
+    monkeypatch.setattr(admin_module, "resolve_cj_variants", resolver)
+    response = client.get(f"/api/admin/products/{ADMIN}/cj-connection", headers={"Authorization": "Bearer admin-test-token"})
+    assert response.status_code == 200
+    assert response.json()["sku_matches"] is False
+    assert response.json()["commercially_verified"] is False
+    assert resolver.call_args.args[1] == [ADMIN]
+
+
 def test_stripe_status_checks_server_key_and_expected_account_without_exposing_secrets(client, monkeypatch):
     account = SimpleNamespace(id="acct_expected", charges_enabled=True, payouts_enabled=True)
     probe = AsyncMock(return_value=account)
