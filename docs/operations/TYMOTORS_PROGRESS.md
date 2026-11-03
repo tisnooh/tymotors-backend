@@ -2,6 +2,8 @@
 
 ## Suite CJ — envoi non payé et retour des statuts
 
+- Jalon final : backend `42c45af` — CI verte,522 tests Python réussis +1 contrôle croisé non applicable dans le clone backend seul,37 contrôles SQL CJ +111 SQL existants. Frontend `686373e` — [PR#8](https://github.com/tisnooh/tymotors-frontend/pull/8),508 tests et compilation CI réussis, préversion Vercel disponible ; panneau d'actions dans le détail fournisseur existant, sans CSS/photo/prix modifié. Revue indépendante approuve le lot pour brouillon non payé. Aucune fusion, migration production ou réception CJ réelle n'est revendiquée.
+
 - L'orchestrateur de brouillon CJ est implémenté : validation du dossier, réservation SQL unique avant POST, `payType=3` sans paiement, référence CJ conservée, consultation du statut avec vérification magasin/lignes. Les reprises après crash/timeout ne renvoient pas de commande.
 - 521 tests Python locaux réussis. Après correction d'identifiants de paiement réutilisés dans les fixtures, le test CI isolé passe :37 contrôles SQL CJ +111 contrôles SQL existants, Python3.11/3.12, secrets et dépendances verts sur `fcb8084` (run41705843185). Migration et backend approuvés par l'auditeur pour brouillon non payé ; migration non appliquée. Aucun test réel de réception CJ revendiqué.
 - Nouveau retour CJ lu et réponse technique envoyée dans le ticket existant à19:02:59 (heure CJ affichée). Aucune variante CJ ni devis encore fournis. WhatsApp sans nouveau retour utile ; Alibaba Messenger reste déconnecté.
