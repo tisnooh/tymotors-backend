@@ -92,10 +92,11 @@ def test_real_sdk_signed_fixture_without_order_is_acknowledged_once(monkeypatch)
 
 
 @pytest.mark.parametrize("event_type", ["checkout.session.completed", "checkout.session.async_payment_succeeded"])
-def test_real_sdk_recursively_converts_paid_checkout_data(monkeypatch, event_type):
+@pytest.mark.parametrize("payment_status,total_cents", [("paid", 4900), ("paid", 0), ("no_payment_required", 0)])
+def test_real_sdk_recursively_converts_paid_checkout_data(monkeypatch, event_type, payment_status, total_cents):
     configure_signed_webhook(monkeypatch)
     order_id = "10000000-0000-4000-8000-000000000009"
-    expected = {"id": order_id, "stripe_session_id": "cs_test_synthetic", "total_cents": 4900,
+    expected = {"id": order_id, "stripe_session_id": "cs_test_synthetic", "total_cents": total_cents,
         "currency": "EUR", "customer_email": "fixture@example.com"}
     monkeypatch.setattr(server.db, "select", AsyncMock(side_effect=[[], [expected], [{"user_id": None}]]))
     monkeypatch.setattr(server.db, "insert", AsyncMock())
@@ -105,8 +106,8 @@ def test_real_sdk_recursively_converts_paid_checkout_data(monkeypatch, event_typ
     monkeypatch.setattr(server, "_send_order_email", email)
     payload, headers = signed_payload({"id": "evt_sdk_paid", "object": "event", "livemode": False,
         "type": event_type, "data": {"object": {"id": "cs_test_synthetic", "object": "checkout.session",
-        "payment_status": "paid", "amount_total": 4900, "currency": "eur", "client_reference_id": order_id,
-        "payment_intent": "pi_synthetic", "metadata": {"order_id": order_id},
+        "payment_status": payment_status, "amount_total": total_cents, "currency": "eur", "client_reference_id": order_id,
+        "payment_intent": "pi_synthetic" if total_cents else None, "metadata": {"order_id": order_id},
         "customer_details": {"email": "fixture@example.com", "name": "Client test", "phone": "+33123456789", "address": {"country": "FR"}},
         "collected_information": {"shipping_details": {"address": {"country": "FR", "city": "Paris"}}}}}})
     response = TestClient(server.app).post("/api/stripe/webhook", content=payload, headers=headers)

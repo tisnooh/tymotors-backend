@@ -11,7 +11,7 @@ Sources : lecture SQL du projet Supabase `dzdcaloewimekvddvdlo`, API publique, c
 | Fournisseurs | 8 articles ont une association GZTM/Leju non vérifiée ; 32 n'ont pas de nom fournisseur dans le champ opérationnel. | Aucune offre commerciale vérifiée. L'unique offre marquée vérifiée est la fixture archivée STAGING-ONLY, exclue du bilan commercial. |
 | Compatibilités pilotes | Règles enregistrées pour trois pilotes. | 0 règle vérifiée sur les cinq pilotes ; W205 et Golf 7 n'ont pas de règle associée. |
 | Images | 39 articles ont des images exposées. | `bmw-logo-door-projectors` n'en expose aucune ; aucune photo modifiée pendant ce lot. |
-| Stripe | Configuration serveur live ; webhook live activé vers `/api/stripe/webhook`. | 0 PaymentIntent live dans le compte interrogé. La correspondance du secret et un paiement complet réel restent non démontrés par cet audit. |
+| Stripe | Configuration serveur live ; webhook live activé vers `/api/stripe/webhook`. Un essai gratuit réel a ensuite confirmé sa signature et son traitement (preuve ci-dessous). | Aucun encaissement bancaire ni parcours panier → commande commerciale validé par cet essai. |
 | Commandes | 14 commandes conservées, toutes `is_test=true` (7 paid, 7 failed). | 0 commande client réelle. Un dossier fournisseur existe et est annulé ; 0 dossier agent connecté. |
 | CJ | Authentification et lecture des connexions prévues par le code ; flux externe à l'unité confirmé par support. | Aucun produit pilote approuvé/mappé et chiffré. Le code CJ actuel n'inscrit ni Service Product ni commande. |
 | Informations commerciales | `legal_ready=false` ; champs légaux publics vides. | Identité du vendeur, coordonnées, retours et médiation ne peuvent pas être inventés. |
@@ -45,3 +45,15 @@ Le fonctionnement commercial de bout en bout reste **BLOCKED**. Les tests intern
 | Codex après réception des données | Enregistrer et vérifier l'offre, relier la variante, calculer le coût complet, tester le checkout dans un sandbox isolé puis vérifier la chaîne commande → agent → expédition simulée. Une commande fournisseur payante exige l'autorisation prévue. |
 
 Aucun pilote ne peut être activé automatiquement avec les preuves actuelles : **0/5 validé**, **40/40 articles commerciaux non vendables**.
+
+## Essai Stripe réel gratuit demandé par le propriétaire
+
+Création d'un produit inline intitulé `[DIAGNOSTIC] TYMotors — essai gratuit sans expédition`, prix 0 EUR, sans moyen de paiement ni expédition. Session créée directement via l'API Stripe, puis finalisée dans Checkout : `cs_live_a1Pdfj14cR01LRMv9MaL5uAD3RSLXKKpCDD8FLU8sHtuOdq4hNcxJRrpBK`, `livemode=true`, `status=complete`, `payment_status=paid`, `amount_total=0`, `payment_intent=null`.
+
+Preuve croisée : l'événement Stripe `evt_1UXak1JB6441TWWoQ88fMnXx` est bien `checkout.session.completed`, live, lié à cette session, avec `pending_webhooks=0`. La même référence figure dans `public.stripe_events` en production, statut `completed`, créée le 3 novembre à 05:59:04 UTC et terminée sans erreur. Cela confirme la réception du webhook signé réel et son traitement.
+
+Limite volontaire : aucune métadonnée `order_id` de commande commerciale n'a été utilisée ; cet essai ne crée donc pas de commande boutique, de dossier fournisseur ou d'achat. Il ne prouve ni l'encaissement d'une carte, ni la disponibilité d'un article, ni une liaison CJ. Les garde-fous du checkout public n'ont pas été contournés.
+
+Les PR brouillon [backend #7](https://github.com/tisnooh/tymotors-backend/pull/7) et [frontend #7](https://github.com/tisnooh/tymotors-frontend/pull/7) sont préparées sans fusion. Le premier scan Gitleaks échouait faute de GITHUB_TOKEN ; le jeton éphémère en lecture et la lecture des PR ont été déclarés, les commentaires désactivés. Après correction, scans secrets, tests Python 3.11/3.12, dépendances, build frontend et preview Vercel ont tous réussi. Aucun déploiement de production de ces branches.
+
+Accès CJ : le propriétaire confirme sa connexion, mais la lecture de l'onglet par l'outil renvoie `browser.user is unavailable` ; l'essai dans un onglet neuf expire. Aucun nouveau mapping ni Service Product ne peut être certifié à partir de cet accès indisponible. Les e-mails ne comportent aucune nouvelle réponse fournisseur depuis celles déjà consignées.
