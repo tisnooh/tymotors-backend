@@ -1,4 +1,11 @@
-# TYMotors — point de reprise du 2 novembre 2026
+# TYMotors — point de reprise du 3 novembre 2026
+
+## Revue des messages du 3 novembre 2026
+
+- Gmail : recherche des messages TYMotors/fournisseurs/CJ/Alibaba et de l'ensemble des messages entrants depuis le 2 novembre. Nouvelle réponse CJ `1a19ebe3e8871ac7` : CJ confirme que le modèle **CJ-Shipped** peut recevoir des pièces d'un fournisseur externe en Chine pour inspection, emballage et livraison. CJ ne fournit **aucun devis de réception, traitement ou transport France** dans cet e-mail ; les tarifs et stocks changent et un devis précis doit être demandé à l'agent avec volume et emballage. CJ demande une association au niveau de la **variante CJ**, avec magasin cible explicite. CJ ne peut pas recopier la réponse du ticket `T202610311023101331` dans l'e-mail ; le ticket reste inaccessible ici derrière une vérification humaine. Cette réponse prouve une possibilité générale de service, **pas** une offre `EXBWB3022` liée, tarifée ou achetable.
+- Aucun nouvel e-mail de Soyintech ni de Leju/GZTM après les demandes du 2 novembre. WhatsApp Business : aucun message HyperSKU plus récent que la réponse de Lexi affichée mercredi ; pas de référence, coût ou expédition confirmés. Alibaba : deux discussions non lues au contrôle, dont Amy Hong/Shenzhen Harrison (caméras embarquées, hors cinq pilotes) ; l'interface indique une connexion réseau interrompue. L'échange Jade/Leju affiché est ancien, sans nouvelle confirmation des trois références BMW. Aucune demande fournisseur répétée.
+- Les notifications Render/GitHub reçues le 1er–2 novembre concernent d'anciens échecs : les derniers runs `Backend CI` sur `develop` et `Frontend CI` sur `main`, créés le 2 novembre vers 12:19 UTC, sont `success`. Contrôle actuel de `/api/health` et `/api/site-config` : `200`, `stripe_mode=live`, `legal_ready=false`, `test_catalog_available=false`. Ces contrôles ne prouvent ni paiement réel réussi ni commande fournisseur exploitable.
+- Décision cinq pilotes : **0/5 validé**. Prochaine dépendance externe : réponse Soyintech sur vendeur/variante et dimensions fiables ; puis devis unitaire France et liaison CJ de variante. Aucun prix public, statut de vente, photo ou design modifié.
 
 ## Vérification des cinq liens pilotes — 2 novembre 2026
 
