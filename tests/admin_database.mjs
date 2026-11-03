@@ -34,6 +34,7 @@ await db.exec(await readFile(new URL('../supabase/migrations/20261101044000_admi
 await db.exec(await readFile(new URL('../supabase/migrations/20261101050000_guard_supplier_claims.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../supabase/migrations/20261101052000_checkout_stock_reservations.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../supabase/migrations/20261101053000_admin_inventory_reserved_stock.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../supabase/migrations/20261103010000_admin_zero_checkout_diagnostic.sql',import.meta.url),'utf8'));
 const sessionUser='10000000-0000-4000-8000-000000000098', sessionId='10000000-0000-4000-8000-000000000099';
 await db.query('insert into auth.sessions values($1,$2,null)',[sessionId,sessionUser]);
 assert.equal((await db.query('select is_auth_session_active($1,$2) active',[sessionId,sessionUser])).rows[0].active,true);checks++;
@@ -303,6 +304,39 @@ assert.equal((await one('select stock from products where id=$1',[reserveProduct
 assert.equal((await one('select stock_reserved_at from orders where id=$1',[testReservation.order_id])).stock_reserved_at,null);checks++;
 const reservationPerms=(await db.query("select rolname,has_function_privilege(rolname,'public.create_reserved_checkout_order(text,jsonb,jsonb,timestamptz,text)','EXECUTE') allowed from pg_roles where rolname in ('anon','authenticated','service_role')")).rows;
 assert.equal(reservationPerms.every(r=>r.allowed===(r.rolname==='service_role')),true);checks++;
+// A live zero-euro diagnostic is an archived internal item, never a public sale.
+await rejects('select create_admin_zero_diagnostic_order($1)',[customer],/Administrator required/);
+const diag=(await one('select create_admin_zero_diagnostic_order($1) data',[admin])).data;
+const diagProduct=await one("select id,status,stock,price_cents,is_verified from products where sku='TY-INTERNAL-ZERO-DIAGNOSTIC'");
+assert.equal(diagProduct.status,'archived');
+assert.equal(diagProduct.stock,0);
+assert.equal(diagProduct.price_cents,0);
+assert.equal(diagProduct.is_verified,false);checks++;
+assert.equal((await one('select count(*) n from order_items where order_id=$1 and product_id=$2 and unit_amount_cents=0',[diag.order_id,diagProduct.id])).n,1);checks++;
+const sameDiag=(await one('select create_admin_zero_diagnostic_order($1) data',[admin])).data;
+assert.equal(sameDiag.order_id,diag.order_id);
+assert.equal(sameDiag.reused,true);checks++;
+await rejects("update products set status='active',is_verified=true,stock=1 where id=$1",[diagProduct.id],/cannot be published or stocked/);
+await rejects('update orders set total_cents=1 where id=$1',[diag.order_id],/zero-value and isolated/);
+await rejects('update orders set checkout_attempt_key=null where id=$1',[diag.order_id],/zero-value and isolated/);
+await rejects("update orders set checkout_attempt_key='admin-zero:10000000-0000-4000-8000-000000000123' where id=$1",[diag.order_id],/identity is immutable/);
+await rejects('update orders set is_test=false where id=$1',[diag.order_id],/zero-value and isolated/);
+const diagLine=await one('select id from order_items where order_id=$1',[diag.order_id]);
+await rejects('update order_items set order_id=$2 where id=$1',[diagLine.id,paid.id],/cannot be moved/);
+await rejects("insert into order_items(order_id,product_id,product_name,product_slug,sku,quantity,unit_amount_cents) values($1,$2,'Diagnostic','internal-zero-diagnostic','TY-INTERNAL-ZERO-DIAGNOSTIC',1,0)",[diag.order_id,diagProduct.id],/allows one line only/);
+await rejects("insert into order_items(order_id,product_id,product_name,product_slug,sku,quantity,unit_amount_cents) values($1,$2,'Diagnostic','internal-zero-diagnostic','TY-INTERNAL-ZERO-DIAGNOSTIC',1,0)",[paid.id,diagProduct.id],/cannot enter a commercial order/);
+await rejects('select complete_paid_order($1,null,null,null,$2,$2)',[diag.order_id,{}],/Invalid live zero-value diagnostic/);
+await db.query("update orders set stripe_session_id='cs_live_zero_diagnostic' where id=$1",[diag.order_id]);
+await db.query('select complete_paid_order($1,null,null,null,$2,$2)',[diag.order_id,{}]);
+await db.query('select complete_paid_order($1,null,null,null,$2,$2)',[diag.order_id,{}]);
+assert.equal((await one('select payment_status from orders where id=$1',[diag.order_id])).payment_status,'paid');
+assert.equal((await one('select count(*) n from supplier_orders where order_id=$1',[diag.order_id])).n,0);
+assert.equal((await one('select stock from products where id=$1',[diagProduct.id])).stock,0);
+assert.equal((await one("select count(*) n from admin_audit where resource=$1 and action='order.paid'",[diag.order_id])).n,1);checks++;
+const nextDiag=(await one('select create_admin_zero_diagnostic_order($1) data',[admin])).data;
+assert.notEqual(nextDiag.order_id,diag.order_id);checks++;
+const diagPerms=(await db.query("select rolname,has_function_privilege(rolname,'public.create_admin_zero_diagnostic_order(uuid)','EXECUTE') allowed from pg_roles where rolname in ('anon','authenticated','service_role')")).rows;
+assert.equal(diagPerms.every(r=>r.allowed===(r.rolname==='service_role')),true);checks++;
 console.log(JSON.stringify({checks,engine:'PostgreSQL/PGlite',result:'passed'}));
 if (process.argv.includes('--serve')) {
   // Restore an obvious disposable product for browser journeys after RPC tests.

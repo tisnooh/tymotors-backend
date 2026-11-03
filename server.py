@@ -1040,6 +1040,81 @@ async def create_checkout_session(request: Request, promotion_code: str | None =
     return {"url": session.url, "order_reference": order["order_number"]}
 
 
+@api.post("/admin/diagnostics/zero-checkout")
+async def create_admin_zero_checkout(request: Request, admin: dict[str, Any] = Depends(require_admin)):
+    """Private, zero-value live Stripe -> order diagnostic; never a sale or shipment."""
+    if await request.body() not in (b"", b"{}"):
+        raise HTTPException(status_code=422, detail="This diagnostic takes no product or amount")
+    if settings.stripe_test_mode or stripe_client is None:
+        raise HTTPException(status_code=503, detail="Live Stripe diagnostic is unavailable")
+    _rate_limit(checkout_attempts, "admin-zero:" + admin["id"], 3, 300)
+    try:
+        order = await db.rpc("create_admin_zero_diagnostic_order", {"p_admin_id": admin["id"]})
+    except SupabaseError as error:
+        logger.error("Unable to create private zero-value diagnostic: %s", error.status_code)
+        raise HTTPException(status_code=503, detail="Diagnostic order is unavailable") from None
+    order_id = str(order["order_id"])
+    existing_session_id = order.get("stripe_session_id")
+    if existing_session_id:
+        try:
+            existing = await stripe_client.v1.checkout.sessions.retrieve_async(existing_session_id)
+        except stripe.StripeError:
+            raise HTTPException(status_code=503, detail="Diagnostic session status is unavailable") from None
+        if existing.status == "open" and existing.url:
+            return {"url": existing.url, "order_reference": order["order_number"],
+                    "order_id": order_id, "is_test": True, "scope": "stripe_order_only"}
+        if existing.status == "expired":
+            await db.update("orders", {"status": "payment_failed", "payment_status": "failed"},
+                            params={"id": f"eq.{order_id}", "sales_channel": "eq.diagnostic",
+                                    "is_test": "eq.true", "payment_status": "eq.unpaid"})
+            raise HTTPException(status_code=409, detail="Diagnostic session expired; retry")
+        raise HTTPException(status_code=409, detail="Diagnostic completion is being confirmed")
+
+    params = {
+        "mode": "payment",
+        "line_items": [{"quantity": 1, "price_data": {"currency": "eur", "unit_amount": 0,
+            "product_data": {"name": "Diagnostic interne TYMotors — 0 €"}}}],
+        "success_url": f"{_checkout_frontend_url(request)}/order-success?session_id={{CHECKOUT_SESSION_ID}}",
+        "cancel_url": f"{_checkout_frontend_url(request)}/admin?diagnostic=cancelled",
+        "client_reference_id": order_id,
+        "integration_identifier": "tymotors_zero_" + "".join(
+            "abcdefghijklmnop"[int(digit, 16)] for digit in order_id.replace("-", "")[:8]),
+        "customer_creation": "always",
+        "metadata": {"order_id": order_id, "diagnostic_zero": "1"},
+    }
+    if admin.get("profile", {}).get("email"):
+        params["customer_email"] = admin["profile"]["email"]
+    try:
+        session = await stripe_client.v1.checkout.sessions.create_async(
+            params=params, options={"idempotency_key": f"admin_zero_{order_id}"})
+    except stripe.StripeError:
+        logger.error("Zero-value Stripe diagnostic Checkout creation failed")
+        raise HTTPException(status_code=502, detail="Diagnostic Checkout is unavailable") from None
+    if not session.url or not session.id.startswith("cs_live_"):
+        raise HTTPException(status_code=502, detail="Stripe returned an invalid live diagnostic session")
+    try:
+        saved = await db.update("orders", {"stripe_session_id": session.id},
+                                params={"id": f"eq.{order_id}", "sales_channel": "eq.diagnostic",
+                                        "is_test": "eq.true", "payment_status": "eq.unpaid",
+                                        "stripe_session_id": "is.null"})
+        if not saved:
+            linked = await db.select("orders", params={"select": "stripe_session_id", "id": f"eq.{order_id}", "limit": 1})
+            if not linked or linked[0].get("stripe_session_id") != session.id:
+                raise RuntimeError("Diagnostic session could not be linked")
+        await _audit(admin, "diagnostic.zero_checkout.session", order_id,
+                     {"scope": "stripe_order_only", "stripe_session_id": session.id})
+    except Exception:
+        # Never return an unlinked Checkout URL. An expired zero-value session
+        # is harmless, but its order remains visibly unpaid for review.
+        try:
+            await stripe_client.v1.checkout.sessions.expire_async(session.id)
+        except Exception:
+            logger.error("Unable to expire an unlinked zero-value diagnostic session")
+        raise HTTPException(status_code=503, detail="Diagnostic session could not be stored") from None
+    return {"url": session.url, "order_reference": order["order_number"],
+            "order_id": order_id, "is_test": True, "scope": "stripe_order_only"}
+
+
 @api.get("/checkout-session/{stripe_session_id}")
 async def checkout_session(stripe_session_id: str, x_session_id: str | None = Header(default=None), user: dict[str, Any] | None = Depends(optional_user)):
     rows = await db.select("orders", params={"select": "*", "stripe_session_id": f"eq.{stripe_session_id}", "limit": 1})
@@ -1062,13 +1137,18 @@ async def _complete_checkout_payment(obj: Any) -> str | None:
     if not order_id:
         return None
     order_rows = await db.select("orders", params={
-        "select": "id,total_cents,currency,stripe_session_id,customer_email,is_test", "id": f"eq.{order_id}", "limit": 1,
+        "select": "id,total_cents,currency,stripe_session_id,customer_email,is_test,sales_channel,checkout_attempt_key", "id": f"eq.{order_id}", "limit": 1,
     })
     if not order_rows:
         raise RuntimeError("Stripe event references an unknown order")
     expected = order_rows[0]
+    diagnostic_zero = expected.get("sales_channel") == "diagnostic"
     if expected.get('is_test') and not settings.stripe_test_mode:
-        raise RuntimeError('A test order cannot be completed by a live payment')
+        if not (diagnostic_zero and expected["total_cents"] == 0
+                and str(expected.get("checkout_attempt_key") or "").startswith("admin-zero:")
+                and (obj.get("metadata") or {}).get("diagnostic_zero") == "1"
+                and obj.get("payment_intent") is None):
+            raise RuntimeError('A test order cannot be completed by a live payment')
     if obj.get("payment_status") == "no_payment_required" and expected["total_cents"] != 0:
         raise RuntimeError("A non-zero order cannot be completed without payment")
     if (
@@ -1089,8 +1169,10 @@ async def _complete_checkout_payment(obj: Any) -> str | None:
     if customer.get("phone"):
         await db.update("orders", {"customer_phone": str(customer["phone"])[:40]}, params={"id": f"eq.{order_id}"})
     orders = await db.select("orders", params={"select": "user_id,customer_email", "id": f"eq.{order_id}", "limit": 1})
-    if orders and orders[0].get("user_id") and obj.get("customer"):
+    if not diagnostic_zero and orders and orders[0].get("user_id") and obj.get("customer"):
         await db.update("profiles", {"stripe_customer_id": obj.get("customer")}, params={"id": f"eq.{orders[0]['user_id']}"})
+    if diagnostic_zero:
+        return order_id
     await _send_order_email("order_confirmation", order_id)
     await _send_order_email("payment_confirmed", order_id)
     return order_id
