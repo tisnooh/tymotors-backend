@@ -1,5 +1,11 @@
 # TYMotors — point de reprise du 3 novembre 2026
 
+## Nouveaux messages fournisseurs — après-midi du 3 novembre
+
+- Nicy a répondu (`1a1a0b3ed9927eb4`) : Yooyi appartient à Soyintech ; cette relation fournisseur est désormais déclarée explicitement et ne doit plus être présentée comme une société sans lien connu. Classeur corrigé conservé/analyse faite : coques BMW à 16 USD/paire (au lieu de18), trois nouveaux liens Soyintech, port138 USD confirmé pour les cinq articles groupés, total262 USD. Pas de tarif individuel/CJ confirmé ; PP/ABS et emballages individuels restent à clarifier.
+- Nouvelle réponse CJ (`1a1a004104bde99f`) : continuer dans ticket/chat du compte. Ticket `T202610311023101331` enfin lu : Wazza confirme le 3PL sans abonnement et attend le retour de son équipe sur les cinq candidats. Service agent existant affiché à0 USD, jusqu'au30 novembre ; aucun paiement effectué ici.
+- WhatsApp HyperSKU : aucun nouveau retour après le refus déjà connu. Alibaba Messenger reste déconnecté, messages récents non certifiables. Rapport et preuves : `SUPPLIER_MESSAGES_2026-11-03_AFTERNOON.md`. Aucune demande répétée ni réponse envoyée lors de cette vérification.
+
 ## Article gratuit intégré — essai réel terminé
 
 - Article interne `TY-INTERNAL-ZERO-DIAGNOSTIC` créé et masqué (archived, prix0, stock0). Commande `TY-DIAG-A19A1078153E4695` confirmée paid à 0 EUR en production par webhook Stripe live `evt_1UXgxLJB6441TWWotlZ1QKAZ` ; aucun débit, une ligne/un audit paiement, aucun dossier fournisseur.
