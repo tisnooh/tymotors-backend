@@ -16,7 +16,7 @@ Configurer dans le coffre de secrets / les variables privées Render du backend 
 
 - `STRIPE_SECRET_KEY` : clé **de test**, de préférence restreinte `rk_test_` avec Checkout Sessions en lecture/écriture ; Coupons en écriture si les promotions sont utilisées. Vérifier les permissions dépendantes indiquées par Stripe lors de la création. `sk_test_` reste compatible. Jamais de clé `live`.
 - `STRIPE_WEBHOOK_SECRET` : secret de signature de la destination **test** ci-dessous, jamais celui du mode réel.
-- `STRIPE_AUTOMATIC_TAX=false` tant que les inscriptions fiscales ne sont pas validées.
+- `STRIPE_AUTOMATIC_TAX=false` obligatoire : l'activation est refusée au démarrage jusqu'à l'intégration et au test de la persistance des taxes et de leur rapprochement avec les commandes.
 
 Ne pas coller les clés dans le chat, Git, le frontend ou des captures d'écran. La création/entrée d'une nouvelle clé doit être effectuée par le propriétaire dans Stripe puis Render.
 

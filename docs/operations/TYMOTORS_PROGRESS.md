@@ -1,5 +1,11 @@
 # TYMotors — point de reprise du 3 novembre 2026
 
+## Correctifs et audit opérationnel du 3 novembre 2026
+
+- Production réconciliée : 40 articles commerciaux draft, aucun actif/vendable/stock positif ; 41e ligne = fixture archivée. Aucune offre fournisseur commerciale vérifiée ; 8 liens GZTM/Leju non vérifiés, 32 noms fournisseur opérationnels manquants. 14 commandes, toutes test ; aucun PaymentIntent live dans Stripe. Webhook live activé. CJ reste sans variante pilote approuvée/mappée et chiffrée.
+- Correctifs : refus de configuration Stripe Tax non rapprochable avec les totaux de commande ; états de paiement échoué/remboursé explicites ; erreurs de modification panier traitées même si le rafraîchissement échoue ; libellés de disponibilité des brouillons corrigés. Design, images et prix publics préservés.
+- Validation : 448 tests Python, 95 contrôles SQL isolés, build frontend réussi et 122 tests conjoints après revue. Audit indépendant sans régression bloquante ; documentation Tax corrigée. Aucune vente réelle, dépense fournisseur ou publication en production de ce lot. Rapport détaillé : `OPERABILITY_AUDIT_2026-11-03.md`.
+
 ## Revue des messages du 3 novembre 2026
 
 - Réponse CJ complémentaire `1a19ec4a852e2f02` : flux fournisseur externe → entrepôt CJ Chine → client France **à l'unité** confirmé en principe, sans stock européen ni achat en gros anticipé. L'adresse de réception et le numéro FW sont émis seulement après approbation d'un « Service Product » ; CJ demande poids/dimensions, prix, attributs et photos exactes. Aucun minimum de dépôt pour l'enregistrement, mais coûts de traitement et transport réel encore non chiffrés. Grille publique de frais consultée et dossiers de soumission préparés dans `CJ_SERVICE_PRODUCT_PILOTS_2026-11-03.md`. Demande opérationnelle ciblée transmise à CJ dans le même fil (`1a19f20bbcf6cda3`, `SENT`) sans commande ni dépense. **Aucune référence CJ ni marge n'est validée.**

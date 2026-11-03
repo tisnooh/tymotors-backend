@@ -29,6 +29,12 @@ def test_non_test_keys_cannot_start_staging(prefix):
         config.validate()
 
 
+def test_automatic_tax_cannot_create_a_payment_total_the_order_cannot_reconcile():
+    config = settings(email_enabled=False, stripe_automatic_tax=True)
+    with pytest.raises(RuntimeError, match="STRIPE_AUTOMATIC_TAX must stay disabled"):
+        config.validate()
+
+
 @pytest.mark.parametrize("livemode", [True, None])
 def test_test_checkout_rejects_live_or_unspecified_webhook_before_database(monkeypatch, livemode):
     monkeypatch.setattr(server, "settings", replace(server.settings, stripe_secret_key="rk_test_synthetic_fixture", stripe_webhook_secret="synthetic_signing_fixture"))

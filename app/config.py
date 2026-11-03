@@ -53,6 +53,7 @@ class Settings:
     smtp_password: str = ""
     smtp_use_tls: bool = True
     stripe_mode: str = "test"
+    stripe_automatic_tax: bool = False
     test_catalog_enabled: bool = True
     public_test_checkout_enabled: bool = False
     shipping_countries: tuple[str, ...] = ("FR",)
@@ -97,6 +98,8 @@ class Settings:
             raise RuntimeError("A live Stripe key cannot be used in test mode")
         if self.stripe_mode == "live" and (self.environment != "production" or not self.stripe_secret_key.startswith(("sk_live_", "rk_live_"))):
             raise RuntimeError("A live Stripe key cannot be used outside production")
+        if self.stripe_automatic_tax:
+            raise RuntimeError("STRIPE_AUTOMATIC_TAX must stay disabled until tax totals are stored and reconciled with paid orders")
         if not self.shipping_countries or any(len(code) != 2 or not code.isalpha() or not code.isupper() for code in self.shipping_countries):
             raise RuntimeError("SHIPPING_COUNTRIES must contain ISO two-letter country codes")
         if self.email_enabled:
@@ -166,6 +169,7 @@ def get_settings() -> Settings:
         smtp_password=os.getenv("SMTP_PASSWORD", ""),
         smtp_use_tls=os.getenv("SMTP_USE_TLS", "true").lower() in {"1", "true", "yes"},
         stripe_mode=os.getenv("STRIPE_MODE", "test").strip().lower(),
+        stripe_automatic_tax=os.getenv("STRIPE_AUTOMATIC_TAX", "false").lower() in {"1", "true", "yes"},
         test_catalog_enabled=os.getenv("TEST_CATALOG_ENABLED", "true").lower() in {"1", "true", "yes"},
         public_test_checkout_enabled=os.getenv("PUBLIC_TEST_CHECKOUT_ENABLED", "false").lower() in {"1", "true", "yes"},
         shipping_countries=tuple(_csv("SHIPPING_COUNTRIES", "FR")),

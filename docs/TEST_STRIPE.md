@@ -65,8 +65,8 @@ hébergé, les clés Render ou la livraison réelle d'un email. Aucun paiement r
 - Un produit test de staging seulement : stock/prix/compatibilité/fournisseur
   contrôlés. Aucun brouillon de production activé pour contourner le blocage métier.
 - `SHIPPING_COUNTRIES=FR`, `SHIPPING_RATE_CENTS=1500`,
-  `FREE_SHIPPING_THRESHOLD_CENTS=35000`, `STRIPE_AUTOMATIC_TAX=false` tant que
-  la situation fiscale n'est pas validée.
+  `FREE_SHIPPING_THRESHOLD_CENTS=35000`, `STRIPE_AUTOMATIC_TAX=false` obligatoire.
+  L'activation des taxes automatiques est refusée au démarrage tant que leurs montants ne sont pas intégrés et rapprochés avec les commandes.
 - Front : `REACT_APP_SITE_MODE=test`, URLs localhost et clés **publishable**
   Supabase staging. Le site n'a pas besoin de clé Stripe frontend pour Checkout.
 

@@ -1000,7 +1000,6 @@ async def create_checkout_session(request: Request, promotion_code: str | None =
         "billing_address_collection": "required", "phone_number_collection": {"enabled": True}}
     if order_payload.get("customer_email"): params["customer_email"] = order_payload["customer_email"]
     params["expires_at"] = expires_at
-    if os.getenv("STRIPE_AUTOMATIC_TAX", "false").lower() == "true": params["automatic_tax"] = {"enabled": True}
     try:
         if promotion:
             coupon = await stripe_client.v1.coupons.create_async(

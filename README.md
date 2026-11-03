@@ -36,7 +36,7 @@ Le serveur relit prix, statut et stock dans PostgreSQL, enregistre une commande 
 
 Endpoint : `/api/stripe/webhook`.
 
-`STRIPE_AUTOMATIC_TAX` reste désactivé tant que les inscriptions fiscales et paramètres Stripe Tax n’ont pas été validés. Ne pas afficher de TVA calculée si cette configuration n’est pas activée.
+`STRIPE_AUTOMATIC_TAX=false` est obligatoire : le serveur refuse de démarrer si cette option est activée, car les taxes Stripe ne sont pas encore enregistrées et rapprochées avec les totaux des commandes. Des inscriptions fiscales validées ne suffisent pas à activer cette fonctionnalité ; il faut aussi implémenter et tester ce rapprochement.
 
 ## Catalogue
 
