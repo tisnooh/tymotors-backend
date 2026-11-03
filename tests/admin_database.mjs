@@ -34,7 +34,7 @@ await db.exec(await readFile(new URL('../supabase/migrations/20261101044000_admi
 await db.exec(await readFile(new URL('../supabase/migrations/20261101050000_guard_supplier_claims.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../supabase/migrations/20261101052000_checkout_stock_reservations.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../supabase/migrations/20261101053000_admin_inventory_reserved_stock.sql',import.meta.url),'utf8'));
-await db.exec(await readFile(new URL('../supabase/migrations/20261103010000_admin_zero_checkout_diagnostic.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../supabase/migrations/20261103072605_admin_zero_checkout_diagnostic.sql',import.meta.url),'utf8'));
 const sessionUser='10000000-0000-4000-8000-000000000098', sessionId='10000000-0000-4000-8000-000000000099';
 await db.query('insert into auth.sessions values($1,$2,null)',[sessionId,sessionUser]);
 assert.equal((await db.query('select is_auth_session_active($1,$2) active',[sessionId,sessionUser])).rows[0].active,true);checks++;
