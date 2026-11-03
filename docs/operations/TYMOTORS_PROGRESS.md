@@ -3,7 +3,7 @@
 ## Suite CJ — envoi non payé et retour des statuts
 
 - L'orchestrateur de brouillon CJ est implémenté : validation du dossier, réservation SQL unique avant POST, `payType=3` sans paiement, référence CJ conservée, consultation du statut avec vérification magasin/lignes. Les reprises après crash/timeout ne renvoient pas de commande.
-- 521 tests Python locaux réussis. La migration reste non appliquée ; le test SQL a manqué de mémoire localement et doit réussir sur le nouveau job CI isolé avant validation. Aucun test réel de réception CJ revendiqué.
+- 521 tests Python locaux réussis. Après correction d'identifiants de paiement réutilisés dans les fixtures, le test CI isolé passe :37 contrôles SQL CJ +111 contrôles SQL existants, Python3.11/3.12, secrets et dépendances verts sur `fcb8084` (run41705843185). Migration et backend approuvés par l'auditeur pour brouillon non payé ; migration non appliquée. Aucun test réel de réception CJ revendiqué.
 - Nouveau retour CJ lu et réponse technique envoyée dans le ticket existant à19:02:59 (heure CJ affichée). Aucune variante CJ ni devis encore fournis. WhatsApp sans nouveau retour utile ; Alibaba Messenger reste déconnecté.
 - Preuves, protocole et limites : `CJ_DRAFT_DISPATCH_2026-11-03.md`. Aucun design, photographie ou prix public modifié.
 

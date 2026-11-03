@@ -25,8 +25,9 @@ Les champs et endpoints sont issus de la [documentation officielle des commandes
 ## Vérifications
 
 - Suite Python locale : **521 tests réussis**, dont orchestration simulée avec le véritable adaptateur CJ sur `httpx.MockTransport`, répétition d'envoi, interruption, changement d'empreinte, mauvaise boutique, mode staging/test et conservation du suivi local.
-- Revue indépendante Python favorable ; migration SQL encore soumise au test d'exécution.
-- Le premier essai PostgreSQL embarqué a échoué par manque de mémoire de la machine, avant preuve exploitable. Les tests SQL sont donc exécutés par un nouveau job CI isolé, avec PGlite0.5.8 épinglé et fichier lock. Ne pas considérer la migration validée avant le succès de ce job.
+- Revue indépendante favorable pour le backend et la migration du brouillon non payé, après réussite du test SQL CI.
+- Le premier essai PostgreSQL embarqué a échoué par manque de mémoire de la machine. Le nouveau job CI isolé, avec PGlite0.5.8 épinglé, a ensuite détecté une collision d'identifiant de paiement dans les fixtures. Les identifiants des fixtures ont été rendus uniques, sans affaiblir les contraintes de production. Sur le commit `fcb8084`, les **37 contrôles SQL CJ et111 contrôles SQL existants passent**, ainsi que les suites Python3.11/3.12, les secrets et les dépendances : [preuve CI](https://github.com/tisnooh/tymotors-backend/actions/runs/41705843185). La migration est validée en base isolée ; elle n'est pas appliquée en production.
+- La lecture d'un brouillon existant retourne son état sans exposer le payload d'adresse ni relancer CJ. Deux contrôles API supplémentaires couvrent cette récupération et le refus des paramètres de paiement/absence de confirmation explicite.
 - Aucun fichier frontend, design, photographie ou prix public n'est modifié. La migration n'est pas appliquée en production.
 
 ## Messages vérifiés
@@ -42,4 +43,4 @@ Les champs et endpoints sont issus de la [documentation officielle des commandes
 
 La référence de service CJ approuvée et le devis unitaire sont toujours manquants. La création et la réception d'un brouillon **réel** chez CJ ne sont donc pas revendiquées. Les observations sont internes ; l'automatisation des événements client et la gestion de plusieurs colis nécessitent des événements CJ vérifiés et un lot distinct. La préparation d'un brouillon n'achète pas la pièce et ne lance pas l'expédition.
 
-Reprise : faire réussir le test SQL CI, relire la migration, préparer son application après validation du lot ; enregistrer le magasin exact et la variante CJ approuvée ; effectuer ensuite une recette réelle non payée sur une référence autorisée, puis contrôler le résultat chez CJ. Toute dépense et toute publication production restent séparées de cette recette.
+Reprise : préparer l'application de la migration après validation de publication du lot ; enregistrer le magasin exact et la variante CJ approuvée ; effectuer ensuite une recette réelle non payée sur une référence autorisée, puis contrôler le résultat chez CJ. Toute dépense et toute publication production restent séparées de cette recette.

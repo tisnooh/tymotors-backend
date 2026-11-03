@@ -10,7 +10,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, Field, Http
 
 from .cj_api import probe_cj_connections, resolve_cj_variants
 from .cj_fulfillment import prepare_cj_dossier
-from .cj_dispatch import load_draft_preview, submit_draft, refresh_draft
+from .cj_dispatch import load_draft_preview, submit_draft, refresh_draft, submission_view
 from .config import get_settings
 
 
@@ -161,6 +161,10 @@ def create_admin_router(db, catalog, require_admin, audit, stripe_test_mode: boo
 
     @router.get("/orders/{order_id}/cj-draft")
     async def cj_draft_preview(order_id: UUID):
+        existing = await db.select("cj_order_submissions", params={"order_id": f"eq.{order_id}", "limit": 1})
+        if existing:
+            return {"scope": "unpaid_cj_draft", "can_submit_draft": False, "can_pay_supplier": False,
+                    "submission": submission_view(existing[0]), "blockers": [], "warnings": []}
         _, preview = await load_draft_preview(db, get_settings(), str(order_id))
         return preview
 

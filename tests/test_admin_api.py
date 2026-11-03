@@ -93,6 +93,40 @@ def test_cj_product_connection_requires_exact_sku_and_does_not_validate_sale(cli
     assert resolver.call_args.args[1] == [ADMIN]
 
 
+def test_cj_existing_draft_get_never_resolves_or_exposes_shipping_payload(client, monkeypatch):
+    import app.admin as admin_module
+    original = server.db.select
+    async def select(table, *, params=None):
+        if table == "profiles": return await original(table, params=params)
+        if table == "cj_order_submissions": return [{"id": CUSTOMER, "order_id": ADMIN, "state": "uncertain",
+                                                      "payload": {"shippingAddress": "private address"}}]
+        raise AssertionError(table)
+    monkeypatch.setattr(server.db, "select", select)
+    preview = AsyncMock()
+    monkeypatch.setattr(admin_module, "load_draft_preview", preview)
+    response = client.get(f"/api/admin/orders/{ADMIN}/cj-draft", headers={"Authorization": "Bearer admin-test-token"})
+    assert response.status_code == 200 and response.json()["submission"]["state"] == "uncertain"
+    assert response.json()["can_submit_draft"] is False
+    assert "private address" not in response.text and "payload" not in response.text
+    preview.assert_not_awaited()
+
+
+def test_cj_draft_requires_explicit_confirmation_and_rejects_payment_controls(client, monkeypatch):
+    import app.admin as admin_module
+    submit = AsyncMock(return_value={"reused": False, "submission": {"state": "reserved"}})
+    monkeypatch.setattr(admin_module, "submit_draft", submit)
+    payload = {"expected_updated_at": "2026-11-03T18:00:00Z", "fingerprint": "a" * 64,
+               "confirm_create_unpaid_draft": True}
+    headers = {"Authorization": "Bearer admin-test-token"}
+    assert client.post(f"/api/admin/orders/{ADMIN}/cj-draft", headers=headers,
+                       json={**payload, "payType": 2}).status_code == 422
+    assert client.post(f"/api/admin/orders/{ADMIN}/cj-draft", headers=headers,
+                       json={**payload, "confirm_create_unpaid_draft": False}).status_code == 422
+    submit.assert_not_awaited()
+    assert client.post(f"/api/admin/orders/{ADMIN}/cj-draft", headers=headers, json=payload).status_code == 200
+    submit.assert_awaited_once()
+
+
 def test_stripe_status_checks_server_key_and_expected_account_without_exposing_secrets(client, monkeypatch):
     account = SimpleNamespace(id="acct_expected", charges_enabled=True, payouts_enabled=True)
     probe = AsyncMock(return_value=account)
