@@ -1,5 +1,12 @@
 # TYMotors — point de reprise du 3 novembre 2026
 
+## Article gratuit intégré — essai réel terminé
+
+- Article interne `TY-INTERNAL-ZERO-DIAGNOSTIC` créé et masqué (archived, prix0, stock0). Commande `TY-DIAG-A19A1078153E4695` confirmée paid à 0 EUR en production par webhook Stripe live `evt_1UXgxLJB6441TWWotlZ1QKAZ` ; aucun débit, une ligne/un audit paiement, aucun dossier fournisseur.
+- Migration `20261103072605` appliquée et vérifiée ; backend PR #7 fusionnée et Render live `a437d52`, frontend PR #7 fusionnée et Vercel production READY `36ef097`.
+- Validation : 461 tests Python, 111 contrôles SQL, 6 tests panneau admin, revue indépendante et CI réussis. Exécution réelle via RPC/connecteurs + formulaire Stripe ; bouton admin authentifié non cliqué car session admin encore déconnectée. Aucun test du panier client ou de CJ revendiqué.
+- Preuves et limites : `ZERO_CHECKOUT_LIVE_RESULT_2026-11-03.md`. L'essai direct Stripe précédent reste distinct de cette commande réellement enregistrée.
+
 ## Correctifs et audit opérationnel du 3 novembre 2026
 
 - Essai gratuit Stripe réel demandé par le propriétaire : session `cs_live_a1Pdfj14cR01LRMv9MaL5uAD3RSLXKKpCDD8FLU8sHtuOdq4hNcxJRrpBK` terminée, 0 EUR, aucun PaymentIntent ni débit. Webhook live `evt_1UXak1JB6441TWWoQ88fMnXx` reçu en production et traité `completed` sans erreur ; Stripe `pending_webhooks=0`. La session a été créée directement dans Stripe, sans order_id : elle valide Stripe → webhook, pas panier → commande → CJ. Détails et limites dans `OPERABILITY_AUDIT_2026-11-03.md`.

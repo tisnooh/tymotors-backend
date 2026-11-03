@@ -1,8 +1,8 @@
 # TYMotors — fonctionnement réel et corrections du 3 novembre 2026
 
-## Constat en production
+## Constat initial en production, avant le diagnostic intégré
 
-Sources : lecture SQL du projet Supabase `dzdcaloewimekvddvdlo`, API publique, connecteur Stripe du compte `acct_1Tc9tvJB6441TWWo`, déploiement Vercel `dpl_EJZ5DqiZjXMYVxtg6Qq3kT8wv82g` (READY, main `d05d68f`). Aucune donnée de production modifiée pendant cet audit.
+Sources de ce premier constat : lecture SQL du projet Supabase `dzdcaloewimekvddvdlo`, API publique, connecteur Stripe du compte `acct_1Tc9tvJB6441TWWo`, déploiement Vercel `dpl_EJZ5DqiZjXMYVxtg6Qq3kT8wv82g` (READY, main `d05d68f`). L'état ultérieur, les déploiements et la commande diagnostique gratuite réellement confirmée sont documentés dans `ZERO_CHECKOUT_LIVE_RESULT_2026-11-03.md`.
 
 | Fonction | Résultat constaté | Limite |
 | --- | --- | --- |
