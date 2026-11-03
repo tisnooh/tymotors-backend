@@ -1,5 +1,12 @@
 # TYMotors — point de reprise du 3 novembre 2026
 
+## Suite CJ — envoi non payé et retour des statuts
+
+- L'orchestrateur de brouillon CJ est implémenté : validation du dossier, réservation SQL unique avant POST, `payType=3` sans paiement, référence CJ conservée, consultation du statut avec vérification magasin/lignes. Les reprises après crash/timeout ne renvoient pas de commande.
+- 521 tests Python locaux réussis. La migration reste non appliquée ; le test SQL a manqué de mémoire localement et doit réussir sur le nouveau job CI isolé avant validation. Aucun test réel de réception CJ revendiqué.
+- Nouveau retour CJ lu et réponse technique envoyée dans le ticket existant à19:02:59 (heure CJ affichée). Aucune variante CJ ni devis encore fournis. WhatsApp sans nouveau retour utile ; Alibaba Messenger reste déconnecté.
+- Preuves, protocole et limites : `CJ_DRAFT_DISPATCH_2026-11-03.md`. Aucun design, photographie ou prix public modifié.
+
 ## Lot CJ — correspondances par SKU et préparation du dossier
 
 - Lecture ciblée du magasin/produit/variante ajoutée, routes administrateur produit et commande connectées au dossier fournisseur existant. Aucun changement frontend/design/photo/prix ni migration. Les commandes de diagnostic restent hors des appels CJ.

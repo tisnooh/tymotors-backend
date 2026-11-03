@@ -119,11 +119,10 @@ async def resolve_cj_variants(
             shop_payload = shop_response.json()
             if not _cj_success(shop_response, shop_payload) or not isinstance(shop_payload.get("data"), list):
                 return {"status": "api_authenticated", "products": unavailable}
-            authorized = any(
+            authorized = [shop for shop in shop_payload["data"] if
                 isinstance(shop, dict) and shop.get("id") == shop_id and shop.get("status") == 1
-                for shop in shop_payload["data"]
-            )
-            if not authorized:
+            ]
+            if len(authorized) != 1:
                 return {"status": "api_authenticated", "products": unavailable}
 
             products = {}
@@ -166,7 +165,9 @@ async def resolve_cj_variants(
                 if product_status == "mapped":
                     entry["connection"] = records[0]
                 products[product_id] = entry
-            return {"status": "api_authenticated", "products": products}
+            name = authorized[0].get("name")
+            return {"status": "api_authenticated", "products": products, "shop_id": shop_id,
+                    "shop_name": name if isinstance(name, str) and 0 < len(name) <= 50 else None}
     except (httpx.HTTPError, TimeoutError, ValueError, TypeError, AttributeError):
         return {"status": "unavailable", "products": unavailable}
 

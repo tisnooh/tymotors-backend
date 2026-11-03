@@ -98,7 +98,7 @@ def prepare_cj_dossier(order: dict, items: list[dict], supplier_order: dict | No
     block("unit_shipping_quote_required")
     block("purchase_currency_and_complete_cost_required")
     block("financial_approval_snapshot_required")
-    block("cj_dispatch_not_enabled")
+    block("cj_paid_fulfillment_not_enabled")
     snapshot = {"schema_version": 1, "order_id": order["id"],
                 "order_updated_at": order.get("updated_at"),
                 "payment_status": order.get("payment_status"), "is_test": order.get("is_test"),

@@ -10,6 +10,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, Field, Http
 
 from .cj_api import probe_cj_connections, resolve_cj_variants
 from .cj_fulfillment import prepare_cj_dossier
+from .cj_dispatch import load_draft_preview, submit_draft, refresh_draft
 from .config import get_settings
 
 
@@ -51,6 +52,12 @@ class SettingsInput(StrictInput):
 
 class SupplierLinksRefreshInput(StrictInput):
     expected_updated_at: AwareDatetime
+
+
+class CjDraftInput(StrictInput):
+    expected_updated_at: AwareDatetime
+    fingerprint: str = Field(pattern=r"^[a-f0-9]{64}$")
+    confirm_create_unpaid_draft: Literal[True]
 
 
 class SupplierInput(StrictInput):
@@ -151,6 +158,20 @@ def create_admin_router(db, catalog, require_admin, audit, stripe_test_mode: boo
         cj = {"status": "test_order_excluded", "products": {}} if excluded else await resolve_cj_variants(
             cfg.cj_api_key, list(dict.fromkeys(str(i["product_id"]) for i in items if i.get("product_id"))), shop_id=cfg.cj_shop_id)
         return prepare_cj_dossier(orders[0], items, supplier, supplier_items, cj)
+
+    @router.get("/orders/{order_id}/cj-draft")
+    async def cj_draft_preview(order_id: UUID):
+        _, preview = await load_draft_preview(db, get_settings(), str(order_id))
+        return preview
+
+    @router.post("/orders/{order_id}/cj-draft")
+    async def cj_draft_submit(order_id: UUID, payload: CjDraftInput, admin=Depends(require_admin)):
+        return await submit_draft(db, get_settings(), admin["id"], str(order_id),
+                                  payload.expected_updated_at.isoformat(), payload.fingerprint)
+
+    @router.post("/orders/{order_id}/cj-sync")
+    async def cj_draft_sync(order_id: UUID, payload: StrictInput, admin=Depends(require_admin)):
+        return await refresh_draft(db, get_settings(), admin["id"], str(order_id))
 
     @router.get("/suppliers")
     async def suppliers(page: int = Query(1, ge=1), limit: int = Query(25, ge=1, le=100)):

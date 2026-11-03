@@ -32,7 +32,7 @@ def test_exact_mapping_is_not_spending_authorization_or_confirmed_cost():
     assert result["scope"] == "read_only_preparation"
     assert result["can_transmit"] is result["transmitted"] is False
     assert codes(result) == {"unit_shipping_quote_required", "purchase_currency_and_complete_cost_required",
-                             "financial_approval_snapshot_required", "cj_dispatch_not_enabled"}
+                             "financial_approval_snapshot_required", "cj_paid_fulfillment_not_enabled"}
     assert "margin" not in result
 
 
