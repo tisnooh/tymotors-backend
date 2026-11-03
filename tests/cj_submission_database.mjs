@@ -92,9 +92,10 @@ async function makeOrder({test = false, paid = true, approve = true} = {}) {
     values($1,$2,'Test CJ product','test-cj-product','TEST-CJ-001',1,1000,
     '{"status":"compatible"}') returning *`, [order.id, product]);
   if (paid) {
-    if (test) await db.query("update orders set stripe_session_id='cs_test_fixture' where id=$1", [order.id]);
-    await db.query("select complete_paid_order($1,'pi_fixture','client@example.test','Client Test',$2,'{}')",
-      [order.id, address]);
+    if (test) await db.query('update orders set stripe_session_id=$2 where id=$1',
+      [order.id, `cs_test_${order.id}`]);
+    await db.query("select complete_paid_order($1,$2,'client@example.test','Client Test',$3,'{}')",
+      [order.id, `pi_fixture_${order.id}`, address]);
   }
   let dossier = await one('select * from supplier_orders where order_id=$1', [order.id]);
   if (approve && dossier) {
@@ -176,7 +177,7 @@ await rejects('select admin_observe_cj_submission($1,$2,$3)',
   [admin, claimed.submission.id, {shop_id: 'wrong-shop', order_id: 'CJ-1',
     order_status: 'AWAITING_PAYMENT', products: [{vid: 'cj-variant-1', quantity: 1,
       store_line_item_id: paid.item.id}]}], /identity and status/);
-const observation = {shop_id: 'shop-1', order_id: 'CJ-1', order_number: 'api_generated_1',
+const observation = {shop_id: 'shop-1', order_id: 'CJ-1', order_number: 'api_generated_CJ_1',
   order_status: 'AWAITING_PAYMENT', sub_status: null, tracking_number: null,
   tracking_provider: null, logistic_name: 'CJPacket',
   products: [{vid: 'cj-variant-1', quantity: 1, store_line_item_id: paid.item.id}]};
