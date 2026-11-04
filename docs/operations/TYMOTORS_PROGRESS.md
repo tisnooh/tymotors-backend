@@ -1,4 +1,42 @@
-# TYMotors — point de reprise du 3 novembre 2026
+# TYMotors — point de reprise du 4 novembre 2026
+
+## Contrôle des messages et préparation de publication — 4 novembre
+
+- Nouveau retour CJ du4novembre02:03:49 lu dans le ticket `T202610311023101331`. La phrase sur une facturation après confirmation/création des références n'est pas un devis. Clarification envoyée et présence revérifiée dans l'historique à04:05:31 : montant/devise/déclencheur des frais demandés, aucun achat ni création payante de référence autorisés. Ticket en attente de CJ.
+- Gmail : aucun nouveau devis technique dans les résultats fournisseurs depuis le3novembre ; le nouveau message HyperSKU `1a1a489bda645452` est promotionnel. WhatsApp : notification Alibaba de référence de prix, pas un devis SKU. Alibaba Messenger : échec d'ouverture IndexedDB avec timeout, messages récents non certifiables. Preuves et prochaine action : `SUPPLIER_MESSAGES_2026-11-04.md`.
+- Backend PR#8 (`11d2248`) et frontend PR#8 (`686373e`) toujours préparés, CI réussies :522 tests Python +1 contrôle croisé ignoré dans le clone backend seul,148 contrôles SQL (111 existants +37 CJ),508 tests frontend et compilation. L'audit indépendant approuve uniquement le flux de brouillon CJ non payé, pas la livraison d'un produit réel.
+- Publication et migration production non exécutées : demande d'autorisation précise déjà présentée conformément à la consigne « Ne déploie rien en production sans autorisation ». Ne pas interpréter l'absence de réponse comme un accord. Après accord : migration additive, backend, puis administration, avec vérification de chaque déploiement. Ne pas activer de produit sans variante et offre exactes.
+
+## Suite CJ — envoi non payé et retour des statuts
+
+- Jalon final : backend `42c45af` — CI verte,522 tests Python réussis +1 contrôle croisé non applicable dans le clone backend seul,37 contrôles SQL CJ +111 SQL existants. Frontend `686373e` — [PR#8](https://github.com/tisnooh/tymotors-frontend/pull/8),508 tests et compilation CI réussis, préversion Vercel disponible ; panneau d'actions dans le détail fournisseur existant, sans CSS/photo/prix modifié. Revue indépendante approuve le lot pour brouillon non payé. Aucune fusion, migration production ou réception CJ réelle n'est revendiquée.
+
+- L'orchestrateur de brouillon CJ est implémenté : validation du dossier, réservation SQL unique avant POST, `payType=3` sans paiement, référence CJ conservée, consultation du statut avec vérification magasin/lignes. Les reprises après crash/timeout ne renvoient pas de commande.
+- 521 tests Python locaux réussis. Après correction d'identifiants de paiement réutilisés dans les fixtures, le test CI isolé passe :37 contrôles SQL CJ +111 contrôles SQL existants, Python3.11/3.12, secrets et dépendances verts sur `fcb8084` (run41705843185). Migration et backend approuvés par l'auditeur pour brouillon non payé ; migration non appliquée. Aucun test réel de réception CJ revendiqué.
+- Nouveau retour CJ lu et réponse technique envoyée dans le ticket existant à19:02:59 (heure CJ affichée). Aucune variante CJ ni devis encore fournis. WhatsApp sans nouveau retour utile ; Alibaba Messenger reste déconnecté.
+- Preuves, protocole et limites : `CJ_DRAFT_DISPATCH_2026-11-03.md`. Aucun design, photographie ou prix public modifié.
+
+## Lot CJ — correspondances par SKU et préparation du dossier
+
+- Lecture ciblée du magasin/produit/variante ajoutée, routes administrateur produit et commande connectées au dossier fournisseur existant. Aucun changement frontend/design/photo/prix ni migration. Les commandes de diagnostic restent hors des appels CJ.
+- La sonde ne peut plus compter les connexions d'autres magasins comme celles de TYMotors. `CJ_SHOP_ID` est désormais requis pour la lecture ciblée ; le contrôle général permet d'identifier les magasins autorisés sans exposer de secrets.
+- Les blocages de devise d'achat, devis unitaire, approbation financière et transmission sont explicites. Aucun achat, commande CJ ou test de réception CJ effectué.
+- Audit indépendant favorable pour la lecture/préparation uniquement. Rapport, contrat UUID/SKU du premier candidat et reprise : `CJ_ORDER_READINESS_2026-11-03.md`. Les sections plus anciennes ci-dessous sont historiques ; elles ne remplacent pas les vérifications datées les plus récentes.
+- Validation finale de ce lot :494 tests Python réussis,13 tests CJ revérifiés indépendamment, diff sans erreur. Les limites API sont respectées par processus (1/s, budget30s, arrêt complet sur429). Branche `codex/cj-order-readiness`, aucune commande CJ transmise ni publication production.
+
+## Nouveaux messages fournisseurs — après-midi du 3 novembre
+
+- Suite exécutée : demande ciblée envoyée à Nicy sur **MR3BF2021 à16 USD/paire** (`1a1a1c71ffc6b8d2`, SENT), et nouveau lien/prix/données manquantes transmis à Wazza dans `T202610311023101331`. Le ticket indique désormais **Awaiting CJ Reply** et affiche notre nouvelle réponse. Nouveau lien Soyintech testé directement : Product Not Available pour notre région, aucune spécification complémentaire obtenue ni contournement. Aucun achat, changement d'article commercial ou déclaration de validation.
+- Nicy a répondu (`1a1a0b3ed9927eb4`) : Yooyi appartient à Soyintech ; cette relation fournisseur est désormais déclarée explicitement et ne doit plus être présentée comme une société sans lien connu. Classeur corrigé conservé/analyse faite : coques BMW à 16 USD/paire (au lieu de18), trois nouveaux liens Soyintech, port138 USD confirmé pour les cinq articles groupés, total262 USD. Pas de tarif individuel/CJ confirmé ; PP/ABS et emballages individuels restent à clarifier.
+- Nouvelle réponse CJ (`1a1a004104bde99f`) : continuer dans ticket/chat du compte. Ticket `T202610311023101331` enfin lu : Wazza confirme le 3PL sans abonnement et attend le retour de son équipe sur les cinq candidats. Service agent existant affiché à0 USD, jusqu'au30 novembre ; aucun paiement effectué ici.
+- WhatsApp HyperSKU : aucun nouveau retour après le refus déjà connu. Alibaba Messenger reste déconnecté, messages récents non certifiables. Rapport et preuves : `SUPPLIER_MESSAGES_2026-11-03_AFTERNOON.md`. Aucune demande répétée ni réponse envoyée lors de cette vérification.
+
+## Article gratuit intégré — essai réel terminé
+
+- Article interne `TY-INTERNAL-ZERO-DIAGNOSTIC` créé et masqué (archived, prix0, stock0). Commande `TY-DIAG-A19A1078153E4695` confirmée paid à 0 EUR en production par webhook Stripe live `evt_1UXgxLJB6441TWWotlZ1QKAZ` ; aucun débit, une ligne/un audit paiement, aucun dossier fournisseur.
+- Migration `20261103072605` appliquée et vérifiée ; backend PR #7 fusionnée et Render live `a437d52`, frontend PR #7 fusionnée et Vercel production READY `36ef097`.
+- Validation : 461 tests Python, 111 contrôles SQL, 6 tests panneau admin, revue indépendante et CI réussis. Exécution réelle via RPC/connecteurs + formulaire Stripe ; bouton admin authentifié non cliqué car session admin encore déconnectée. Aucun test du panier client ou de CJ revendiqué.
+- Preuves et limites : `ZERO_CHECKOUT_LIVE_RESULT_2026-11-03.md`. L'essai direct Stripe précédent reste distinct de cette commande réellement enregistrée.
 
 ## Correctifs et audit opérationnel du 3 novembre 2026
 
