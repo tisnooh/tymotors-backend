@@ -35,7 +35,7 @@ const migrations = [
   '20261101052000_checkout_stock_reservations.sql',
   '20261101053000_admin_inventory_reserved_stock.sql',
   '20261103072605_admin_zero_checkout_diagnostic.sql',
-  '20261103180202_cj_order_submission_reservation.sql',
+  '20261104060209_cj_order_submission_reservation.sql',
 ];
 for (const name of migrations) {
   let sql = await readFile(new URL(`../supabase/migrations/${name}`, import.meta.url), 'utf8');

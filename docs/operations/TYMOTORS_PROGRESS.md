@@ -1,5 +1,12 @@
 # TYMotors — point de reprise du 4 novembre 2026
 
+## Publication CJ autorisée et vérifiée — 4 novembre
+
+- Accord explicite reçu : « Oui, publier ces correctifs CJ ». Migration appliquée à la base de production sous la version20261104060209 ; table vide, RLS et droits backend/RPC vérifiés. Fichier SQL renommé sans changement de contenu pour correspondre à l'historique réel.
+- Backend PR#8 fusionnée, Render **Live** au commit `c2031d0` ; routes CJ présentes et protégées401, health/config200, CORS200. CI du commit fusionné réussie.
+- Frontend PR#8 fusionnée, Vercel **READY production** au commit `646583b`, alias public vérifié ; CI du commit fusionné réussie. Administration accessible sur son formulaire de connexion ; session déconnectée, action authentifiée non cliquée.
+- Aucune commande CJ, dépense ou activation de produit. La variante et le devis unitaire restent attendus. Preuves, limites et version exacte de migration : `CJ_RELEASE_2026-11-04.md`. Les sections précédentes ci-dessous qui indiquent « publication en attente » sont historiques.
+
 ## Contrôle des messages et préparation de publication — 4 novembre
 
 - Nouveau retour CJ du4novembre02:03:49 lu dans le ticket `T202610311023101331`. La phrase sur une facturation après confirmation/création des références n'est pas un devis. Clarification envoyée et présence revérifiée dans l'historique à04:05:31 : montant/devise/déclencheur des frais demandés, aucun achat ni création payante de référence autorisés. Ticket en attente de CJ.
