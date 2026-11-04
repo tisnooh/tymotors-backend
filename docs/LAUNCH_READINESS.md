@@ -14,6 +14,7 @@
 - [x] Dernier lot technique : 529 tests backend locaux, contrôles SQL/CI et 512 tests frontend CI réussis. Aucune livraison réelle déduite de ces tests.
 - [x] Demandes consolidées auprès de Soyintech et CJ, sans achat. Complément technique envoyé ce soir au support CJ : Gmail `1a1a87a9054a7be4`.
 - [x] Design, photographies et prix publics conservés dans ce cycle.
+- [x] Données partielles Soyintech enregistrées dans la note interne du pilote en production : 16 USD/paire remplace la proposition historique de 18 USD, relation Yooyi–Soyintech clarifiée, champs commerciaux inchangés. Audit unique et répétition sans doublon vérifiés ; les trois anciens dossiers pilotes sont actualisés.
 
 ## Mesures en production
 
@@ -38,7 +39,7 @@ Contrôle SQL en lecture seule, hors archives et fixtures :
 
 | Fait | Tâche | Responsable | Prochaine preuve/action |
 | --- | --- | --- | --- |
-| [ ] | Lire la dernière réponse CJ | CODEX / accès navigateur | Ticket `T202610311023101331` : notification reçue, contenu non lu. Contrôleurs navigateur et secours Windows sans réponse ce soir ; reprendre ce ticket après rétablissement. |
+| [ ] | Lire la dernière réponse CJ | CODEX / accès navigateur | Ticket `T202610311023101331` : notification reçue. Une ancienne vue a pu être lue, mais son actualisation reste blanche et une nouvelle ouverture expire ; contenu récent non vérifié. Reprendre le ticket dès rétablissement. |
 | [ ] | Résoudre le 429 CJ sur la lecture des boutiques | CJ puis CODEX | Support saisi avec deux request IDs. Obtenir diagnostic compte/IP/endpoint et cadence/cooldown avant un nouvel essai ; pas de boucle. |
 | [ ] | Compléter la variante pilote | Soyintech | Pour `MR3BF2021` : ABS noir brillant de remplacement, exclusions rétroviseurs d'origine, stock/départ, dimensions et poids brut emballés, traitement des défauts. Clarification déjà envoyée. |
 | [ ] | Enregistrer le mapping exact | CJ / CODEX | Produit de service, variante, SKU, véritable ID boutique et correspondance avec le produit TYMotors. Création gratuite annoncée mais IDs non reçus dans les réponses lues. |
