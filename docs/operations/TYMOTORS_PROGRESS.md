@@ -1,5 +1,13 @@
 # TYMotors — point de reprise du 4 novembre 2026
 
+## Point de reprise final — contrôle CJ après publication
+
+- Correctif de cadence **publié**, backend `e106f23` RenderLive, CI réussie,529 tests locaux. Frontend `3adcb85` VercelREADYproduction,512 tests CI. Pas de migration, achat, paiement fournisseur, photo, prix ou produit activé dans ce lot.
+- Contrôle connecté unique après correction : clé authentifiée mais GET boutiques toujours429/code1600200, requestID `ef187dd20df8440289e112a68690f691`. Sonde arrêtée, pas de répétition automatique. La liaison réelle CJ reste **BLOCKED**, pas déclarée fonctionnelle.
+- CJ a annoncé préparer gratuitement référence provisoire et devis France, réponse du4novembre13:02:56 ; IDs et devis encore attendus. Signalement API avec les deux requestIDs envoyé et vérifié à13:11:49 dans le ticket existant. Attendre une réponse utile avant nouveau contrôle.
+- Candidat MR3BF2021 avancé : paire à16 USD, F30 berline2013–2018, données unitaires et MOQ1 fournis par Nicy. Finition, exclusions, stock, SAV et poids emballé restent en clarification. Aucune activation commerciale.
+- Pour reprendre : lire `CJ_ADMIN_RUNTIME_2026-11-04.md` et `SUPPLIER_MESSAGES_2026-11-04.md`, puis nouvelles réponses CJ/Nicy ; ne pas refaire les tests Stripe gratuits déjà terminés ni les demandes déjà envoyées.
+
 ## CJ : cause de l'échec de contrôle identifiée en production
 
 - Diagnostics publiés : backend `467cdb1` RenderLive et frontend `3adcb85` VercelREADYproduction, CI des commits fusionnés réussies.
