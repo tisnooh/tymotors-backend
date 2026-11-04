@@ -26,3 +26,12 @@ Le diagnostic CJ ne distingue pas une erreur HTTP, un refus de l'API magasins et
 ## Limites
 
 La référence de variante CJ approuvée et le devis unitaire restent attendus. Le contrôle authentifié ne crée aucune commande CJ et ne remplace pas la recette d'un brouillon réellement reçu chez le prestataire. Design, photographies, prix et statut des produits restent inchangés.
+
+## Diagnostic publié et vérifié
+
+- Backend PR#10 fusionnée, Render **Live** au commit `467cdb17bf368904711ebf85a98207b885a652c1`, déploiement `dep-dblhs6p7lnhs739odc5g`. CI du commit fusionné réussie, run41825398273.
+- Frontend PR#9 fusionnée, Vercel **READY production**, commit `3adcb85b8dbfa374d79c7ab6077404e84030f704`, déploiement `dpl_A4Dtf54EKLh97jgQHsVtR2nyQaak`, alias `tymotors.vercel.app`. CI du commit fusionné réussie, run41825569986.
+- Un seul contrôle CJ connecté relancé après publication : authentification réussie, **lecture des boutiques HTTP429 / code1600200**, request ID `deb941dc230640c39d923a085d67fe2e`. Aucun appel de liaison produit ou commande lancé après ce refus. Cette réponse ne prouve ni magasin invalide ni absence de produit.
+- La temporisation existante réserve une seconde entre les débuts de requête, ce qui ne garantit pas une seconde entre leurs arrivées chez CJ si les latences diffèrent. Correction ciblée en cours sur `codex/cj-request-spacing` : sérialiser les appels et attendre une seconde après leur fin, en conservant le budget30s et l'absence de répétition automatique. Cela corrige une faiblesse locale démontrable, sans attribuer avec certitude toute limitation CJ à cette seule cause. Ne pas multiplier les appels réels de contrôle.
+- La [documentation officielle de fréquence CJ](https://developers.cjdropshipping.com/en/api/api2/standard/limit.html) indique1 requête/seconde pour les utilisateurs gratuits et niveaux0/1 ; elle mentionne aussi une limite par IP et un quota quotidien par points. Ne pas assimiler le429 observé à une preuve d'épuisement quotidien ni souscrire une offre payante pour le contourner.
+- Correctif de cadence terminé : une seule requête en vol par processus et pause1s après réponse, erreur ou annulation ; le budget30s et l'absence de répétition automatique sont conservés.19 tests CJ API et6 tests CJ Orders passent. Revue indépendante **APPROVED**,19 tests CJ réexécutés par l'auditeur. La vérification CJ réelle reste à faire après publication ; ne pas prétendre que le429 est résolu avant ce contrôle.

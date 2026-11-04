@@ -20,6 +20,7 @@ _now = time.monotonic
 _sleep = asyncio.sleep
 _rate_lock = threading.Lock()
 _next_cj_request_at = 0.0
+_cj_in_flight = False
 SAFE_CONNECTION_FIELDS = (
     "shopId", "platformProductId", "platformVariantId", "cjProductId",
     "cjVariantId", "cjSku", "sourceCountryCode", "targetCountryCode", "logistics",
@@ -55,28 +56,45 @@ def _probe_failure(stage: str, response: httpx.Response | None = None,
 
 
 async def _wait_for_cj_slot(deadline: float) -> None:
-    """Space CJ network starts across async callers in this Python process."""
-    global _next_cj_request_at
+    """Reserve the single CJ network slot across event loops in this process."""
+    global _cj_in_flight
     while True:
         with _rate_lock:
             now = _now()
             if now >= deadline:
                 raise TimeoutError("CJ call budget exhausted")
-            if now >= _next_cj_request_at:
-                _next_cj_request_at = now + CJ_REQUEST_INTERVAL_SECONDS
+            if not _cj_in_flight and now >= _next_cj_request_at:
+                _cj_in_flight = True
                 return
-            delay = min(_next_cj_request_at - now, deadline - now)
+            # A threading lock protects process-wide state; no lock is held
+            # while awaiting, so callers on different event loops can wait.
+            delay = min(0.01 if _cj_in_flight else _next_cj_request_at - now,
+                        deadline - now)
         await _sleep(delay)
+
+
+def _release_cj_slot() -> None:
+    """Start the full cooldown when the response or failure is known."""
+    global _cj_in_flight, _next_cj_request_at
+    with _rate_lock:
+        _next_cj_request_at = _now() + CJ_REQUEST_INTERVAL_SECONDS
+        _cj_in_flight = False
 
 
 async def _cj_request(client: httpx.AsyncClient, method: str, url: str, *,
                       deadline: float, bypass_rate_limit: bool = False, **kwargs) -> httpx.Response:
-    if not bypass_rate_limit:
-        await _wait_for_cj_slot(deadline)
-    remaining = deadline - _now()
-    if remaining <= 0:
-        raise TimeoutError("CJ call budget exhausted")
-    return await asyncio.wait_for(client.request(method, url, **kwargs), timeout=remaining)
+    reserved = False
+    try:
+        if not bypass_rate_limit:
+            await _wait_for_cj_slot(deadline)
+            reserved = True
+        remaining = deadline - _now()
+        if remaining <= 0:
+            raise TimeoutError("CJ call budget exhausted")
+        return await asyncio.wait_for(client.request(method, url, **kwargs), timeout=remaining)
+    finally:
+        if reserved:
+            _release_cj_slot()
 
 
 def _cj_success(response: httpx.Response, payload: object) -> bool:

@@ -1,5 +1,12 @@
 # TYMotors — point de reprise du 4 novembre 2026
 
+## CJ : cause de l'échec de contrôle identifiée en production
+
+- Diagnostics publiés : backend `467cdb1` RenderLive et frontend `3adcb85` VercelREADYproduction, CI des commits fusionnés réussies.
+- Contrôle administrateur authentifié : token CJ accepté puis GET boutiques refuséHTTP429/code1600200, requestID `deb941dc230640c39d923a085d67fe2e`. Ce n'est pas une preuve de magasin absent ou de mapping vide.
+- La cadence locale espaçait les débuts de requêtes. Correction sur `codex/cj-request-spacing` : une seule requête réseau en vol et pause complète1s après sa fin, budget30s et arrêt sans répétition après429.25 tests CJ ciblés réussis et revue indépendante APPROVED. Un seul nouveau contrôle réel à effectuer après publication ; aucun paiement/achat/produit activé.
+- Reprise et preuves de publication : `CJ_ADMIN_RUNTIME_2026-11-04.md`. Les demandes fournisseur ont avancé : voir `SUPPLIER_MESSAGES_2026-11-04.md`.
+
 ## Suite de mi-journée — revue rétablie et données unitaires reçues
 
 - Revue indépendante finale **APPROVED** des diagnostics backend `ef4149c` / frontend `a3be2a1` après corrections de filtrage. Backend CI réussie ; frontend512 tests et compilation CI réussis. PR backend#10 et frontend#9 préparées pour publication du correctif non secret.
