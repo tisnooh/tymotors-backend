@@ -1,5 +1,14 @@
 # Messages fournisseurs — 4 novembre 2026
 
+## Mise à jour de mi-journée : réponses exploitées
+
+- **Soyintech**, Gmail `1a1a53ecf2cf214d`, reçu le4novembre à07:28 Paris : `MR3BF2021` à16 USD la paire gauche/droite, adaptation F30 berline2013–2018 explicitement confirmée. Nicy cite aussi F22/F23/F87 avant restylage/F32/F33/F36 ; ne pas étendre automatiquement ces affirmations à toutes les finitions ou équipements. Données par paire annoncées :32×22×17cm,0,6kg. MOQ1 paire et expédition à un entrepôt tiers chinois acceptés ; port intérieur selon adresse réelle et délai normalement1–3 jours ouvrables. Aucun stock disponible chiffré, finition ABS noir brillant explicitement reconfirmée, détail des exclusions ou conditions après réception d'un défaut dans cette réponse.
+- **Réponse de clarification envoyée à Nicy**, Gmail `1a1a6695622def89`, même fil, statut SENT. Les données reçues sont reconnues ; seuls emballage/poids brut, finition de remplacement exacte, exclusions F30, stock/départ et responsabilité en cas de pièce défectueuse/erronée restent demandés. Aucun achat, fabrication ou expédition autorisé.
+- **CJ**, ticket `T202610311023101331`, réponse du4novembre04:16:47 (heure de la plateforme) : création/approbation d'une référence de service **sans frais** ; frais uniquement pour opérations réelles de réception, contrôle, emballage, expédition selon devis, sans achat ni facturation avant acceptation. Cette réponse clarifie le déclencheur, pas les montants.
+- **Mise à jour envoyée à CJ**, présence vérifiée dans l'historique à12:56:57 le4novembre (heure affichée CJ), statut en attente CJ : transmission des données unitaires et du MOQ1 ; demande d'étude/devis France avec hypothèses déclarées et, si possible, brouillon gratuit de Service Product avec IDs produit/variante/SKU/magasin. Finition/stock/poids emballé encore en clarification signalés explicitement. Aucun substitut, achat, expédition ou service payant approuvé. Ne pas répéter ces demandes sans élément nouveau.
+
+Cette mise à jour remplace l'observation matinale « aucune nouvelle réponse Soyintech » ci-dessous. Le pilote n'est pas activé : les données manquantes restent visibles.
+
 Contrôle effectué vers 04 h 05–04 h 15, heure de Paris. Les heures du ticket ci-dessous sont celles affichées par CJ ; ne pas leur attribuer un fuseau non confirmé.
 
 ## CJ : réponse reçue et clarification envoyée

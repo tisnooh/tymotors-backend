@@ -1,5 +1,19 @@
 # TYMotors — point de reprise du 4 novembre 2026
 
+## Suite de mi-journée — revue rétablie et données unitaires reçues
+
+- Revue indépendante finale **APPROVED** des diagnostics backend `ef4149c` / frontend `a3be2a1` après corrections de filtrage. Backend CI réussie ; frontend512 tests et compilation CI réussis. PR backend#10 et frontend#9 préparées pour publication du correctif non secret.
+- Nicy a répondu `1a1a53ecf2cf214d` : MR3BF2021,16 USD/paire gauche-droite, F30 berline2013–2018, données unitaires32×22×17cm/0,6kg,MOQ1, livraison à un entrepôt chinois acceptée. Finition/exclusions/stock/poids emballé et SAV encore à préciser ; clarification envoyée `1a1a6695622def89`.
+- CJ confirme la création/approbation de référence gratuite, opérations effectives facturées seulement selon devis accepté. Données nouvelles transmises dans le ticket et vérifiées à12:56:57 (heure CJ). Demande de brouillon gratuit et devis préliminaire, aucun achat ou approbation de variante incertaine.
+- Preuves : `SUPPLIER_MESSAGES_2026-11-04.md` et `CJ_ADMIN_RUNTIME_2026-11-04.md`. Les mentions de revue encore interrompue ci-dessous décrivent l'état antérieur.
+
+## Recette connectée et diagnostic CJ — reprise prioritaire
+
+- Propriétaire reconnecté : administration ouverte, contrôle Stripe authentifié sur le compte attendu. Commande de test existante correctement exclue des dossiers fournisseur/CJ.
+- Le contrôle CJ confirme la clé mais ne vérifie pas les liaisons ; côté compte CJ, Backend TYMotors apparaît autorisé/activé. Ne pas conclure que le mapping fonctionne ou qu'il est vide.
+- Correctif diagnostic non secret préparé sur `codex/cj-probe-diagnostics` dans les deux dépôts :527 tests backend et10 tests frontend ciblés passent. Revue initiale corrigée ; validation indépendante finale interrompue par la limite d'utilisation des sous-agents, donc lot non publié. Dernières productions restent `7c2a046`/`646583b`.
+- Reprise détaillée : `CJ_ADMIN_RUNTIME_2026-11-04.md`. Vérifier revue finale et CI, publier le diagnostic puis utiliser l'erreur réelle pour débloquer le contrôle CJ ; aucun achat, activation de produit ou identifiant inventé.
+
 ## Publication CJ autorisée et vérifiée — 4 novembre
 
 - Accord explicite reçu : « Oui, publier ces correctifs CJ ». Migration appliquée à la base de production sous la version20261104060209 ; table vide, RLS et droits backend/RPC vérifiés. Fichier SQL renommé sans changement de contenu pour correspondre à l'historique réel.

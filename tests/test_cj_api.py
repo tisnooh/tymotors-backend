@@ -112,6 +112,133 @@ def test_cj_connection_probe_requires_exact_authorized_shop_and_valid_result():
     assert asyncio.run(probe_cj_connections("key", httpx.MockTransport(bool_total), shop_id="shop-1"))["mapping_status"] == "unavailable"
 
 
+def test_cj_connection_probe_reports_safe_shops_failure_diagnostics():
+    def handler(request):
+        if str(request.url) == TOKEN_URL:
+            return httpx.Response(200, json={"code": 200, "result": True,
+                                             "data": {"accessToken": "private-token"}})
+        assert str(request.url) == SHOPS_URL
+        return httpx.Response(200, json={"code": 1600100, "result": False,
+                                         "requestId": "trace:shops-1", "message": "private-token",
+                                         "data": {"debug": "private-key"}})
+
+    result = asyncio.run(probe_cj_connections("private-key", httpx.MockTransport(handler), shop_id="shop-1"))
+    assert result == {"status": "api_authenticated", "mapping_status": "unavailable",
+                      "diagnostics": {"stage": "shops", "http_status": 200,
+                                      "code": 1600100, "request_id": "trace:shops-1"}}
+    assert "private" not in repr(result)
+
+    def gateway_handler(request):
+        if str(request.url) == TOKEN_URL:
+            return httpx.Response(200, json={"code": 200, "result": True,
+                                             "data": {"accessToken": "private-token"}})
+        return httpx.Response(200, text="<html>private-token</html>")
+
+    gateway = asyncio.run(probe_cj_connections("private-key", httpx.MockTransport(gateway_handler), shop_id="shop-1"))
+    assert gateway == {"status": "api_authenticated", "mapping_status": "unavailable",
+                       "diagnostics": {"stage": "shops", "http_status": 200}}
+
+    def network_handler(request):
+        if str(request.url) == TOKEN_URL:
+            return httpx.Response(200, json={"code": 200, "result": True,
+                                             "data": {"accessToken": "private-token"}})
+        raise httpx.ConnectError("private-token", request=request)
+
+    network = asyncio.run(probe_cj_connections("private-key", httpx.MockTransport(network_handler), shop_id="shop-1"))
+    assert network == {"status": "api_authenticated", "mapping_status": "unavailable",
+                       "diagnostics": {"stage": "shops"}}
+
+
+def test_cj_connection_probe_reports_safe_connection_failure_diagnostics():
+    def run_connections(response):
+        def handler(request):
+            if str(request.url) == TOKEN_URL:
+                return httpx.Response(200, json={"code": 200, "result": True,
+                                                 "data": {"accessToken": "private-token"}})
+            if str(request.url) == SHOPS_URL:
+                return httpx.Response(200, json={"code": 200, "result": True,
+                                                 "data": [{"id": "shop-1", "status": 1}]})
+            return response
+        return asyncio.run(probe_cj_connections("private-key", httpx.MockTransport(handler), shop_id="shop-1"))
+
+    limited = run_connections(httpx.Response(429, json={"code": 1600100,
+        "result": False, "requestId": "trace-429", "message": "private-key"}))
+    assert limited["diagnostics"] == {"stage": "connections", "http_status": 429,
+                                       "code": 1600100, "request_id": "trace-429"}
+    assert limited["mapping_status"] == "unavailable"
+
+    malformed = run_connections(httpx.Response(200, json={"code": 200, "result": True,
+        "data": {"total": "2", "list": []}, "requestId": "trace-format"}))
+    assert malformed["diagnostics"] == {"stage": "connections", "http_status": 200,
+                                         "code": 200, "request_id": "trace-format"}
+
+    hostile = run_connections(httpx.Response(200, json={"code": True, "result": False,
+        "requestId": "secret\nAuthorization: token", "message": "private-token"}))
+    assert hostile["diagnostics"] == {"stage": "connections", "http_status": 200}
+    assert "secret" not in repr(hostile) and "private" not in repr(hostile)
+
+    token_as_id = run_connections(httpx.Response(200, json={"code": 1600100,
+        "result": False, "requestId": "trace-private-token"}))
+    assert token_as_id["diagnostics"] == {"stage": "connections", "http_status": 200,
+                                           "code": 1600100}
+
+    hash_id = run_connections(httpx.Response(200, json={"code": 1600100,
+        "result": False, "requestId": "trace#42"}))
+    assert hash_id["diagnostics"] == {"stage": "connections", "http_status": 200,
+                                       "code": 1600100}
+
+    invalid_json = run_connections(httpx.Response(502, text="private-token"))
+    assert invalid_json["diagnostics"] == {"stage": "connections", "http_status": 502}
+
+
+def test_cj_auth_probe_filters_untrusted_request_id():
+    response = httpx.Response(200, json={"code": 1601000, "result": False,
+                                         "requestId": {"token": "private-token"}})
+    result = asyncio.run(probe_cj_auth("private-key", httpx.MockTransport(lambda _request: response)))
+    assert result == {"status": "rejected"}
+
+    for unsafe_id in ("private-key", "private-token"):
+        response = httpx.Response(200, json={"code": 1601000, "result": False,
+                                             "requestId": unsafe_id,
+                                             "data": {"accessToken": "private-token"}})
+        result = asyncio.run(probe_cj_auth("private-key", httpx.MockTransport(lambda _request: response)))
+        assert result == {"status": "rejected"}
+
+    malformed_token = httpx.Response(200, json={"code": 200, "result": True,
+                                                  "data": {"accessToken": {"secret": "private-token"}}})
+    assert asyncio.run(probe_cj_auth("private-key",
+        httpx.MockTransport(lambda _request: malformed_token))) == {"status": "rejected"}
+
+
+def test_cj_shops_and_resolver_never_expose_known_secrets():
+    def handler(request):
+        if str(request.url) == TOKEN_URL:
+            return httpx.Response(200, json={"code": 200, "result": True,
+                                             "data": {"accessToken": "private-token"}})
+        assert str(request.url) == SHOPS_URL
+        return httpx.Response(200, json={"code": 200, "result": True, "data": [
+            {"id": "shop-1", "name": "TY private-token Motors", "status": 1},
+            {"id": "private-key-2", "name": "Other", "status": 1},
+            {"id": "private-token-3", "name": "Other", "status": 1},
+            {"id": "shop-4", "name": "Store private-key", "status": 1},
+        ]})
+
+    result = asyncio.run(probe_cj_connections("private-key", httpx.MockTransport(handler)))
+    assert result == {"status": "api_authenticated", "mapping_status": "shop_not_configured",
+                      "shops": [{"id": "shop-1", "name": ""}, {"id": "shop-4", "name": ""}]}
+    assert "private" not in repr(result)
+
+    transport, _ = _resolve_transport({"ty-product-1": {"code": 200, "result": True,
+        "data": {"total": 1, "list": [_connection()]} }},
+        shops={"code": 200, "result": True,
+               "data": [{"id": "shop-1", "name": "TY private-token Motors", "status": 1}]})
+    resolved = asyncio.run(resolve_cj_variants("private-key", ["ty-product-1"], transport,
+                                               shop_id="shop-1"))
+    assert resolved["products"]["ty-product-1"]["status"] == "mapped"
+    assert resolved["shop_name"] is None
+    assert "private" not in repr(resolved)
+
+
 def _connection(product="ty-product-1", shop="shop-1", variant="TY-SKU-1"):
     return {"shopId": shop, "platformProductId": product, "platformVariantId": variant,
             "cjProductId": "cj-product-1", "cjVariantId": "cj-variant-1", "cjSku": "CJ-SKU-1",
