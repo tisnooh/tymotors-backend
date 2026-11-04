@@ -35,3 +35,23 @@ La référence de variante CJ approuvée et le devis unitaire restent attendus. 
 - La temporisation existante réserve une seconde entre les débuts de requête, ce qui ne garantit pas une seconde entre leurs arrivées chez CJ si les latences diffèrent. Correction ciblée en cours sur `codex/cj-request-spacing` : sérialiser les appels et attendre une seconde après leur fin, en conservant le budget30s et l'absence de répétition automatique. Cela corrige une faiblesse locale démontrable, sans attribuer avec certitude toute limitation CJ à cette seule cause. Ne pas multiplier les appels réels de contrôle.
 - La [documentation officielle de fréquence CJ](https://developers.cjdropshipping.com/en/api/api2/standard/limit.html) indique1 requête/seconde pour les utilisateurs gratuits et niveaux0/1 ; elle mentionne aussi une limite par IP et un quota quotidien par points. Ne pas assimiler le429 observé à une preuve d'épuisement quotidien ni souscrire une offre payante pour le contourner.
 - Correctif de cadence terminé : une seule requête en vol par processus et pause1s après réponse, erreur ou annulation ; le budget30s et l'absence de répétition automatique sont conservés.19 tests CJ API et6 tests CJ Orders passent. Revue indépendante **APPROVED**,19 tests CJ réexécutés par l'auditeur. La vérification CJ réelle reste à faire après publication ; ne pas prétendre que le429 est résolu avant ce contrôle.
+
+## Résultat final du contrôle après correction de cadence
+
+- Backend PR#11 fusionnée au commit **e106f23dbb25c2bde912507770a4ba2c0ad06ff5**, Render **Live** confirmé sur ce commit. CI du commit fusionné réussie, run41826812411. Suite locale finale :529 tests backend réussis. Frontend inchangé après `3adcb85`.
+- Un seul nouvel essai CJ depuis la session administrateur : authentification réussie, puis **GET boutiques toujours HTTP429 / code1600200**, nouveau request ID **ef187dd20df8440289e112a68690f691**. Arrêt des contrôles CJ après ce résultat. Aucune référence CJ obtenue, aucun magasin configuré par supposition, aucune commande créée.
+- Ticket existant relu avant réponse : CJ indique le4novembre13:02:56 qu'il va préparer gratuitement le Service Product provisoire, les identifiants produit/variante/SKU/magasin et le devis France avec hypothèses explicites. Ce sont des livrables annoncés, pas encore reçus.
+- Signalement technique envoyé et revérifié dans l'historique du même ticket à **13:11:49** (heure affichée CJ) : les deux request IDs et la cadence désormais appliquée ont été transmis. Demande de vérification par l'équipe API de la limite compte/IP/endpoint, de la cadence autorisée et du délai de reprise. Aucune clé, jeton ou donnée client transmis. Pas de nouvelle tentative avant réponse utile.
+- Contrôles du service après publication : health200 ; route statut CJ401 sans session. L'administration connectée et le compte Stripe attendu ont été vérifiés plus haut. Cela ne constitue pas une commande fournisseur reçue, payée ou livrée.
+
+### Décisions
+
+| Périmètre | Décision | Preuve / prochaine action |
+| --- | --- | --- |
+| Administration connectée | APPROVED pour accès et lecture | Tableau de bord et commande de test ouverts |
+| Diagnostic et cadence CJ | APPROVED techniquement | Tests, audit indépendant, CI, publication vérifiés |
+| Authentification Stripe | APPROVED pour la sonde seulement | Compte attendu confirmé, aucun débit |
+| Lecture/mapping réel CJ | BLOCKED |429 persistant ; attendre l'équipe API et le magasin/variante exacts |
+| Premier pilote commercial | BLOCKED | Finition, exclusions, stock, SAV et devis complet encore en clarification |
+
+Reprise : examiner la réponse du ticket et celle de Nicy sans doublon. N'effectuer le prochain contrôle CJ qu'après donnée ou consigne technique nouvelle. Enregistrer ensuite uniquement les identifiants réellement fournis et approuvés ; ne pas activer de produit ou engager de paiement sur la base de cette préparation.
