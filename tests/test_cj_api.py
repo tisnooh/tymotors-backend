@@ -348,29 +348,131 @@ def test_cj_variant_resolver_paginates_with_a_bounded_budget():
 def test_cj_rate_slot_spaces_requests_and_respects_deadline(monkeypatch):
     clock = [10.0]
     slept = []
+    starts = []
 
     async def fake_sleep(seconds):
         slept.append(seconds)
         clock[0] += seconds
 
+    class Client:
+        async def request(self, _method, _url, **_kwargs):
+            starts.append(clock[0])
+            if len(starts) == 1:
+                clock[0] += 2.0  # A slow TLS/auth response must finish before cooldown starts.
+            return httpx.Response(200)
+
     monkeypatch.setattr(cj_api, "_now", lambda: clock[0])
     monkeypatch.setattr(cj_api, "_sleep", fake_sleep)
     monkeypatch.setattr(cj_api, "_next_cj_request_at", 0.0)
+    monkeypatch.setattr(cj_api, "_cj_in_flight", False)
 
-    async def reserve():
-        await cj_api._wait_for_cj_slot(20.0)
-        first = clock[0]
-        await cj_api._wait_for_cj_slot(20.0)
-        second = clock[0]
+    async def run():
+        client = Client()
+        await cj_api._cj_request(client, "POST", TOKEN_URL, deadline=20.0)
+        await cj_api._cj_request(client, "GET", SHOPS_URL, deadline=20.0)
         try:
-            await cj_api._wait_for_cj_slot(11.5)
+            await cj_api._cj_request(client, "GET", CONNECTIONS_URL, deadline=13.5)
         except TimeoutError:
-            return first, second
+            return
         raise AssertionError("A request must not start after its call budget")
 
-    first, second = asyncio.run(reserve())
-    assert second - first >= cj_api.CJ_REQUEST_INTERVAL_SECONDS
+    asyncio.run(run())
+    assert starts == [10.0, 13.0]
     assert slept == [1.0, 0.5]
+
+
+def test_cj_rate_slot_serializes_concurrent_network_requests(monkeypatch):
+    import time
+    monkeypatch.setattr(cj_api, "_next_cj_request_at", 0.0)
+    monkeypatch.setattr(cj_api, "_cj_in_flight", False)
+    monkeypatch.setattr(cj_api, "_now", time.monotonic)
+    monkeypatch.setattr(cj_api, "_sleep", asyncio.sleep)
+    started = asyncio.Event()
+    release = asyncio.Event()
+    starts = []
+    ends = []
+    active = [0]
+
+    class Client:
+        async def request(self, _method, _url, **_kwargs):
+            active[0] += 1
+            assert active[0] == 1
+            starts.append(time.monotonic())
+            if len(starts) == 1:
+                started.set()
+                await release.wait()
+            ends.append(time.monotonic())
+            active[0] -= 1
+            return httpx.Response(200)
+
+    async def run():
+        client = Client()
+        deadline = time.monotonic() + 5
+        first = asyncio.create_task(cj_api._cj_request(client, "POST", TOKEN_URL, deadline=deadline))
+        await started.wait()
+        second = asyncio.create_task(cj_api._cj_request(client, "GET", SHOPS_URL, deadline=deadline))
+        await asyncio.sleep(0.03)
+        assert len(starts) == 1
+        release.set()
+        await asyncio.gather(first, second)
+
+    asyncio.run(run())
+    assert len(starts) == 2
+    assert starts[1] >= ends[0] + 0.98
+
+
+def test_cj_rate_slot_releases_after_error_and_cancellation(monkeypatch):
+    clock = [0.0]
+    starts = []
+
+    async def fake_sleep(seconds):
+        clock[0] += seconds
+
+    monkeypatch.setattr(cj_api, "_now", lambda: clock[0])
+    monkeypatch.setattr(cj_api, "_sleep", fake_sleep)
+    monkeypatch.setattr(cj_api, "_next_cj_request_at", 0.0)
+    monkeypatch.setattr(cj_api, "_cj_in_flight", False)
+
+    class FailingClient:
+        async def request(self, _method, _url, **_kwargs):
+            starts.append(clock[0])
+            raise httpx.ConnectError("offline")
+
+    class WaitingClient:
+        def __init__(self):
+            self.started = asyncio.Event()
+
+        async def request(self, _method, _url, **_kwargs):
+            starts.append(clock[0])
+            self.started.set()
+            await asyncio.Event().wait()
+
+    class GoodClient:
+        async def request(self, _method, _url, **_kwargs):
+            starts.append(clock[0])
+            return httpx.Response(200)
+
+    async def run():
+        try:
+            await cj_api._cj_request(FailingClient(), "POST", TOKEN_URL, deadline=10)
+        except httpx.ConnectError:
+            pass
+        else:
+            raise AssertionError("Network failure must propagate")
+        waiting = WaitingClient()
+        task = asyncio.create_task(cj_api._cj_request(waiting, "GET", SHOPS_URL, deadline=10))
+        await waiting.started.wait()
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+        else:
+            raise AssertionError("Cancellation must propagate")
+        await cj_api._cj_request(GoodClient(), "GET", SHOPS_URL, deadline=10)
+
+    asyncio.run(run())
+    assert starts == [0.0, 1.0, 2.0]
 
 
 def test_cj_resolver_discards_partial_mappings_on_global_budget_expiry(monkeypatch):
