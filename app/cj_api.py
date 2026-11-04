@@ -24,6 +24,34 @@ SAFE_CONNECTION_FIELDS = (
     "shopId", "platformProductId", "platformVariantId", "cjProductId",
     "cjVariantId", "cjSku", "sourceCountryCode", "targetCountryCode", "logistics",
 )
+_SAFE_REQUEST_ID = re.compile(r"[A-Za-z0-9_.:-]{1,48}\Z")
+
+
+def _contains_secret(value: object, secrets: tuple[str, ...]) -> bool:
+    return isinstance(value, str) and any(secret and secret in value for secret in secrets)
+
+
+def _safe_request_id(payload: object, forbidden: tuple[str, ...] = ()) -> str | None:
+    value = payload.get("requestId") if isinstance(payload, dict) else None
+    if not isinstance(value, str) or not _SAFE_REQUEST_ID.fullmatch(value):
+        return None
+    return None if _contains_secret(value, forbidden) else value
+
+
+def _probe_failure(stage: str, response: httpx.Response | None = None,
+                   payload: object = None, forbidden: tuple[str, ...] = ()) -> dict:
+    """Expose only stable, bounded CJ diagnostics; never echo provider content."""
+    diagnostics = {"stage": stage}
+    if response is not None and type(response.status_code) is int and 100 <= response.status_code <= 599:
+        diagnostics["http_status"] = response.status_code
+    if isinstance(payload, dict):
+        code = payload.get("code")
+        if type(code) is int and 0 <= code <= 2_147_483_647:
+            diagnostics["code"] = code
+        request_id = _safe_request_id(payload, forbidden)
+        if request_id is not None:
+            diagnostics["request_id"] = request_id
+    return diagnostics
 
 
 async def _wait_for_cj_slot(deadline: float) -> None:
@@ -113,6 +141,8 @@ async def resolve_cj_variants(
             token = data.get("accessToken") if isinstance(data, dict) else None
             if not isinstance(token, str) or not token:
                 return {"status": "invalid_response", "products": unavailable}
+            if _contains_secret(shop_id, (api_key, token)):
+                return {"status": "api_authenticated", "products": unavailable}
             headers = {"CJ-Access-Token": token}
             shop_response = await _cj_request(client, "GET", SHOPS_URL, deadline=deadline,
                                               bypass_rate_limit=bypass_rate_limit, headers=headers)
@@ -167,7 +197,8 @@ async def resolve_cj_variants(
                 products[product_id] = entry
             name = authorized[0].get("name")
             return {"status": "api_authenticated", "products": products, "shop_id": shop_id,
-                    "shop_name": name if isinstance(name, str) and 0 < len(name) <= 50 else None}
+                    "shop_name": name if (isinstance(name, str) and 0 < len(name) <= 50
+                                           and not _contains_secret(name, (api_key, token))) else None}
     except (httpx.HTTPError, TimeoutError, ValueError, TypeError, AttributeError):
         return {"status": "unavailable", "products": unavailable}
 
@@ -189,9 +220,14 @@ async def probe_cj_auth(api_key: str, transport: httpx.AsyncBaseTransport | None
     if not isinstance(payload, dict):
         return {"status": "invalid_response"}
     if _cj_success(response, payload) and isinstance(payload.get("data"), dict):
-        if payload["data"].get("accessToken"):
+        token = payload["data"].get("accessToken")
+        if isinstance(token, str) and token:
             return {"status": "api_authenticated"}
-    return {"status": "rejected", "request_id": payload.get("requestId")}
+    auth_data = payload.get("data")
+    auth_token = auth_data.get("accessToken") if isinstance(auth_data, dict) else None
+    request_id = _safe_request_id(payload, tuple(value for value in (api_key, auth_token)
+                                                 if isinstance(value, str)))
+    return {"status": "rejected", **({"request_id": request_id} if request_id else {})}
 
 
 async def probe_cj_connections(api_key: str, transport: httpx.AsyncBaseTransport | None = None,
@@ -204,6 +240,7 @@ async def probe_cj_connections(api_key: str, transport: httpx.AsyncBaseTransport
         return {"status": "invalid_request", "mapping_status": "shop_not_authorized"}
     deadline = _now() + CJ_CALL_BUDGET_SECONDS
     bypass_rate_limit = transport is not None
+    failure_stage = None
     try:
         async with httpx.AsyncClient(timeout=10, transport=transport) as client:
             auth = await _cj_request(client, "POST", TOKEN_URL, deadline=deadline,
@@ -213,26 +250,38 @@ async def probe_cj_connections(api_key: str, transport: httpx.AsyncBaseTransport
             if not isinstance(token, str) or not token:
                 return {"status": "unavailable" if auth.status_code == 429 or auth.status_code >= 500 else "rejected"}
             headers = {"CJ-Access-Token": token}
+            failure_stage = "shops"
             shops_response = await _cj_request(client, "GET", SHOPS_URL, deadline=deadline,
                                                bypass_rate_limit=bypass_rate_limit, headers=headers)
-            shops_payload = shops_response.json()
+            try:
+                shops_payload = shops_response.json()
+            except ValueError:
+                shops_payload = None
             if not _cj_success(shops_response, shops_payload) or not isinstance(shops_payload.get("data"), list):
-                return {"status": "api_authenticated", "mapping_status": "unavailable"}
+                return {"status": "api_authenticated", "mapping_status": "unavailable",
+                        "diagnostics": _probe_failure("shops", shops_response, shops_payload,
+                                                       (api_key, token))}
             shops = []
             for shop in shops_payload["data"]:
                 if (isinstance(shop, dict) and shop.get("status") == 1
                         and isinstance(shop.get("id"), str)
-                        and re.fullmatch(r"[A-Za-z0-9_-]{1,40}", shop["id"])):
+                        and re.fullmatch(r"[A-Za-z0-9_-]{1,40}", shop["id"])
+                        and not _contains_secret(shop["id"], (api_key, token))):
                     name = shop.get("name")
-                    shops.append({"id": shop["id"], "name": name if isinstance(name, str) and len(name) <= 200 else ""})
+                    shops.append({"id": shop["id"], "name": name if (isinstance(name, str)
+                        and len(name) <= 200 and not _contains_secret(name, (api_key, token))) else ""})
             if shop_id is None:
                 return {"status": "api_authenticated", "mapping_status": "shop_not_configured", "shops": shops}
             if not any(shop["id"] == shop_id for shop in shops):
                 return {"status": "api_authenticated", "mapping_status": "shop_not_authorized", "shops": shops}
+            failure_stage = "connections"
             response = await _cj_request(client, "GET", CONNECTIONS_URL,
                                          deadline=deadline, bypass_rate_limit=bypass_rate_limit,
                                          headers=headers, params={"shopId": shop_id, "page": 1, "pageSize": 1})
-            payload = response.json()
+            try:
+                payload = response.json()
+            except ValueError:
+                payload = None
             data = payload.get("data") if _cj_success(response, payload) else None
             total = data.get("total") if isinstance(data, dict) else None
             rows = data.get("list") if isinstance(data, dict) else None
@@ -240,8 +289,13 @@ async def probe_cj_connections(api_key: str, transport: httpx.AsyncBaseTransport
                     or (total == 0 and rows)
                     or (total > 0 and (len(rows) != 1 or not isinstance(rows[0], dict)
                                        or rows[0].get("shopId") != shop_id))):
-                return {"status": "api_authenticated", "mapping_status": "unavailable"}
+                return {"status": "api_authenticated", "mapping_status": "unavailable",
+                        "diagnostics": _probe_failure("connections", response, payload,
+                                                       (api_key, token))}
             return {"status": "api_authenticated", "mapping_status": "connected" if total else "no_products",
                     "connected_variants": total, "shop_id": shop_id, "authorized_shops": 1}
     except (httpx.HTTPError, TimeoutError, ValueError, TypeError, AttributeError):
+        if failure_stage:
+            return {"status": "api_authenticated", "mapping_status": "unavailable",
+                    "diagnostics": _probe_failure(failure_stage)}
         return {"status": "unavailable"}
