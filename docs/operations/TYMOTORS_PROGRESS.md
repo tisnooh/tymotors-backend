@@ -186,3 +186,15 @@ Objectif actif : ouvrir de vraies commandes avec Stripe en mode réel et une off
 3. Compléter les informations du vendeur encore vides dans la configuration publique.
 4. Activer une référence vérifiée, effectuer un paiement réel contrôlé puis vérifier commande, attribution fournisseur, expédition et suivi. Aucun paiement réel n'a encore été exécuté.
 5. Obtenir la réponse écrite de CJ sur l'acceptation des colis Alibaba à l'unité et un devis complet France ; identifier cinq SKU pilotes exacts et leur mapping CJ avant le test sandbox. Toute transmission payante reste soumise à validation humaine. L'affectation de Wazza et l'authentification API ne remplacent aucune de ces étapes.
+
+## 4 novembre 2026 — checklist du soir et reprise
+
+- Checklist centrale `docs/LAUNCH_READINESS.md` réécrite à partir des lectures actuelles, en remplacement du constat périmé « Stripe test ». Production : Stripe live, test catalogue désactivé, legal_ready false ; les dix champs vendeur requis par le code sont vides. Aucun secret affiché.
+- SQL commercial hors archives :40 articles,0 actif,0 stock positif,0 vérifié,0 compatibilité vérifiée,0 offre vérifiée,0 prix d'achat/livraison renseigné,0 marge calculable ;8 liens produit-fournisseur (pas8 fournisseurs),0 commande commerciale,15 essais,0 soumission CJ. La compatibilité vérifiée globale appartient à une fixture staging archivée, exclue du chiffre commercial.
+- Health HTTP200 en24,05s au premier appel puis site-config HTTP200 en0,34s : mesure ponctuelle, pas diagnostic de cause ni autorisation d'infrastructure payante.
+- Gmail : notification CJ `1a1a78f5f5189c2a`, reçue à18:15:50 Paris, annonce une nouvelle réponse au ticket. Contenu technique non lu : le contrôleur navigateur et le secours Windows list_apps expirent ; aucune nouvelle preuve d'ID/devis n'en est déduite. Pas de nouvelle réponse technique Soyintech dans la recherche effectuée.
+- Complément technique envoyé dans le fil humain existant support@cjdropshipping.com, Gmail `1a1a87a9054a7be4`, SENT : demande de routage API et diagnostic429 avec les deux request IDs, compte/IP/endpoint et délai de reprise. Aucun doublon de demande commerciale, secret, achat ou envoi de commande.
+- Administration : correction textuelle isolée du libellé « Paiement sandbox uniquement » pour les commandes internes ; is_test ne détermine pas le mode Stripe. Revue indépendante favorable, validation ciblée en cours. Aucun style, image, prix ou logique modifié.
+- Prochaine étape : rétablir le contrôleur navigateur puis lire le ticket existant ; suivre la checklist. Ne pas multiplier les sondes CJ ni créer un mapping fictif.
+
+- Fin du lot : checklist approuvée en revue indépendante ; liens vérifiés. Correctif textuel Commerce approuvé,7 tests ciblés et lint réussis. Premier passage Jest : un délai dépassé à5s sous charge ; relance avec délai30s réussie, sans assertion modifiée. Aucun déploiement de ce nouveau libellé effectué. Nouveau contrôle navigateur : timeout20s, ticket toujours non lu.
