@@ -1,4 +1,11 @@
-# TYMotors — point de reprise du 3 novembre 2026
+# TYMotors — point de reprise du 4 novembre 2026
+
+## Contrôle des messages et préparation de publication — 4 novembre
+
+- Nouveau retour CJ du4novembre02:03:49 lu dans le ticket `T202610311023101331`. La phrase sur une facturation après confirmation/création des références n'est pas un devis. Clarification envoyée et présence revérifiée dans l'historique à04:05:31 : montant/devise/déclencheur des frais demandés, aucun achat ni création payante de référence autorisés. Ticket en attente de CJ.
+- Gmail : aucun nouveau devis technique dans les résultats fournisseurs depuis le3novembre ; le nouveau message HyperSKU `1a1a489bda645452` est promotionnel. WhatsApp : notification Alibaba de référence de prix, pas un devis SKU. Alibaba Messenger : échec d'ouverture IndexedDB avec timeout, messages récents non certifiables. Preuves et prochaine action : `SUPPLIER_MESSAGES_2026-11-04.md`.
+- Backend PR#8 (`11d2248`) et frontend PR#8 (`686373e`) toujours préparés, CI réussies :522 tests Python +1 contrôle croisé ignoré dans le clone backend seul,148 contrôles SQL (111 existants +37 CJ),508 tests frontend et compilation. L'audit indépendant approuve uniquement le flux de brouillon CJ non payé, pas la livraison d'un produit réel.
+- Publication et migration production non exécutées : demande d'autorisation précise déjà présentée conformément à la consigne « Ne déploie rien en production sans autorisation ». Ne pas interpréter l'absence de réponse comme un accord. Après accord : migration additive, backend, puis administration, avec vérification de chaque déploiement. Ne pas activer de produit sans variante et offre exactes.
 
 ## Suite CJ — envoi non payé et retour des statuts
 
