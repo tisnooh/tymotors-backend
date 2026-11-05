@@ -219,3 +219,10 @@ Objectif actif : ouvrir de vraies commandes avec Stripe en mode réel et une off
 - Blocage d'accès désormais explicite : navigateur désactivé dans les réglages Work. Réactivation demandée pour lire le ticket et relever les plages Render. Aucun contournement des réglages.
 - SQL production relu :40 articles commerciaux,0 actif,0 stock positif,0 vérifié,0 soumission CJ. Pas de nouveau retour Soyintech trouvé dans la recherche Gmail ciblée.
 - Prochaine action : après réactivation du navigateur, ouvrir Render Connect/Outbound et le ticket existant ; transmettre le complément technique sans achat, puis traiter les vrais IDs/devis reçus.
+
+### Accès rétabli et complément envoyé
+
+- Le contrôle suivant retrouve le navigateur intégré disponible. Ticket CJ relu : réponse4novembre13:13:35 confirme la transmission à IT, sans IDs/devis. Render Connect ouvert en lecture seule : plages sortantes partagées74.220.51.0/24 et74.220.59.0/24, backend0ba3cb6 Live. Aucun secret révélé ni infrastructure payante activée.
+- Complément envoyé et relu dans le ticket :5novembre06:51:00 (heure affichée), statut Awaiting CJ Reply. Deux plages + request IDs + cadence transmis à IT. Preuve locale enregistrée, texte778caractères, aucune commande/paiement.
+- Une saisie lente a expiré au milieu du message ; le brouillon partiel a été remplacé avant l'unique envoi, puis l'historique a été relu. Aucun doublon envoyé.
+- Le blocage navigateur précédent est levé. Reprise : attendre la réponse IT et les identifiants/devis réels, puis mapper et tester le brouillon non payé.

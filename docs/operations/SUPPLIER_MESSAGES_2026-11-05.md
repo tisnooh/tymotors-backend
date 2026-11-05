@@ -18,6 +18,12 @@ La [documentation Render](https://render.com/docs/outbound-ip-addresses) confirm
 
 ## Accès et absence de nouveaux engagements
 
+**Mise à jour après rétablissement de l'accès :** le ticket connecté a été relu. CJ a répondu le4novembre à13:13:35 (heure affichée) avoir transmis le problème à IT. Aucun nouvel identifiant produit/variante/magasin ni devis France n'est fourni dans cette réponse. Render Connect confirme les plages sortantes partagées `74.220.51.0/24` et `74.220.59.0/24` ; l'IP précise des requêtes historiques n'est pas déduite de ces plages.
+
+Le complément technique a été envoyé dans le même ticket et relu dans son historique : **5novembre06:51:00**, heure affichée par CJ, statut **Awaiting CJ Reply**. Il transmet les deux plages, les request IDs, la cadence appliquée et demande à IT de distinguer QPS et limite par IP. Il rappelle les identifiants et le devis attendus, sans achat ou option payante. Le texte envoyé est une version condensée de778caractères du brouillon ci-dessus. Aucune relance à renvoyer tant qu'il n'y a pas d'élément nouveau.
+
+Preuve locale de l'historique : `C:/Users/utilisateur/.codex/visualizations/2026/09/11/01a08f4a-18ce-7221-a393-8d6d4537a373/cj-ticket-2026-11-05.jpg` (capture locale, non ajoutée au dépôt).
+
 - Le contrôle du 5 novembre06:40 Paris renvoie explicitement `Local browser use is disabled in Work settings`. Aucun site n'est accessible par ce contrôleur ; demander sa réactivation plutôt que simuler une lecture ou modifier les réglages de l'application par un autre moyen.
 - Aucun nouveau message technique Soyintech dans la recherche Gmail ciblée depuis le4novembre ; la réponse du4novembre reste la dernière exploitable trouvée. Ne pas renvoyer la clarification déjà partie.
 - Aucun nouvel appel API CJ, achat, envoi de commande ou abonnement payant. L'IP partagée reste une piste à faire confirmer, pas une raison de contourner une limite ou d'acheter une option sans décision.

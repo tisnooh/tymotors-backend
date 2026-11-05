@@ -41,8 +41,8 @@ Contrôle SQL en lecture seule, hors archives et fixtures :
 
 | Fait | Tâche | Responsable | Prochaine preuve/action |
 | --- | --- | --- | --- |
-| [ ] | Lire la dernière réponse du ticket CJ | CODEX / accès navigateur | Réponse e-mail du5novembre analysée ; contenu récent du ticket connecté non vérifié. L'accès navigateur est désactivé dans Work ; le réactiver avant de lire le ticket existant. |
-| [ ] | Résoudre le 429 CJ sur la lecture des boutiques | CJ puis CODEX | Réponse e-mail : piste QPS ou limite3 utilisateurs/IP. Relever les IP sortantes du backend dans Render et compléter le ticket existant, sans affirmer la cause ni relancer en boucle. |
+| [x] | Lire la dernière réponse du ticket CJ et compléter le diagnostic | CODEX | Accès rétabli, réponse4novembre13:13:35 lue : transmission à IT. Plages Render74.220.51.0/24 et74.220.59.0/24 relevées et complément envoyé, entrée CJ5novembre06:51:00 vérifiée. |
+| [ ] | Résoudre le 429 CJ sur la lecture des boutiques | CJ puis CODEX | Attendre le diagnostic IT sur QPS ou limite3 utilisateurs/IP ; les plages Render sont fournies, pas l'IP exacte des requêtes historiques. Aucun nouvel essai en boucle. |
 | [ ] | Compléter la variante pilote | Soyintech | Pour `MR3BF2021` : ABS noir brillant de remplacement, exclusions rétroviseurs d'origine, stock/départ, dimensions et poids brut emballés, traitement des défauts. Clarification déjà envoyée. |
 | [ ] | Enregistrer le mapping exact | CJ / CODEX | Produit de service, variante, SKU, véritable ID boutique et correspondance avec le produit TYMotors. Création gratuite annoncée mais IDs non reçus dans les réponses lues. |
 | [ ] | Chiffrer une commande unitaire France | Soyintech / CJ | Port Chine, réception, QC, emballage, transport France, devise, validité, délais, suivi et retours. Les 138 USD historiques portent sur cinq pièces groupées. |
