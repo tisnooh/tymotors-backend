@@ -2,6 +2,8 @@
 
 État vérifié le **4 novembre 2026 au soir (Paris)**. Remplace la photographie du 12 octobre ; l'historique reste dans [le journal](operations/TYMOTORS_PROGRESS.md).
 
+Mise à jour du5novembre06:40–06:45 Paris : correctif du libellé admin publié, CI et fichier servi vérifiés. Lecture SQL :40 produits commerciaux,0 actif,0 stock positif,0 vérifié,0 soumission CJ. [Nouvelle réponse technique CJ analysée](operations/SUPPLIER_MESSAGES_2026-11-05.md) ; l'accès navigateur est désormais explicitement désactivé dans Work.
+
 **Stripe est en mode réel. Aucun produit commercial n'a encore toutes les données nécessaires à son activation. La réception d'une commande TYMotors par CJ n'est pas démontrée.**
 
 ## Terminé et vérifié
@@ -39,8 +41,8 @@ Contrôle SQL en lecture seule, hors archives et fixtures :
 
 | Fait | Tâche | Responsable | Prochaine preuve/action |
 | --- | --- | --- | --- |
-| [ ] | Lire la dernière réponse CJ | CODEX / accès navigateur | Ticket `T202610311023101331` : notification reçue. Une ancienne vue a pu être lue, mais son actualisation reste blanche et une nouvelle ouverture expire ; contenu récent non vérifié. Reprendre le ticket dès rétablissement. |
-| [ ] | Résoudre le 429 CJ sur la lecture des boutiques | CJ puis CODEX | Support saisi avec deux request IDs. Obtenir diagnostic compte/IP/endpoint et cadence/cooldown avant un nouvel essai ; pas de boucle. |
+| [ ] | Lire la dernière réponse du ticket CJ | CODEX / accès navigateur | Réponse e-mail du5novembre analysée ; contenu récent du ticket connecté non vérifié. L'accès navigateur est désactivé dans Work ; le réactiver avant de lire le ticket existant. |
+| [ ] | Résoudre le 429 CJ sur la lecture des boutiques | CJ puis CODEX | Réponse e-mail : piste QPS ou limite3 utilisateurs/IP. Relever les IP sortantes du backend dans Render et compléter le ticket existant, sans affirmer la cause ni relancer en boucle. |
 | [ ] | Compléter la variante pilote | Soyintech | Pour `MR3BF2021` : ABS noir brillant de remplacement, exclusions rétroviseurs d'origine, stock/départ, dimensions et poids brut emballés, traitement des défauts. Clarification déjà envoyée. |
 | [ ] | Enregistrer le mapping exact | CJ / CODEX | Produit de service, variante, SKU, véritable ID boutique et correspondance avec le produit TYMotors. Création gratuite annoncée mais IDs non reçus dans les réponses lues. |
 | [ ] | Chiffrer une commande unitaire France | Soyintech / CJ | Port Chine, réception, QC, emballage, transport France, devise, validité, délais, suivi et retours. Les 138 USD historiques portent sur cinq pièces groupées. |
@@ -69,7 +71,7 @@ C'est le comportement mesuré de l'application, pas une conclusion générale su
 
 ## Vérifications restantes de qualité
 
-- [ ] Vérifier le nouveau libellé de l'administration : `is_test=true` peut désigner un diagnostic gratuit Stripe live et ne prouve pas le mode sandbox. Correction textuelle préparée sur `codex/launch-checklist-label`, revue indépendante APPROVED, 7 tests Commerce et lint réussis ; publication et contrôle visuel non effectués. Aucun changement de logique ni styles.
+- [x] Publier et vérifier le fichier contenant le libellé admin : PR frontend#10 fusionnée au commit `22fd37614533f2bf4b83d91006d0045bbcc21543`, Vercel `dpl_7wY5eY3cW9KyZ9bFc1vuJha3tZNL` READY/production avec alias `tymotors.vercel.app`. Le chunk `/static/js/793.367aeb7e.chunk.js` contient le nouveau texte et plus l'ancien « Paiement sandbox uniquement ». CI de fusion réussie,7 tests ciblés et lint réussis avant fusion. Aucun changement de logique ni styles.
 - [ ] Vérifier visuellement mobile/ordinateur après rétablissement du contrôleur navigateur.
 - [ ] Surveiller la latence initiale : `/api/health` 24,05 s au premier contrôle, puis `/api/site-config` 0,34 s. Mesure ponctuelle, cause non établie ; aucun abonnement payant activé.
 - [ ] Vérifier confirmations client et suivi multicolis dans la recette du premier produit ; le diagnostic gratuit ne prouve pas la livraison physique.

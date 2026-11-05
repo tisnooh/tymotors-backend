@@ -209,3 +209,13 @@ Objectif actif : ouvrir de vraies commandes avec Stripe en mode réel et une off
 - L'administration ne propose actuellement que nom interne, contact opérationnel, seuil de stock et devise. Les champs LEGAL_* sont lus depuis Render ; nom interne et contact opérationnel ne doivent pas être assimilés automatiquement à l'identité légale.
 - Correctif frontend #10 : CI build réussie,7 tests et lint réussis, revue APPROVED. Autorisation de publication demandée via la question asynchrone en cours, en respect de l'instruction de ne pas déployer sans accord. Aucun déploiement réalisé.
 - Reprise : lire le ticket dès que CJ se recharge, traiter les données reçues, appliquer le mapping/devis exact puis vérifier le brouillon non payé. Les demandes existantes restent à traiter, pas à renvoyer.
+
+## 5 novembre 2026 — publication admin et réponse CJ analysée
+
+- Consigne vocale « fais-les aussi » après la demande de publication et la liste des tâches : publication du correctif textuel frontend#10, strictement limité à la phrase de Commerce.jsx. Aucun autre changement applicatif ni activation commerciale.
+- Fusion vérifiée : `22fd37614533f2bf4b83d91006d0045bbcc21543`, Vercel `dpl_7wY5eY3cW9KyZ9bFc1vuJha3tZNL` READY/production, projet et alias TYMotors attendus. CI du commit fusionné réussie, run41975566191. Contrôle HTTP : manifeste et28 scripts servis ; chunk793.367aeb7e contient la nouvelle phrase, ancienne absente. Contrôle visuel connecté non réalisé faute de navigateur disponible.
+- Réponse CJ reçue à00:08:55 UTC, Gmail `1a1a909928d6dbce`, lue et analysée : QPS ou limite de trois utilisateurs par IP possibles ; pas de diagnostic du compte via email. Complément de ticket préparé,872caractères, non envoyé. Voir `SUPPLIER_MESSAGES_2026-11-05.md`.
+- Documentation officielle Render consultée : plages sortantes partagées dans une région ; IP réelle des requêtes CJ non relevée. Aucun proxy, rotation de compte, option payante ou nouvel appel CJ.
+- Blocage d'accès désormais explicite : navigateur désactivé dans les réglages Work. Réactivation demandée pour lire le ticket et relever les plages Render. Aucun contournement des réglages.
+- SQL production relu :40 articles commerciaux,0 actif,0 stock positif,0 vérifié,0 soumission CJ. Pas de nouveau retour Soyintech trouvé dans la recherche Gmail ciblée.
+- Prochaine action : après réactivation du navigateur, ouvrir Render Connect/Outbound et le ticket existant ; transmettre le complément technique sans achat, puis traiter les vrais IDs/devis reçus.
