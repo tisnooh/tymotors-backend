@@ -41,3 +41,16 @@ Ne pas répéter cette demande. Prochaine action : examiner le montant et le dé
 - Les 138 USD Soyintech concernent les cinq pièces groupées, pas une livraison client à l'unité.
 - Les lots techniques backend PR #8 et frontend PR #8 sont testés et préparés. Migration et publication production restent soumises à la réponse à la demande d'autorisation déjà présentée ; aucune fusion, migration production ou activation d'article effectuée pendant ce contrôle.
 - Aucun changement de design, photographie, prix public, stock ou association commerciale non prouvée.
+
+## Contrôle du soir : nouvelle notification, accès au ticket indisponible
+
+- Notification Gmail `1a1a78f5f5189c2a`, reçue le4novembre18:15:50 Paris : une réponse CJ est annoncée. C'est un avis automatique ; le contenu de la réponse n'a pas été lu et aucun nouvel ID/devis n'est confirmé.
+- Le contrôleur du navigateur ne répond pas ; le secours Windows list_apps expire également. Pas d'accès au ticket obtenu pendant ce contrôle. Pas de nouveau message technique Soyintech dans la recherche Gmail effectuée.
+- Ancien fil humain support@cjdropshipping.com relu avant envoi. Complément technique envoyé dans ce même fil, Gmail `1a1a87a9054a7be4`, statut SENT : routage vers l'équipe API pour le ticketT202610311023101331, HTTP429/code1600200 après authentification, traces connues, cadence série/pause1s et demande de limite/cooldown. Le refus antérieur de recopier un ticket interne par email est reconnu ; aucune demande de copie répétée. Aucun secret, donnée client ou engagement transmis.
+- Ne pas renvoyer ces messages. Reprise : lire la réponse dans le ticket dès le retour du contrôleur et exploiter uniquement ses données réelles.
+
+## Reprise de fin de soirée
+
+- E-mail Nicy `1a1a53ecf2cf214d` relu ; pas de nouveau message dans la recherche Gmail ciblée. Les données partielles ont été ajoutées dans la note interne en production du pilote `TY-BMW-F30-F32-MIRROR-CAPS`, avec source et audit unique `dec47472-b163-43ad-8ef8-e9ac15a7758e`. Prix candidat16 USD/paire, et non prix public EUR. Offre principale Leju conservée, aucun statut vérifié ou achat déclenché.
+- Ticket CJ : une ancienne vue chargée reste lisible ; son actualisation devient blanche, les nouvelles ouvertures expirent. La notification tardive ne démontre donc pas une nouvelle réponse technique distincte de celle déjà lue à13:02:56. Aucun nouvel ID/devis reçu n'est déclaré.
+- Aucun nouveau message envoyé : clarification Soyintech et signalement API CJ déjà partis, absence d'élément nouveau justifiant un doublon.

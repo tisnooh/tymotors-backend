@@ -1,58 +1,86 @@
-# TYMotors — état de préparation au lancement
+# TYMotors — checklist de lancement
 
-> Ce document est une photographie du 12 octobre. Pour l'état vérifié au 1er novembre et les déploiements actuels, consulter [TYMOTORS_PROGRESS.md](operations/TYMOTORS_PROGRESS.md). Le checkout réel reste fermé : Stripe est en test, les 40 produits sont en brouillon sans stock et les offres fournisseur ne sont pas vérifiées.
+État vérifié le **4 novembre 2026 au soir (Paris)**. Remplace la photographie du 12 octobre ; l'historique reste dans [le journal](operations/TYMOTORS_PROGRESS.md).
 
-Vérifié le 12 octobre 2026. Verdict : vitrine publiée, mais **ouverture aux commandes réelles non validée**. Stripe reste en test et aucun achat fournisseur n'a été effectué.
+Mise à jour du5novembre06:40–06:45 Paris : correctif du libellé admin publié, CI et fichier servi vérifiés. Lecture SQL :40 produits commerciaux,0 actif,0 stock positif,0 vérifié,0 soumission CJ. [Nouvelle réponse technique CJ analysée](operations/SUPPLIER_MESSAGES_2026-11-05.md) ; l'accès navigateur est désormais explicitement désactivé dans Work.
 
-## Parcours attendu
+**Stripe est en mode réel. Aucun produit commercial n'a encore toutes les données nécessaires à son activation. La réception d'une commande TYMotors par CJ n'est pas démontrée.**
 
-Un client sélectionne un produit disponible et compatible, paie, reçoit une confirmation, puis TYMotors valide manuellement l'achat fournisseur ; l'agent contrôle et expédie le colis, et le client voit un suivi fiable.
+## Terminé et vérifié
 
-## Éléments vérifiés
+- [x] Derniers correctifs CJ publiés : backend `0ba3cb6` sur Render et administration `3adcb85` sur Vercel.
+- [x] Configuration publique HTTP 200 : `stripe_mode=live`, `test_catalog_available=false`.
+- [x] Diagnostic Stripe réel à 0 € enregistré jusqu'à la commande interne `TY-DIAG-A19A1078153E4695`, avec webhook reçu. Sans stock commercial, achat ou expédition. Ne pas le confondre avec une vente physique.
+- [x] Authentification CJ contrôlée, agent Wazza identifié. Cela ne prouve pas le mapping ni le traitement d'une commande.
+- [x] Brouillons CJ protégés par réservation durable et confirmation humaine ; pas de paiement, pas de renvoi automatique d'un résultat incertain. Migration publiée.
+- [x] Dernier lot technique : 529 tests backend locaux, contrôles SQL/CI et 512 tests frontend CI réussis. Aucune livraison réelle déduite de ces tests.
+- [x] Demandes consolidées auprès de Soyintech et CJ, sans achat. Complément technique envoyé ce soir au support CJ : Gmail `1a1a87a9054a7be4`.
+- [x] Design, photographies et prix publics conservés dans ce cycle.
+- [x] Données partielles Soyintech enregistrées dans la note interne du pilote en production : 16 USD/paire remplace la proposition historique de 18 USD, relation Yooyi–Soyintech clarifiée, champs commerciaux inchangés. Audit unique et répétition sans doublon vérifiés ; les trois anciens dossiers pilotes sont actualisés.
 
-| Élément | Preuve | Limite |
-| --- | --- | --- |
-| Backend européen | Render Frankfurt, service `srv-dajf809594qs73bvpgi0`, correctif `9860d88` Live | Offre gratuite conservée ; les réveils après inactivité restent possibles |
-| Base de données | Production `dzdcaloewimekvddvdlo` et staging `enckmnyapgovkkzsnyca`, Paris `eu-west-3` | Ne prouve pas une vente ni une disponibilité fournisseur |
-| Origine frontend | `FRONTEND_URL` production enregistré ; contrôle CORS réussi | Aucune clé révélée ou changée |
-| Stripe sandbox | Destination active vers le backend européen ; événement signé reçu HTTP 200 et état `completed` en base ; renvoi HTTP 200 avec `duplicate: true`, une seule ligne en base | Événement synthétique sans commande TYMotors, pas une recette panier/paiement complète |
-| Administration fournisseur | Liens privés, prestataire éditable, récupération des liens manquants avec confirmation, RPC déployée sur les deux bases | Traitement manuel uniquement ; aucun adaptateur HyperSKU connecté |
-| Tests | 168 backend, 17 frontend, lint frontend ; CI backend et frontend réussies | Pas une certification sécurité, juridique ou fournisseur |
-| Frontend publié | Commit `61731d2`, Vercel `dpl_7HZRP7sW3Y3oJaRqEtkVBkcWMAde` READY, alias `tymotors.vercel.app` | Seuls le suivi et les promesses livraison/paiement ont été corrigés ; design et animations inchangés |
-| Personnalisation véhicule | 14 images récupérées lors de la préparation précédente | Huit droits/licences restent à revoir ; ne pas confondre disponibilité technique et droit d'usage |
+## Mesures en production
 
-## Blocages avant les vraies ventes
+Contrôle SQL en lecture seule, hors archives et fixtures :
 
-1. **Catalogue vendable :** les deux bases ont 40 brouillons et une fixture archivée, zéro produit actif. Les 40 brouillons ont stock zéro et ne disposent pas de preuves fournisseur, de compatibilité et d'images vérifiées. Les aperçus publics ne sont pas des produits commandables. Ne pas inventer de stock ou publier la fixture test.
-2. **Fournisseur et agent :** demande HyperSKU envoyée et assignée à Chloe lors de la préparation. Aucun devis, acceptation des colis à l'unité, délai total France, prix complet, contrôle qualité ou conditions de retour confirmé dans les preuves disponibles. Aucun achat ni solde crédité.
-3. **Informations commerciales :** nom légal, SIRET, adresse professionnelle, médiateur, domaine et e-mail public à fournir pour finaliser les pages et l'expéditeur. Confirmer aussi les conditions de livraison/retour annoncées et les droits des visuels.
-4. **Recette et paiements réels :** effectuer une commande complète de test sur un environnement isolé avec un produit dûment validé, puis vérifier stock, paiement, dossier fournisseur unique, mails, suivi, expiration et remboursement. Le passage Stripe live n'est pas autorisé par la demande antérieure de test uniquement et doit être préparé séparément avec le propriétaire.
+| Indicateur | Valeur | Limite |
+| --- | ---: | --- |
+| Articles commerciaux | 40 | 42 lignes avec deux archives internes |
+| Articles actifs | 0/40 | Aucun ouvert à la vente |
+| Stock positif | 0/40 | Aucun stock à inventer |
+| Articles vérifiés | 0/40 | Aucune validation commerciale complète |
+| Compatibilités commerciales vérifiées | 0 | La seule règle globale vérifiée appartient à une fixture staging archivée |
+| Offres fournisseur vérifiées | 0 | Réponse partielle différente d'une offre complète |
+| Prix d'achat renseignés en base | 0 | Le devis mail USD n'est pas encore un coût complet EUR |
+| Prix de livraison renseignés en base | 0 | Aucun tarif unitaire client confirmé |
+| Marges commerciales calculables | 0 | Coûts incomplets |
+| Liens produit–fournisseur | 8 | Huit associations, pas huit fournisseurs |
+| Commandes commerciales | 0 | 15 tests/diagnostics internes exclus |
+| Soumissions CJ enregistrées | 0 | Aucune réception CJ prouvée |
 
-## Corrections apportées
+## À faire, dans l'ordre
 
-- Normalisation récursive des objets réels du SDK Stripe après contrôle de signature ; correction des remboursements et tests avec signatures HMAC réelles.
-- SDK Stripe fixé à la version 16.0.0 pour un déploiement reproductible.
-- Statuts du suivi traduits ; une panne réseau n'est plus affichée comme une commande introuvable.
-- Suppression des promesses non confirmées d'expédition avant 14 h, de délais express et de paiement fractionné sans frais.
-- Aucun changement du Hero, des images publiques, de la navbar ou des animations pendant ces correctifs.
+| Fait | Tâche | Responsable | Prochaine preuve/action |
+| --- | --- | --- | --- |
+| [x] | Lire la dernière réponse du ticket CJ et compléter le diagnostic | CODEX | Accès rétabli, réponse4novembre13:13:35 lue : transmission à IT. Plages Render74.220.51.0/24 et74.220.59.0/24 relevées et complément envoyé, entrée CJ5novembre06:51:00 vérifiée. |
+| [ ] | Résoudre le 429 CJ sur la lecture des boutiques | CJ puis CODEX | Attendre le diagnostic IT sur QPS ou limite3 utilisateurs/IP ; les plages Render sont fournies, pas l'IP exacte des requêtes historiques. Aucun nouvel essai en boucle. |
+| [ ] | Compléter la variante pilote | Soyintech | Pour `MR3BF2021` : ABS noir brillant de remplacement, exclusions rétroviseurs d'origine, stock/départ, dimensions et poids brut emballés, traitement des défauts. Clarification déjà envoyée. |
+| [ ] | Enregistrer le mapping exact | CJ / CODEX | Produit de service, variante, SKU, véritable ID boutique et correspondance avec le produit TYMotors. Création gratuite annoncée mais IDs non reçus dans les réponses lues. |
+| [ ] | Chiffrer une commande unitaire France | Soyintech / CJ | Port Chine, réception, QC, emballage, transport France, devise, validité, délais, suivi et retours. Les 138 USD historiques portent sur cinq pièces groupées. |
+| [ ] | Calculer coût complet et marge | CODEX | Conserver preuve/date/devise ; ne pas saisir le montant USD dans un champ EUR. Conversion et hypothèses explicites, prix public inchangé. |
+| [ ] | Compléter les informations vendeur | ADMINISTRATEUR / CODEX | Champs réellement vides ci-dessous. Ne pas inventer une identité, un numéro ou un médiateur. |
+| [ ] | Créer un brouillon CJ non payé et vérifier sa présence | CODEX après données exactes | Une réservation, confirmation humaine, ID distant et présence chez CJ. Aucun paiement ni achat fournisseur. |
+| [ ] | Recetter le parcours complet du premier produit | CODEX / fournisseur-CJ | Véhicules compatible/incompatible, variante, stock, devis, total, paiement contrôlé, webhook unique, commande, agent, CJ, puis suivi. Distinguer simulation et expédition réelle. |
+| [ ] | Valider cinq pilotes puis étendre aux autres | CODEX / audit indépendant | Aucun blocage essentiel ; offre, compatibilité, coût rendu et livraison prouvés pour chaque produit. |
+| [ ] | Autoriser l'achat fournisseur et l'ouverture effective | ADMINISTRATEUR | Décision après recette ; aucun engagement financier automatique. |
 
-## Informations attendues du propriétaire
+## Pilote : preuves reçues et manquantes
 
-- Réponse reçue : aucun devis fournisseur/HyperSKU confirmé ; « TYmotors » est le nom souhaité, mais SIRET et autres informations d'entreprise ne sont pas disponibles. Ne pas déclarer l'entreprise immatriculée ni inventer ces mentions.
-- Les premières références à vendre et la confirmation écrite des variantes, disponibilité, compatibilité, coût total et délai France.
-- Les informations légales et le domaine/e-mail professionnel choisi, sans transmettre de clé ni document d'identité dans le chat.
-- Ensuite, décision explicite sur le passage aux paiements réels et budget éventuel pour des échantillons ; aucun engagement payant n'est pris automatiquement.
+`TY-BMW-F30-F32-MIRROR-CAPS`, produit `e46bf5e1-d459-44ca-b28d-70c01c5c14e7` : Soyintech/Nicy, Gmail `1a1a53ecf2cf214d`, 4 novembre 07:28 Paris. Référence `MR3BF2021`, **16 USD la paire gauche/droite**, MOQ une paire ; F30 berline 2013–2018 explicitement cité. Données annoncées par paire : 32 × 22 × 17 cm, 0,6 kg, caractère emballé/brut à confirmer. Livraison à un entrepôt tiers chinois acceptée ; port selon adresse, transit intérieur normalement 1–3 jours ouvrables, distinct du délai client France.
 
-## Références
+Ne pas généraliser aux F32, carrosseries, années et équipements sur la similarité du titre. Variante exacte et restrictions restent en clarification, Gmail `1a1a6695622def89`. Aucun stock ou poids emballé confirmé à partir de cette réponse.
 
-- [CI backend](https://github.com/tisnooh/tymotors-backend/actions/runs/38238416091)
-- [CI frontend](https://github.com/tisnooh/tymotors-frontend/actions/runs/38240456974)
-- [Site publié](https://tymotors.vercel.app/)
-- [Procédure Stripe test](STRIPE_TEST_SETUP.md)
-- [Pilote et demande de devis HyperSKU](HYPERSKU_PILOT.md)
-- [Checklist Stripe avant le mode réel](https://docs.stripe.com/get-started/checklist/go-live)
-- [Règles officielles e-commerce](https://www.economie.gouv.fr/dgccrf/les-fiches-pratiques/e-commerce-les-regles-entre-professionnels-et-consommateurs)
-- [Formalités de création d'une micro-entreprise](https://entreprendre.service-public.gouv.fr/vosdroits/F36746)
-- [Mentions obligatoires d'un site professionnel](https://entreprendre.service-public.gouv.fr/vosdroits/F31228)
+CJ annonce le 4 novembre à 13:02:56 (heure affichée) préparer un Service Product gratuit et fournir les IDs/devis. Une notification Gmail `1a1a78f5f5189c2a` reçue à 18:15:50 Paris annonce une nouvelle réponse : **son contenu reste à lire**, pas une preuve que les IDs sont arrivés.
 
-Le nom commercial seul ne remplace pas l'identification du vendeur. Service Public prévoit une demande d'immatriculation au plus tôt un mois avant le début d'activité et au plus tard quinze jours après celui-ci : ne pas assimiler automatiquement un SIRET en cours d'attribution à une interdiction générale, ni afficher cette mention sans démarche réellement engagée. Le lancement reste ici non validé pour l'ensemble des raisons ci-dessus, indépendamment du seul délai d'attribution du numéro.
+## Configuration qui ferme actuellement le checkout
+
+Le contrôle public du soir retourne `legal_ready=false`. `app/site_config.py` et `src/pages/Cart.jsx` conditionnent le panier réel à ce booléen. Les dix champs exigés par le code sont vides :
+
+`LEGAL_COMPANY_NAME`, `LEGAL_SIRET`, `LEGAL_ADDRESS`, `LEGAL_CONTACT_EMAIL`, `LEGAL_CONTACT_PHONE`, `LEGAL_VAT_MENTION`, `LEGAL_MEDIATOR_NAME`, `LEGAL_MEDIATOR_URL`, `LEGAL_HOSTING_DETAILS`, `LEGAL_RETURNS_ADDRESS`.
+
+C'est le comportement mesuré de l'application, pas une conclusion générale sur le démarrage d'une activité avec immatriculation en cours. Toute adaptation doit utiliser les informations réelles du vendeur ; ne pas forcer le booléen ni fabriquer un numéro. Ne transmettre aucune clé secrète dans le chat.
+
+## Vérifications restantes de qualité
+
+- [x] Publier et vérifier le fichier contenant le libellé admin : PR frontend#10 fusionnée au commit `22fd37614533f2bf4b83d91006d0045bbcc21543`, Vercel `dpl_7wY5eY3cW9KyZ9bFc1vuJha3tZNL` READY/production avec alias `tymotors.vercel.app`. Le chunk `/static/js/793.367aeb7e.chunk.js` contient le nouveau texte et plus l'ancien « Paiement sandbox uniquement ». CI de fusion réussie,7 tests ciblés et lint réussis avant fusion. Aucun changement de logique ni styles.
+- [ ] Vérifier visuellement mobile/ordinateur après rétablissement du contrôleur navigateur.
+- [ ] Surveiller la latence initiale : `/api/health` 24,05 s au premier contrôle, puis `/api/site-config` 0,34 s. Mesure ponctuelle, cause non établie ; aucun abonnement payant activé.
+- [ ] Vérifier confirmations client et suivi multicolis dans la recette du premier produit ; le diagnostic gratuit ne prouve pas la livraison physique.
+
+## Preuves et reprise
+
+- [Contrôle CJ publié](operations/CJ_ADMIN_RUNTIME_2026-11-04.md).
+- [Messages fournisseur](operations/SUPPLIER_MESSAGES_2026-11-04.md).
+- [Diagnostic gratuit](operations/ZERO_CHECKOUT_LIVE_RESULT_2026-11-03.md).
+- [Progression](operations/TYMOTORS_PROGRESS.md).
+
+Reprise : lire le ticket existant, traiter la réponse, relier uniquement des IDs authentiques, compléter variante et devis, tester le brouillon non payé. Conserver les 40 fiches en brouillon tant que leurs preuves manquent, sans stock fictif ni mention de disponibilité trompeuse.

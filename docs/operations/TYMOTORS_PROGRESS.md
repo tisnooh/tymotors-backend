@@ -186,3 +186,43 @@ Objectif actif : ouvrir de vraies commandes avec Stripe en mode réel et une off
 3. Compléter les informations du vendeur encore vides dans la configuration publique.
 4. Activer une référence vérifiée, effectuer un paiement réel contrôlé puis vérifier commande, attribution fournisseur, expédition et suivi. Aucun paiement réel n'a encore été exécuté.
 5. Obtenir la réponse écrite de CJ sur l'acceptation des colis Alibaba à l'unité et un devis complet France ; identifier cinq SKU pilotes exacts et leur mapping CJ avant le test sandbox. Toute transmission payante reste soumise à validation humaine. L'affectation de Wazza et l'authentification API ne remplacent aucune de ces étapes.
+
+## 4 novembre 2026 — checklist du soir et reprise
+
+- Checklist centrale `docs/LAUNCH_READINESS.md` réécrite à partir des lectures actuelles, en remplacement du constat périmé « Stripe test ». Production : Stripe live, test catalogue désactivé, legal_ready false ; les dix champs vendeur requis par le code sont vides. Aucun secret affiché.
+- SQL commercial hors archives :40 articles,0 actif,0 stock positif,0 vérifié,0 compatibilité vérifiée,0 offre vérifiée,0 prix d'achat/livraison renseigné,0 marge calculable ;8 liens produit-fournisseur (pas8 fournisseurs),0 commande commerciale,15 essais,0 soumission CJ. La compatibilité vérifiée globale appartient à une fixture staging archivée, exclue du chiffre commercial.
+- Health HTTP200 en24,05s au premier appel puis site-config HTTP200 en0,34s : mesure ponctuelle, pas diagnostic de cause ni autorisation d'infrastructure payante.
+- Gmail : notification CJ `1a1a78f5f5189c2a`, reçue à18:15:50 Paris, annonce une nouvelle réponse au ticket. Contenu technique non lu : le contrôleur navigateur et le secours Windows list_apps expirent ; aucune nouvelle preuve d'ID/devis n'en est déduite. Pas de nouvelle réponse technique Soyintech dans la recherche effectuée.
+- Complément technique envoyé dans le fil humain existant support@cjdropshipping.com, Gmail `1a1a87a9054a7be4`, SENT : demande de routage API et diagnostic429 avec les deux request IDs, compte/IP/endpoint et délai de reprise. Aucun doublon de demande commerciale, secret, achat ou envoi de commande.
+- Administration : correction textuelle isolée du libellé « Paiement sandbox uniquement » pour les commandes internes ; is_test ne détermine pas le mode Stripe. Revue indépendante favorable, validation ciblée en cours. Aucun style, image, prix ou logique modifié.
+- Prochaine étape : rétablir le contrôleur navigateur puis lire le ticket existant ; suivre la checklist. Ne pas multiplier les sondes CJ ni créer un mapping fictif.
+
+- Fin du lot : checklist approuvée en revue indépendante ; liens vérifiés. Correctif textuel Commerce approuvé,7 tests ciblés et lint réussis. Premier passage Jest : un délai dépassé à5s sous charge ; relance avec délai30s réussie, sans assertion modifiée. Aucun déploiement de ce nouveau libellé effectué. Nouveau contrôle navigateur : timeout20s, ticket toujours non lu.
+
+## 4 novembre 2026 — reprise et correction des preuves du pilote
+
+- Source fournisseur relue : Gmail `1a1a53ecf2cf214d`. L'ancienne note en base conservait la proposition18 USD et l'interrogation sur Yooyi. Ajout d'un bloc daté annonçant16 USD/paire et la clarification Yooyi–Soyintech, sans remplacer l'offre principale Leju ni transférer cette preuve à une autre variante.
+- Correction de données en production exécutée à22:25:52 UTC : `record_soyintech_partial_evidence_2026-11-04.sql`, après revue indépendante APPROVED. Première application :1 note/1 audit ; répétition :0/0. Audit `dec47472-b163-43ad-8ef8-e9ac15a7758e`. Champs relus : statutdraft, stock0, prix public6900cents, is_verifiedfalse, supplier_verifiedfalse, référence fournisseur principale nulle, coûts achat/livraison nuls, source Leju conservée. Seuls notes et last_checked_at sont modifiés.
+- Revue indépendante APPROVED des trois dossiers historiques corrigés : prix candidat, relation Yooyi–Soyintech et statut du Service Product provisoire CJ. Aucun ID CJ ou devis ajouté par supposition, aucun pilote approuvé.
+- Accès navigateur partiellement rétabli pour lire l'inventaire et la vue déjà chargée du ticket ; celle-ci montre encore les échanges13:02:56/13:11:49. Après actualisation, page blanche ; autre vue CJ et nouvel onglet expirent. Impossible de vérifier une réponse plus récente. Aucune nouvelle sonde CJ API, commande ou relance en double.
+- Recherche Gmail : seuls la notification CJ connue et l'e-mail Nicy connu sont retournés. L'annonce Alibaba1600834862867 n'est pas accessible par l'outil web et la recherche exacte ne donne aucun résultat : ne pas en conclure que le produit est indisponible ni vérifier sa finition à partir de cet échec.
+- L'administration ne propose actuellement que nom interne, contact opérationnel, seuil de stock et devise. Les champs LEGAL_* sont lus depuis Render ; nom interne et contact opérationnel ne doivent pas être assimilés automatiquement à l'identité légale.
+- Correctif frontend #10 : CI build réussie,7 tests et lint réussis, revue APPROVED. Autorisation de publication demandée via la question asynchrone en cours, en respect de l'instruction de ne pas déployer sans accord. Aucun déploiement réalisé.
+- Reprise : lire le ticket dès que CJ se recharge, traiter les données reçues, appliquer le mapping/devis exact puis vérifier le brouillon non payé. Les demandes existantes restent à traiter, pas à renvoyer.
+
+## 5 novembre 2026 — publication admin et réponse CJ analysée
+
+- Consigne vocale « fais-les aussi » après la demande de publication et la liste des tâches : publication du correctif textuel frontend#10, strictement limité à la phrase de Commerce.jsx. Aucun autre changement applicatif ni activation commerciale.
+- Fusion vérifiée : `22fd37614533f2bf4b83d91006d0045bbcc21543`, Vercel `dpl_7wY5eY3cW9KyZ9bFc1vuJha3tZNL` READY/production, projet et alias TYMotors attendus. CI du commit fusionné réussie, run41975566191. Contrôle HTTP : manifeste et28 scripts servis ; chunk793.367aeb7e contient la nouvelle phrase, ancienne absente. Contrôle visuel connecté non réalisé faute de navigateur disponible.
+- Réponse CJ reçue à00:08:55 UTC, Gmail `1a1a909928d6dbce`, lue et analysée : QPS ou limite de trois utilisateurs par IP possibles ; pas de diagnostic du compte via email. Complément de ticket préparé,872caractères, non envoyé. Voir `SUPPLIER_MESSAGES_2026-11-05.md`.
+- Documentation officielle Render consultée : plages sortantes partagées dans une région ; IP réelle des requêtes CJ non relevée. Aucun proxy, rotation de compte, option payante ou nouvel appel CJ.
+- Blocage d'accès désormais explicite : navigateur désactivé dans les réglages Work. Réactivation demandée pour lire le ticket et relever les plages Render. Aucun contournement des réglages.
+- SQL production relu :40 articles commerciaux,0 actif,0 stock positif,0 vérifié,0 soumission CJ. Pas de nouveau retour Soyintech trouvé dans la recherche Gmail ciblée.
+- Prochaine action : après réactivation du navigateur, ouvrir Render Connect/Outbound et le ticket existant ; transmettre le complément technique sans achat, puis traiter les vrais IDs/devis reçus.
+
+### Accès rétabli et complément envoyé
+
+- Le contrôle suivant retrouve le navigateur intégré disponible. Ticket CJ relu : réponse4novembre13:13:35 confirme la transmission à IT, sans IDs/devis. Render Connect ouvert en lecture seule : plages sortantes partagées74.220.51.0/24 et74.220.59.0/24, backend0ba3cb6 Live. Aucun secret révélé ni infrastructure payante activée.
+- Complément envoyé et relu dans le ticket :5novembre06:51:00 (heure affichée), statut Awaiting CJ Reply. Deux plages + request IDs + cadence transmis à IT. Preuve locale enregistrée, texte778caractères, aucune commande/paiement.
+- Une saisie lente a expiré au milieu du message ; le brouillon partiel a été remplacé avant l'unique envoi, puis l'historique a été relu. Aucun doublon envoyé.
+- Le blocage navigateur précédent est levé. Reprise : attendre la réponse IT et les identifiants/devis réels, puis mapper et tester le brouillon non payé.
